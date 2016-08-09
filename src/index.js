@@ -26,6 +26,7 @@ const argv = yargs
   , deployRun)
 
   .command('upload-assets', 'Upload contents of assets/ folder to S3', {}, assetsUploadRun)
+
   .command('log', 'Get last log lines for a Lambda', () =>
     yargs
       .describe('function-name', 'Function to retreive logs for')

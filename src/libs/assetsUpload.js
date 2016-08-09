@@ -3,6 +3,7 @@ import AWS from 'aws-sdk';
 import fs from 'fs';
 import mime from 'mime';
 import path from 'path';
+import ProgressBar from 'progress';
 import promisify from 'es6-promisify';
 import readdirLib from 'recursive-readdir';
 
@@ -36,8 +37,11 @@ function listFiles () {
 export function assetsUpload ({ bucketName }) {
   return Promise.resolve()
   .then(listFiles)
-  .then(files => {
-    const promises = files.map(f => uploadS3({ bucketName, filePath: f }));
-    return Promise.all(promises);
+  .then(async files => {
+    const progress = new ProgressBar('  [:bar] :current/:total (:elapseds)', { total: files.length, width: 20 });
+    for (const f of files) {
+      await uploadS3({ bucketName, filePath: f });
+      progress.tick();
+    }
   });
 }
