@@ -3,7 +3,7 @@
   "version": "0.12.1",
   "description": "Serverless Web Framework for AWS Lambda and API Gateway",
   "repository": "https://github.com/lusentis/dawson",
-  "main": "lib/index.js",
+  "main": "src/index.js",
   "scripts": {
     "test": "npm run lint && npm run tape",
     "lint": "semistandard | snazzy",
@@ -34,7 +34,7 @@
     "temp": "^0.8.3",
     "yargs": "^4.8.1"
   },
-  "bin": "lib/index.js",
+  "bin": "src/index.js",
   "devDependencies": {
     "babel-register": "^6.11.6",
     "pre-commit": "^1.1.3",
