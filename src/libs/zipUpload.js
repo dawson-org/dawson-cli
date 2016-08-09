@@ -7,9 +7,6 @@ import childProcess from 'child_process';
 
 import { debug, error } from '../logger';
 import { PROJECT_ROOT } from '../config';
-import {
-  templateSupportBucket
-} from '../factories/cf_support';
 
 const s3 = new AWS.S3({});
 const putObject = promisify(s3.putObject.bind(s3));
@@ -109,8 +106,7 @@ function findZipVersionId ({ uuid, zipVersionsList }) {
   return versionDescriptor.VersionId;
 }
 
-export async function listZipVersions ({ appName }) {
-  const bucketName = templateSupportBucket({ appName });
+export async function listZipVersions ({ bucketName }) {
   const response = await listObjectVersions({
     Bucket: bucketName,
     Prefix: S3_ZIP_PREFIX
@@ -120,7 +116,7 @@ export async function listZipVersions ({ appName }) {
 
 function uploadS3 (args) {
   const {
-    appName,
+    bucketName,
     uuid,
     tempZipFile,
     tempZipFileSize,
@@ -128,7 +124,6 @@ function uploadS3 (args) {
     zipVersionsList
   } = args;
   if (!skip) { debug(`   zip size: ${tempZipFileSize}`); }
-  const bucketName = templateSupportBucket({ appName });
   const s3Key = `${S3_ZIP_PREFIX}/${uuid}.zip`;
   const zipS3Location = {
     Bucket: bucketName,
@@ -168,7 +163,8 @@ function uploadS3 (args) {
 }
 
 export function zipAndUpload ({
-  appName,
+  bucketName,
+  appStageName,
   functionName,
   indexFileContents,
   zipVersionsList,
@@ -176,8 +172,8 @@ export function zipAndUpload ({
   excludeList = []
 }) {
   return Promise.resolve({
-    uuid: `${appName}-${functionName}-bundle`,
-    appName,
+    uuid: `${appStageName}-${functionName}-bundle`,
+    bucketName,
     indexFileContents,
     skip,
     excludeList,

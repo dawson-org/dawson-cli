@@ -24,6 +24,7 @@ import {
   removeStackPolicy,
   createOrUpdateStack,
   waitForUpdateCompleted,
+  getStackOutputs,
   AWS_REGION
 } from '../factories/cf_utils';
 
@@ -63,16 +64,20 @@ export async function deploy ({
   dangerDeleteStorage = false
 }) {
   const stackName = templateStackName({ appName });
+  const supportStackName = templateStackName({ appName: `${appName}Support` });
   try {
     // create support stack (e.g.: temp s3 buckets)
     log('*'.blue, 'updating support resources...');
-    await createSupportResources({ appName });
+    await createSupportResources({ stackName: supportStackName });
+
+    const supportBucketName = (await getStackOutputs({ stackName: supportStackName }))
+      .find(o => o.OutputKey === 'SupportBucket').OutputValue;
 
     const stageName = 'prod';
     const functionsHuman = [];
     let lastMethodInTemplate = null; // used by DependsOn to prevent APIG to abort deployment because "API contains no methods"
     let templatePartials = {};
-    const zipVersionsList = await listZipVersions({ appName });
+    const zipVersionsList = await listZipVersions({ bucketName: supportBucketName });
 
     const defs = Object.entries(API_DEFINITIONS);
     let currentCounter = 0;
@@ -107,7 +112,8 @@ export async function deploy ({
       });
       const indexFileContents = await compiler(name, def.api);
       const zipS3Location = await zipAndUpload({
-        appName,
+        bucketName: supportBucketName,
+        appStageName: 'default',
         functionName: name,
         indexFileContents,
         skip,
@@ -187,7 +193,10 @@ export async function deploy ({
       cfInnerTemplate = API_DEFINITIONS.processCFTemplate(cfInnerTemplate);
     }
     const cfInnerTemplateJSON = JSON.stringify(cfInnerTemplate, null, 2);
-    const nestedTemplateUrl = await stackUpload({ appName, stackBody: cfInnerTemplateJSON });
+    const nestedTemplateUrl = await stackUpload({
+      bucketName: supportBucketName,
+      stackBody: cfInnerTemplateJSON
+    });
     debug('Inner template:', nestedTemplateUrl);
 
     const finalOutputs = {};
