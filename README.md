@@ -12,6 +12,7 @@ An opinionated serverless web framework for nodejs on AWS (CloudFormation, API G
 
 * [X] zero boilerplate
 * [X] 100% infrastructure-as-code via CloudFormation
+* [X] stateless: no local/remote state files
 * [X] full compatibility with single-page apps
 * [X] babel supported out-of-the-box
 * [X] optionally support promises as function handlers
