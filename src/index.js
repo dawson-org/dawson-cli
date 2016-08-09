@@ -2,15 +2,22 @@
 
 import yargs from 'yargs';
 
-import { enableDebug } from './logger';
+import { enableDebug, log } from './logger';
 import { run as deployRun } from './commands/deploy';
 import { run as assetsUploadRun } from './commands/deploy-assets';
 import { run as logRun } from './commands/log';
 import { run as describeRun } from './commands/describe';
 import { run as proxyRun } from './commands/proxy';
 
+const DAWSON_STAGE = process.env.DAWSON_STAGE || 'default';
+
 const argv = yargs
   .usage('$0 <command> [command-options]')
+
+  .describe('verbose', 'Enable verbose logging')
+  .boolean('verbose')
+  .alias('v')
+
   .command('deploy', 'Deploy your app or a single function', () =>
     yargs
       .describe('function-name', 'Only deploy the specified function(s) (regexp). If not specified, deploys all the functions.')
@@ -22,6 +29,9 @@ const argv = yargs
       .boolean('danger-delete-storage')
       .default('danger-delete-storage', false)
       .describe('danger-delete-storage', 'Allow Tables & Buckets to be deleted/replaced as part of a stack update. YOU WILL LOOSE YOUR DATA!')
+      .describe('stage', 'Application stage to work on')
+      .default('stage', DAWSON_STAGE)
+      .alias('s')
       .help()
   , deployRun)
 
@@ -38,11 +48,17 @@ const argv = yargs
       .default('limit', 200)
       .describe('request-id', 'Filter logs by Lambda RequestId')
       .alias('r', 'request-id')
+      .describe('stage', 'Application stage to work on')
+      .default('stage', DAWSON_STAGE)
+      .alias('s')
       .help()
   , logRun)
 
   .command('describe', 'List stack outputs', () =>
     yargs
+      .describe('stage', 'Application stage to work on')
+      .default('stage', DAWSON_STAGE)
+      .alias('s')
       .help()
   , describeRun)
 
@@ -53,16 +69,17 @@ const argv = yargs
       .describe('port', 'Port to listen on')
       .demand('port')
       .number('port')
+      .describe('stage', 'Application stage to work on')
+      .default('stage', DAWSON_STAGE)
+      .alias('s')
       .help()
   , proxyRun)
-
-  .describe('verbose', 'Enable verbose logging')
-  .boolean('verbose')
-  .alias('v')
 
   .demand(1)
   .help()
   .argv;
+
+log('*'.blue, 'working on stage', argv.stage.bold);
 
 if (argv.verbose === true) {
   enableDebug();

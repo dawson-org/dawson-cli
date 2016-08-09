@@ -24,8 +24,13 @@ import {
 const stripNewLines = str => str.replace(/\n$/, ' ');
 
 export function run (argv) {
-  const { functionName, limit, requestId: filterRequestId } = argv;
-  const stackName = templateStackName({ appName });
+  const {
+    stage,
+    functionName,
+    limit,
+    requestId: filterRequestId
+  } = argv;
+  const stackName = templateStackName({ appName, stage });
   const camelFunctionName = functionName[0].toUpperCase() + functionName.substring(1);
   const cfLambdaName = templateLambdaName({ lambdaName: camelFunctionName });
   return Promise.resolve()

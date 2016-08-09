@@ -50,8 +50,11 @@ const UNSAFE_STACK_POLICY = {
   }]
 };
 
-export function templateStackName ({ appName }) {
-  return `${appName}Stack`;
+export function templateStackName ({ appName, stage }) {
+  const stageUCFirst = stage
+    ? (stage[0].toUpperCase() + stage.substring(1))
+    : '';
+  return `${appName}${stageUCFirst}`;
 }
 
 function checkStackExists (stackName) {

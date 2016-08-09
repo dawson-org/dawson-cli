@@ -10,9 +10,14 @@ import {
   templateStackName
 } from '../factories/cf_utils';
 
-export function run () {
+export function run (argv) {
+  const {
+    stage
+  } = argv;
+
   title('*'.blue, 'uploading assets/ contents...');
-  const stackName = templateStackName({ appName });
+  const stackName = templateStackName({ appName, stage });
+
   return Promise.resolve()
   .then(() => getStackOutputs({ stackName }))
   .then(outputs => {

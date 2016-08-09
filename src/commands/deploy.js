@@ -59,11 +59,12 @@ import {
 const RESERVED_FUCTION_NAMES = ['processCFTemplate'];
 
 export async function deploy ({
+  appStage,
   functionFilterRE,
   noUploads = false,
   dangerDeleteStorage = false
 }) {
-  const stackName = templateStackName({ appName });
+  const stackName = templateStackName({ appName, stage: appStage });
   const supportStackName = templateStackName({ appName: `${appName}Support` });
   try {
     // create support stack (e.g.: temp s3 buckets)
@@ -113,7 +114,7 @@ export async function deploy ({
       const indexFileContents = await compiler(name, def.api);
       const zipS3Location = await zipAndUpload({
         bucketName: supportBucketName,
-        appStageName: 'default',
+        appStageName: appStage,
         functionName: name,
         indexFileContents,
         skip,
@@ -280,7 +281,8 @@ export function run (argv) {
   deploy({
     functionFilterRE: argv['function-name'],
     noUploads: argv['no-uploads'],
-    dangerDeleteStorage: argv['danger-delete-storage']
+    dangerDeleteStorage: argv['danger-delete-storage'],
+    appStage: argv.stage
   })
   .catch(error => error('Uncaught error', error.message, error.stack))
   .then(() => process.exit(0));
