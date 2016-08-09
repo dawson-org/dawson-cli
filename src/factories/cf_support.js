@@ -1,24 +1,21 @@
 
 import { debug } from '../logger';
 import {
-  templateStackName,
   buildStackParams,
   createOrUpdateStack,
   waitForUpdateCompleted
 } from './cf_utils';
 
-export function templateSupportBucket ({ appName }) {
-  return `support${appName.toLowerCase()}`;
+export function templateSupportBucket () {
+  return `Support`;
 }
 
-export async function createSupportResources ({ appName }) {
-  const stackName = templateStackName({ appName: `${appName}Support` });
+export async function createSupportResources ({ stackName }) {
   const cfTemplateJSON = JSON.stringify({
     'Resources': {
-      [`${templateSupportBucket({ appName })}`]: {
+      [`${templateSupportBucket()}`]: {
         'Type': 'AWS::S3::Bucket',
         'Properties': {
-          'BucketName': `${templateSupportBucket({ appName })}`,
           'LifecycleConfiguration': {
             'Rules': [{
               'Id': 'CleanupAfter7Days',
@@ -30,6 +27,11 @@ export async function createSupportResources ({ appName }) {
             'Status': 'Enabled'
           }
         }
+      }
+    },
+    'Outputs': {
+      'SupportBucket': {
+        Value: { Ref: `${templateSupportBucket()}` }
       }
     }
   }, null, 2);

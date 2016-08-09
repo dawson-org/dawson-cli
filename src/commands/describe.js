@@ -9,7 +9,10 @@ import {
 } from '../factories/cf_utils';
 
 export function run (argv) {
-  const stackName = templateStackName({ appName });
+  const {
+    stage
+  } = argv;
+  const stackName = templateStackName({ appName, stage });
   return Promise.resolve()
   .then(() => getStackOutputs({ stackName }))
   .then(outputs => {

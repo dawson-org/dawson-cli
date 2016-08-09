@@ -7,15 +7,15 @@ import {
 } from './cf_s3';
 
 test('templateAssetsBucketName', t => {
-  const expected = 'MyAppAssets';
-  const actual = templateAssetsBucketName({ appName: 'MyApp' });
-  t.equal(actual, expected, 'should return my app name suffixed by Assets');
+  const expected = 'Assets';
+  const actual = templateAssetsBucketName();
+  t.equal(actual, expected, 'should return Assets');
   t.end();
 });
 
 test('templateAssetsBucket', t => {
   const expected = {
-    'MyAppAssets': {
+    'Assets': {
       'Type': 'AWS::S3::Bucket',
       'Properties': {
         'WebsiteConfiguration': {
@@ -25,7 +25,7 @@ test('templateAssetsBucket', t => {
       }
     }
   };
-  const actual = templateAssetsBucket({ appName: 'MyApp' });
+  const actual = templateAssetsBucket();
   t.deepEqual(actual, expected, 'shoudl return an S3 Bucket template');
   t.end();
 });

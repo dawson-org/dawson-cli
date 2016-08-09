@@ -15,12 +15,11 @@ if (cloudfrontRootOrigin !== 'assets' && cloudfrontRootOrigin !== 'api') {
   throw new Error('Invalid parameter value for cloudfrontRootOrigin. Allowed values are: assets, api');
 }
 
-export function templateCloudfrontDistributionName ({ appName }) {
-  return `${appName}WWWDistribution`;
+export function templateCloudfrontDistributionName () {
+  return `WWWDistribution`;
 }
 
 export function templateCloudfrontDistribution ({
-  appName,
   stageName
 }) {
   const aliases = {};
@@ -33,7 +32,7 @@ export function templateCloudfrontDistribution ({
 
   const s3Origin = {
     'DomainName': { 'Fn::Join': ['', [
-      { 'Ref': `${templateAssetsBucketName({ appName })}` },
+      { 'Ref': `${templateAssetsBucketName()}` },
       '.s3-website-',
       { 'Ref': 'AWS::Region' },
       '.amazonaws.com'
@@ -62,7 +61,7 @@ export function templateCloudfrontDistribution ({
   const apiOrigin = {
     'DomainName': {
       'Fn::Join': ['', [
-        { Ref: `${templateAPIID({ appName })}` },
+        { Ref: `${templateAPIID()}` },
         '.execute-api.',
         { 'Ref': 'AWS::Region' },
         '.amazonaws.com'
@@ -131,11 +130,11 @@ export function templateCloudfrontDistribution ({
   }
 
   return {
-    [`${templateCloudfrontDistributionName({ appName })}`]: {
+    [`${templateCloudfrontDistributionName()}`]: {
       'Type': 'AWS::CloudFront::Distribution',
       'DependsOn': [
-        templateAPIID({ appName }),
-        templateAssetsBucketName({ appName })
+        templateAPIID(),
+        templateAssetsBucketName()
       ],
       'Properties': {
         'DistributionConfig': {

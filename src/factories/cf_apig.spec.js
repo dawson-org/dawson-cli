@@ -19,14 +19,14 @@ import {
 } from './cf_apig';
 
 test('templateAPIID', t => {
-  const expected = 'MyAppAPI';
-  const actual = templateAPIID({ appName: 'MyApp' });
+  const expected = 'API';
+  const actual = templateAPIID();
   t.deepEqual(actual, expected, 'should return app name suffixed by API');
   t.end();
 });
 
 test('templateResourceName', t => {
-  const expected = 'UsersResource';
+  const expected = 'ResourceUsers';
   const actual = templateResourceName({ resourceName: 'Users' });
   t.equal(actual, expected, 'should return resource name suffixed by Resource');
   t.end();
@@ -35,17 +35,17 @@ test('templateResourceName', t => {
 test('templateMethodName', t => {
   t.equal(
     templateMethodName({ resourceName: 'Users', httpMethod: 'GET' }),
-    'UsersGETMethod',
+    'MethodUsersGET',
     'should return resourceName, httpMethod concatenated and suffixed with Method');
   t.equal(
     templateMethodName({ httpMethod: 'GET' }),
-    'RootGETMethod',
+    'MethodRootGET',
     'should assume resourceName = Root when called with no resourceName');
   t.end();
 });
 
 test('templateStageName', t => {
-  const expected = 'prodStage';
+  const expected = 'Stageprod';
   const actual = templateStageName({ stageName: 'prod' });
   t.equal(actual, expected, 'should return stage name suffixed by Stage');
   t.end();
@@ -59,7 +59,7 @@ test('templateDeploymentName', t => {
 });
 
 test('templateModelName', t => {
-  const expected = 'EmptyModel';
+  const expected = 'ModelEmpty';
   const actual = templateModelName({ modelName: 'Empty' });
   t.equal(actual, expected, 'should return model name suffixed by Model');
   t.end();
@@ -67,15 +67,15 @@ test('templateModelName', t => {
 
 test('templateRest', t => {
   const expected = {
-    MyAppAPI: {
+    API: {
       'Type': 'AWS::ApiGateway::RestApi',
       'Properties': {
-        'Description': 'REST API for app MyApp',
-        'Name': 'MyApp'
+        'Description': 'REST API for dawson app',
+        'Name': 'AppAPI'
       }
     }
   };
-  const actual = templateRest({ appName: 'MyApp' });
+  const actual = templateRest();
   t.deepEqual(actual, expected, 'should return a rest api template');
   t.end();
 });
@@ -85,19 +85,16 @@ test('templateResourceHelper', t => {
     resourceName: 'Prefix',
     templateResourcePartial: {
       ...templateResource({
-        appName: 'MyApp',
         resourceName: 'List',
         resourcePath: 'list',
         parentResourceName: 'Users'
       }),
       ...templateResource({
-        appName: 'MyApp',
         resourceName: 'Users',
         resourcePath: 'users',
         parentResourceName: null
       }),
       ...templateResource({
-        appName: 'MyApp',
         resourceName: 'Prefix',
         resourcePath: '{prefix}',
         parentResourceName: 'List'
@@ -105,7 +102,6 @@ test('templateResourceHelper', t => {
     }
   };
   const actual = templateResourceHelper({
-    appName: 'MyApp',
     resourcePath: 'users/list/{prefix}'
   });
   t.deepEqual(actual, expected, 'should return the leaf resource template plus all the parent resources templates');
@@ -115,16 +111,15 @@ test('templateResourceHelper', t => {
 test('templateResource', t => {
   t.deepEqual(
     templateResource({
-      appName: 'MyApp',
       resourceName: 'Users',
       resourcePath: 'users',
       parentResourceName: null
     }), {
-      UsersResource: {
+      ResourceUsers: {
         'Type': 'AWS::ApiGateway::Resource',
         'Properties': {
-          'RestApiId': { 'Ref': 'MyAppAPI' },
-          'ParentId': { 'Fn::GetAtt': ['MyAppAPI', 'RootResourceId'] },
+          'RestApiId': { 'Ref': 'API' },
+          'ParentId': { 'Fn::GetAtt': ['API', 'RootResourceId'] },
           'PathPart': 'users'
         }
       }
@@ -132,16 +127,15 @@ test('templateResource', t => {
     'should return a resource template, which references the root api as parent');
   t.deepEqual(
     templateResource({
-      appName: 'MyApp',
       resourceName: 'List',
       resourcePath: 'list',
       parentResourceName: 'Users'
     }), {
-      ListResource: {
+      ResourceList: {
         'Type': 'AWS::ApiGateway::Resource',
         'Properties': {
-          'RestApiId': { 'Ref': 'MyAppAPI' },
-          'ParentId': { 'Ref': 'UsersResource' },
+          'RestApiId': { 'Ref': 'API' },
+          'ParentId': { 'Ref': 'ResourceUsers' },
           'PathPart': 'list'
         }
       }
@@ -152,19 +146,17 @@ test('templateResource', t => {
 
 test('templateModel', t => {
   const expected = {
-    'CustomResponseModel': {
+    'ModelCustomResponse': {
       'Type': 'AWS::ApiGateway::Model',
       'Properties': {
         'ContentType': 'application/json',
         'Description': `Model CustomResponse`,
-        'Name': 'CustomResponse',
-        'RestApiId': { 'Ref': 'MyAppAPI' },
+        'RestApiId': { 'Ref': 'API' },
         'Schema': {}
       }
     }
   };
   const actual = templateModel({
-    appName: 'MyApp',
     modelName: 'CustomResponse',
     modelSchema: {}
   });
@@ -190,17 +182,16 @@ test('templateDeployment', t => {
   const date = new Date().toISOString();
   const expected = {
     'Deployment1234ABC': {
-      'DependsOn': 'UsersGETMethod',
+      'DependsOn': 'MethodUsersGET',
       'Type': 'AWS::ApiGateway::Deployment',
       'Properties': {
-        'RestApiId': { 'Ref': 'MyAppAPI' },
+        'RestApiId': { 'Ref': 'API' },
         'Description': `Automated deployment by danilo on ${date}`,
         'StageName': 'dummy'
       }
     }
   };
   const actual = templateDeployment({
-    appName: 'MyApp',
     deploymentUid: '1234ABC',
     dependsOnMethod: { resourceName: 'Users', httpMethod: 'GET' },
     date
@@ -211,7 +202,7 @@ test('templateDeployment', t => {
 
 test('templateStage', t => {
   const expected = {
-    'prodStage': {
+    'Stageprod': {
       'Type': 'AWS::ApiGateway::Stage',
       'Properties': {
         'CacheClusterEnabled': false,
@@ -226,7 +217,6 @@ test('templateStage', t => {
     }
   };
   const actual = templateStage({
-    appName: 'MyApp',
     stageName: 'prod',
     deploymentUid: '1234567',
     stageVariables: { abc: '123' }

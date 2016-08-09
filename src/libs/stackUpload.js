@@ -9,12 +9,7 @@ import {
 const s3 = new AWS.S3({});
 const putObject = promisify(s3.putObject.bind(s3));
 
-import {
-  templateSupportBucket
-} from '../factories/cf_support';
-
-export function stackUpload ({ appName, stackBody }) {
-  const bucketName = templateSupportBucket({ appName });
+export function stackUpload ({ bucketName, stackBody }) {
   const key = 'nested-template-' + Date.now() + '' + Math.floor(Math.random() * 1000) + '.template';
   const s3Params = {
     Bucket: bucketName,

@@ -24,6 +24,7 @@ import {
   removeStackPolicy,
   createOrUpdateStack,
   waitForUpdateCompleted,
+  getStackOutputs,
   AWS_REGION
 } from '../factories/cf_utils';
 
@@ -58,21 +59,26 @@ import {
 const RESERVED_FUCTION_NAMES = ['processCFTemplate'];
 
 export async function deploy ({
+  appStage,
   functionFilterRE,
   noUploads = false,
   dangerDeleteStorage = false
 }) {
-  const stackName = templateStackName({ appName });
+  const stackName = templateStackName({ appName, stage: appStage });
+  const supportStackName = templateStackName({ appName: `${appName}Support` });
   try {
     // create support stack (e.g.: temp s3 buckets)
     log('*'.blue, 'updating support resources...');
-    await createSupportResources({ appName });
+    await createSupportResources({ stackName: supportStackName });
+
+    const supportBucketName = (await getStackOutputs({ stackName: supportStackName }))
+      .find(o => o.OutputKey === 'SupportBucket').OutputValue;
 
     const stageName = 'prod';
     const functionsHuman = [];
     let lastMethodInTemplate = null; // used by DependsOn to prevent APIG to abort deployment because "API contains no methods"
     let templatePartials = {};
-    const zipVersionsList = await listZipVersions({ appName });
+    const zipVersionsList = await listZipVersions({ bucketName: supportBucketName });
 
     const defs = Object.entries(API_DEFINITIONS);
     let currentCounter = 0;
@@ -107,7 +113,8 @@ export async function deploy ({
       });
       const indexFileContents = await compiler(name, def.api);
       const zipS3Location = await zipAndUpload({
-        appName,
+        bucketName: supportBucketName,
+        appStageName: appStage,
         functionName: name,
         indexFileContents,
         skip,
@@ -125,7 +132,6 @@ export async function deploy ({
         resourceName,
         templateResourcePartial
       } = templateResourceHelper({
-        appName,
         resourcePath
       });
       templatePartials = {
@@ -133,7 +139,6 @@ export async function deploy ({
         ...templateResourcePartial,
         ...lambdaPartial,
         ...templateMethod({
-          appName,
           resourceName,
           httpMethod,
           lambdaName,
@@ -148,39 +153,37 @@ export async function deploy ({
     const deploymentUid = `${Math.floor(Math.random() * 100000)}`;
     let cfInnerTemplate = {
       Resources: {
-        ...templateAssetsBucket({ appName }),
-        ...templateRest({ appName }),
+        ...templateAssetsBucket(),
+        ...templateRest(),
         ...templatePartials,
         ...templateDeployment({
-          appName,
           deploymentUid,
           dependsOnMethod: lastMethodInTemplate
         }),
         ...templateCloudfrontDistribution({
-          appName,
           stageName
         })
       },
       Outputs: {
         ApiGatewayUrl: {
           Value: { 'Fn::Join': ['', [
-            'https://', { Ref: `${templateAPIID({ appName })}` },
+            'https://', { Ref: `${templateAPIID()}` },
             '.execute-api.', AWS_REGION, '.amazonaws.com', `/${stageName}`
           ]]}
         },
         S3AssetsDNS: {
-          Value: { 'Fn::GetAtt': [`${templateAssetsBucketName({ appName })}`, 'DomainName'] }
+          Value: { 'Fn::GetAtt': [`${templateAssetsBucketName()}`, 'DomainName'] }
         },
         S3AssetsBucket: {
-          Value: { 'Ref': `${templateAssetsBucketName({ appName })}` }
+          Value: { 'Ref': `${templateAssetsBucketName()}` }
         },
         CloudFrontDNS: {
           Value: (SETTINGS.cloudfront === false)
                   ? 'CloudFront disabled from config'
-                  : { 'Fn::GetAtt': [`${templateCloudfrontDistributionName({ appName })}`, 'DomainName'] }
+                  : { 'Fn::GetAtt': [`${templateCloudfrontDistributionName()}`, 'DomainName'] }
         },
         RestApiId: {
-          Value: { 'Ref': `${templateAPIID({ appName })}` }
+          Value: { 'Ref': `${templateAPIID()}` }
         },
         DeploymentId: {
           Value: { 'Ref': `${templateDeploymentName({ deploymentUid })}` }
@@ -191,7 +194,10 @@ export async function deploy ({
       cfInnerTemplate = API_DEFINITIONS.processCFTemplate(cfInnerTemplate);
     }
     const cfInnerTemplateJSON = JSON.stringify(cfInnerTemplate, null, 2);
-    const nestedTemplateUrl = await stackUpload({ appName, stackBody: cfInnerTemplateJSON });
+    const nestedTemplateUrl = await stackUpload({
+      bucketName: supportBucketName,
+      stackBody: cfInnerTemplateJSON
+    });
     debug('Inner template:', nestedTemplateUrl);
 
     const finalOutputs = {};
@@ -214,7 +220,6 @@ export async function deploy ({
           }
         },
         ...templateStage({
-          appName,
           stageName,
           deploymentUid,
           stageVariables
@@ -276,7 +281,8 @@ export function run (argv) {
   deploy({
     functionFilterRE: argv['function-name'],
     noUploads: argv['no-uploads'],
-    dangerDeleteStorage: argv['danger-delete-storage']
+    dangerDeleteStorage: argv['danger-delete-storage'],
+    appStage: argv.stage
   })
   .catch(error => error('Uncaught error', error.message, error.stack))
   .then(() => process.exit(0));

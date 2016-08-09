@@ -6,20 +6,20 @@ import {
   templateLambdaName
 } from './cf_lambda';
 
-export function templateAPIID ({ appName }) {
-  return `${appName}API`;
+export function templateAPIID () {
+  return `API`;
 }
 
 export function templateResourceName ({ resourceName }) {
-  return `${resourceName}Resource`;
+  return `Resource${resourceName}`;
 }
 
 export function templateMethodName ({ resourceName = 'Root', httpMethod }) {
-  return `${resourceName}${httpMethod}Method`;
+  return `Method${resourceName}${httpMethod}`;
 }
 
 export function templateStageName ({ stageName }) {
-  return `${stageName}Stage`;
+  return `Stage${stageName}`;
 }
 
 export function templateDeploymentName ({ deploymentUid }) {
@@ -27,19 +27,17 @@ export function templateDeploymentName ({ deploymentUid }) {
 }
 
 export function templateModelName ({ modelName }) {
-  return `${modelName}Model`;
+  return `Model${modelName}`;
 }
 
 
-export function templateRest ({
-  appName
-}) {
+export function templateRest () {
   return {
-    [`${templateAPIID({ appName })}`]: {
+    [`${templateAPIID()}`]: {
       'Type': 'AWS::ApiGateway::RestApi',
       'Properties': {
-        'Description': `REST API for app ${appName}`,
-        'Name': `${appName}`
+        'Description': `REST API for dawson app`,
+        'Name': `AppAPI`
       }
     }
   };
@@ -47,7 +45,6 @@ export function templateRest ({
 
 
 export function templateResourceHelper ({
-  appName,
   resourcePath
 }) {
   const resourcePathTokens = resourcePath.split('/');
@@ -67,7 +64,6 @@ export function templateResourceHelper ({
     assert(!pathToken || pathToken[0] !== '/', '`path` should not begin with a /');
     const templateResourcePartial = (pathToken)
       ? templateResource({
-        appName,
         resourceName, // @FIXME prepend to resourceName the parent resources names
         resourcePath: pathToken,
         parentResourceName: lastResourceName
@@ -86,19 +82,18 @@ export function templateResourceHelper ({
 }
 
 export function templateResource ({
-  appName,
   resourceName,
   resourcePath,
   parentResourceName = null
 }) {
   const parentId = !parentResourceName
-    ? { 'Fn::GetAtt': [`${templateAPIID({ appName })}`, 'RootResourceId'] }
+    ? { 'Fn::GetAtt': [`${templateAPIID()}`, 'RootResourceId'] }
     : { 'Ref': `${templateResourceName({ resourceName: parentResourceName })}` };
   return {
     [`${templateResourceName({ resourceName })}`]: {
       'Type': 'AWS::ApiGateway::Resource',
       'Properties': {
-        'RestApiId': { 'Ref': `${templateAPIID({ appName })}` },
+        'RestApiId': { 'Ref': `${templateAPIID()}` },
         'ParentId': parentId,
         'PathPart': resourcePath
       }
@@ -107,7 +102,6 @@ export function templateResource ({
 }
 
 export function templateModel ({
-  appName,
   modelName,
   modelSchema
 }) {
@@ -117,8 +111,7 @@ export function templateModel ({
       'Properties': {
         'ContentType': 'application/json',
         'Description': `Model ${modelName}`,
-        'Name': `${modelName}`,
-        'RestApiId': { 'Ref': `${templateAPIID({ appName })}` },
+        'RestApiId': { 'Ref': `${templateAPIID()}` },
         'Schema': modelSchema
       }
     }
@@ -251,7 +244,6 @@ export function templateLambdaIntegration ({
 }
 
 export function templateMethod ({
-  appName,
   resourceName,
   httpMethod = 'GET',
   lambdaName = null,
@@ -259,7 +251,7 @@ export function templateMethod ({
 }) {
   const responseModelName = 'HelloWorldModel';
   const resourceId = !resourceName
-    ? { 'Fn::GetAtt': [`${templateAPIID({ appName })}`, 'RootResourceId'] }
+    ? { 'Fn::GetAtt': [`${templateAPIID()}`, 'RootResourceId'] }
     : { 'Ref': `${templateResourceName({ resourceName })}` };
   const integrationConfig = lambdaName
     ? templateLambdaIntegration({ lambdaName, responseContentType })
@@ -282,11 +274,11 @@ export function templateMethod ({
   }
   return {
     ...templateInvokationRole({}),
-    ...templateModel({ appName, modelName: responseModelName, modelSchema: '{}' }),
+    ...templateModel({ modelName: responseModelName, modelSchema: '{}' }),
     [`${templateMethodName({ resourceName, httpMethod })}`]: {
       'Type': 'AWS::ApiGateway::Method',
       'Properties': {
-        'RestApiId': { 'Ref': `${templateAPIID({ appName })}` },
+        'RestApiId': { 'Ref': `${templateAPIID()}` },
         'ResourceId': resourceId,
         'HttpMethod': httpMethod,
         'AuthorizationType': 'NONE',
@@ -303,7 +295,6 @@ export function templateMethod ({
 }
 
 export function templateDeployment ({
-  appName,
   deploymentUid,
   dependsOnMethod: { resourceName, httpMethod },
   date = new Date().toISOString()
@@ -313,7 +304,7 @@ export function templateDeployment ({
       'DependsOn': `${templateMethodName({ resourceName, httpMethod })}`,
       'Type': 'AWS::ApiGateway::Deployment',
       'Properties': {
-        'RestApiId': { 'Ref': `${templateAPIID({ appName })}` },
+        'RestApiId': { 'Ref': `${templateAPIID()}` },
         'Description': `Automated deployment by danilo on ${date}`,
         'StageName': 'dummy' // From the docs: "This property is required by API Gateway.
                               // We recommend that you specify a name using any value
@@ -324,7 +315,6 @@ export function templateDeployment ({
 }
 
 export function templateStage ({
-  appName,
   stageName,
   deploymentUid,
   stageVariables = {}
