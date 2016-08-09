@@ -1,14 +1,17 @@
 
-import promisify from 'es6-promisify';
 import AWS from 'aws-sdk';
-const AWS_REGION = AWS.config.region;
+import promisify from 'es6-promisify';
+
+import {
+  AWS_REGION
+} from '../factories/cf_utils';
 
 const s3 = new AWS.S3({});
 const putObject = promisify(s3.putObject.bind(s3));
 
 import {
   templateSupportBucket
-} from './cf_support';
+} from '../factories/cf_support';
 
 export function stackUpload ({ appName, stackBody }) {
   const bucketName = templateSupportBucket({ appName });
