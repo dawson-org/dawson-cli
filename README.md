@@ -20,7 +20,7 @@ A serverless web framework for nodejs on AWS (CloudFormation, API Gateway, Lambd
 * [X] customizable functions' IAM Policies
 * [X] optionally, CloudFront to avoid CORS
 * [X] fully extensible and customizable with user-defined CloudFormation templates
-* [ ] support multiple stages/regions per app
+* [X] support multiple stages/regions per app
 * [ ] built-in authentication support via API Gateway Authorizers & Cognito Identity Provider
 
 ### CLI
