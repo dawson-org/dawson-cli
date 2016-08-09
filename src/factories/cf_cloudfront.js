@@ -1,12 +1,14 @@
 
-import { templateAPIID } from './cf_apig';
-import { templateAssetsBucketName } from './cf_s3';
-
-import AWS from 'aws-sdk';
-const AWS_REGION = AWS.config.region;
-
-import { SETTINGS } from './config';
+import { SETTINGS } from '../config';
 const domains = SETTINGS.domains || [];
+
+import {
+  templateAPIID
+} from './cf_apig';
+
+import {
+  templateAssetsBucketName
+} from './cf_s3';
 
 const cloudfrontRootOrigin = SETTINGS.cloudfrontRootOrigin || 'api';
 if (cloudfrontRootOrigin !== 'assets' && cloudfrontRootOrigin !== 'api') {
@@ -61,7 +63,9 @@ export function templateCloudfrontDistribution ({
     'DomainName': {
       'Fn::Join': ['', [
         { Ref: `${templateAPIID({ appName })}` },
-        '.execute-api.', AWS_REGION, '.amazonaws.com'
+        '.execute-api.',
+        { 'Ref': 'AWS::Region' },
+        '.amazonaws.com'
       ]]
     },
     'Id': 'api',

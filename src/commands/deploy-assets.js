@@ -1,14 +1,14 @@
 
-import { SETTINGS } from './config';
+import { SETTINGS } from '../config';
 const { appName } = SETTINGS;
 
-import { debug, error } from './logger';
-import { assetsUpload } from './assetsUpload';
+import { debug, error } from '../logger';
+import { assetsUpload } from '../libs/assetsUpload';
 
 import {
   getStackOutputs,
   templateStackName
-} from './cf_utils';
+} from '../factories/cf_utils';
 
 export function run () {
   const stackName = templateStackName({ appName });

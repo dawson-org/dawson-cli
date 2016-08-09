@@ -9,15 +9,15 @@ if (process.env.NODE_ENV !== 'testing') {
   try {
     requiredPkgJson = require(PROJECT_ROOT + '/package.json');
   } catch (e) {
-    error('Cannot find a valid package.json in current directory.');
+    error('Error: cannot find a valid package.json in current directory');
     process.exit(1);
   }
 
   try {
     requiredApi = require(PROJECT_ROOT + '/api');
   } catch (e) {
-    error('Cannot find a valid api.js in current directory.');
-    log('You may have syntax errors in your api.js.');
+    error('Error: cannot find a valid api.js in current directory');
+    log(`You may have syntax errors in your api.js (${e.message})`);
     process.exit(1);
   }
 } else {

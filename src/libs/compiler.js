@@ -1,6 +1,5 @@
 
-import { error } from './logger';
-
+import { error } from '../logger';
 
 export const RUNNER_FUNCTION_BODY = `
 Promise.resolve()

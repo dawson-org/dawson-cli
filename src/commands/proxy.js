@@ -2,8 +2,8 @@
 // DAWSON local development proxy (preview)
 // ========================================
 //
-// This command will parse requests to '/prod' and call the appropriate API function
-// all requests that do not begin with '/prod' will be forwarded to the address specified
+// This command will parse requests to '/prod' and call the appropriate API function.
+// All requests that do not begin with '/prod' will be forwarded to the address specified
 //    by --proxy-assets-url
 //
 // Currently, this proxy DOES NOT SUPPORT:
@@ -11,30 +11,27 @@
 // - "big" requests that does not fit in a single chunk (will restult in a JSON error)
 // - requests/responses of type other than application/json (text/html is not supported)
 //
-// Currently, this proxy assumes that you are building a SPA with an API, and it will only
+// Currently, this proxy assumes that you are building a Single-Page-App with a backend API, and it will only
 // be useful for this use case.
 //
 // This feature is preview-quality, we need error checking, etc...
 //
 
-require('colors');
-
 import assert from 'assert';
+import qs from 'querystring';
+import { createProxyServer } from 'http-proxy';
 import { createServer } from 'http';
 import { parse } from 'url';
-import qs from 'querystring';
 
-import { debug, error, success } from './logger';
-import { SETTINGS, API_DEFINITIONS } from './config';
+import { debug, error, success } from '../logger';
+import { SETTINGS, API_DEFINITIONS } from '../config';
 const { appName } = SETTINGS;
-import { RUNNER_FUNCTION_BODY } from './compiler';
-
-import { createProxyServer } from 'http-proxy';
+import { RUNNER_FUNCTION_BODY } from '../libs/compiler';
 
 import {
   getStackOutputs,
   templateStackName
-} from './cf_utils';
+} from '../factories/cf_utils';
 
 const stackName = templateStackName({ appName });
 
@@ -146,6 +143,7 @@ export function run (argv) {
 
   assert(proxyAssetsUrl, 'Serving from a filder is not implemented yet, you should try --proxy-assets-url');
   assert(!assetsPathname, 'Option --assets-pathname is not implemented yet');
+  assert(SETTINGS.cloudfrontRootOrigin === 'assets', 'This proxy currently only supports Single-Page-Applications (with cloudfrontRootOrigin === "assets" in package.json)');
 
   const proxy = createProxyServer({});
   // Proxy errors
