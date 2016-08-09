@@ -44,10 +44,85 @@ You must define a `dawson` property, as follows:
 },
 ```
 
+---
 
 ## `api.js` file specification
 
 You must have an `api.js` file in the folder where you will run `dawson`. This file may use ES2017 and must, at least, export a function.
+
+##### Basic function
+
+```js
+export function index (params) {
+  console.log('Called with', params)
+  return '<html><body><marquee>I love Marquees</marquee></body></html>'
+}
+index.api = {
+  path: ''
+}
+```
+
+##### Async function
+
+```js
+export function fetchAsync (params) {
+  return new Promise((resolve, reject) => {
+    // ...
+    resolve('<html><body><center>Bar Baz</center></body></html>')
+  })
+}
+fetchAsync.api = {
+  path: '/fetchSomething'
+}
+```
+
+##### Returning JSON
+
+```js
+export function fetchMe (params) {
+  return {
+    my: 'data'
+  }
+}
+fetchMe.api = {
+  path: '/fetchMyJSON',
+  responseContentType: 'application/json'
+}
+```
+
+
+##### Using async/await
+
+```js
+export async function listProjects(event) {
+  // get a Physical name from CloudFormation's Outputs
+  const tableName = event.stageVariables.MyProjects;
+
+  // scan this table
+  const response = await dynamodb.scan({
+    TableName: tableName,
+  }).promise();
+
+  // set responseContentType below
+  // and just return a plain object
+  return {
+    projects: response.Items,
+  };
+}
+listProjects.api = {
+  path: 'projects',
+  responseContentType: 'application/json',
+  policyStatements: [{
+    Effect: "Allow",
+    Action: ["dynamodb:Scan"],
+    Resource: "*", // your ARN here (see the examples)
+  }],
+};
+```
+
+For `api` property reference, see [Function property reference](#function-property-reference).  
+For function params reference, see [Lambda parameters reference](#lambda parameters-reference).
+
 
 
 #### Customizing a dawson template
@@ -115,7 +190,7 @@ export function processCFTemplate(template) {
       myAppAssets: {
         ...template.Resources.myAppAssets,
         Properties: {
-          ...template.Resources.MyAppAssets.Properties,
+          ...template.Resources.myAppAssets.Properties,
           NotificationConfiguration: {
             LambdaConfigurations: [{
               Event: "s3:ObjectCreated:*",
@@ -138,6 +213,7 @@ export function processCFTemplate(template) {
 
 Please, do not forget to return the **whole** template object, and not just the new Resources.
 
+---
 
 
 ## Lambda parameters reference
@@ -186,6 +262,7 @@ You may add or modify whitelisted headers, see [Customizing a dawson template](#
 
 *Internally, `dawson` uses a [Passthrough Parameter-Mapping Template](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-mapping-template-reference.html).*
 
+---
 
 ## Function property reference
 
