@@ -5,7 +5,7 @@ import { stripIndent } from 'common-tags';
 import { SETTINGS, API_DEFINITIONS } from '../config';
 const { appName } = SETTINGS;
 
-import { debug, error, log, table, danger, success, title } from './logger';
+import { debug, error, log, table, danger, success, title } from '../logger';
 import compiler from '../compiler';
 
 import {

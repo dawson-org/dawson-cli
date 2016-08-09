@@ -5,11 +5,11 @@ import fs from 'fs';
 import temp from 'temp';
 import childProcess from 'child_process';
 
-import { debug, error } from './logger';
-import { PROJECT_ROOT } from './config';
+import { debug, error } from '../logger';
+import { PROJECT_ROOT } from '../config';
 import {
   templateSupportBucket
-} from './cf_support';
+} from '../factories/cf_support';
 
 const s3 = new AWS.S3({});
 const putObject = promisify(s3.putObject.bind(s3));
