@@ -1,11 +1,11 @@
 
-export function templateAssetsBucketName ({ appName }) {
-  return `${appName}Assets`;
+export function templateAssetsBucketName () {
+  return `Assets`;
 }
 
-export function templateAssetsBucket ({ appName }) {
+export function templateAssetsBucket () {
   return {
-    [`${templateAssetsBucketName({ appName })}`]: {
+    [`${templateAssetsBucketName()}`]: {
       'Type': 'AWS::S3::Bucket',
       'Properties': {
         'WebsiteConfiguration': {

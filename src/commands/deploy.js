@@ -125,7 +125,6 @@ export async function deploy ({
         resourceName,
         templateResourcePartial
       } = templateResourceHelper({
-        appName,
         resourcePath
       });
       templatePartials = {
@@ -133,7 +132,6 @@ export async function deploy ({
         ...templateResourcePartial,
         ...lambdaPartial,
         ...templateMethod({
-          appName,
           resourceName,
           httpMethod,
           lambdaName,
@@ -148,39 +146,37 @@ export async function deploy ({
     const deploymentUid = `${Math.floor(Math.random() * 100000)}`;
     let cfInnerTemplate = {
       Resources: {
-        ...templateAssetsBucket({ appName }),
-        ...templateRest({ appName }),
+        ...templateAssetsBucket(),
+        ...templateRest(),
         ...templatePartials,
         ...templateDeployment({
-          appName,
           deploymentUid,
           dependsOnMethod: lastMethodInTemplate
         }),
         ...templateCloudfrontDistribution({
-          appName,
           stageName
         })
       },
       Outputs: {
         ApiGatewayUrl: {
           Value: { 'Fn::Join': ['', [
-            'https://', { Ref: `${templateAPIID({ appName })}` },
+            'https://', { Ref: `${templateAPIID()}` },
             '.execute-api.', AWS_REGION, '.amazonaws.com', `/${stageName}`
           ]]}
         },
         S3AssetsDNS: {
-          Value: { 'Fn::GetAtt': [`${templateAssetsBucketName({ appName })}`, 'DomainName'] }
+          Value: { 'Fn::GetAtt': [`${templateAssetsBucketName()}`, 'DomainName'] }
         },
         S3AssetsBucket: {
-          Value: { 'Ref': `${templateAssetsBucketName({ appName })}` }
+          Value: { 'Ref': `${templateAssetsBucketName()}` }
         },
         CloudFrontDNS: {
           Value: (SETTINGS.cloudfront === false)
                   ? 'CloudFront disabled from config'
-                  : { 'Fn::GetAtt': [`${templateCloudfrontDistributionName({ appName })}`, 'DomainName'] }
+                  : { 'Fn::GetAtt': [`${templateCloudfrontDistributionName()}`, 'DomainName'] }
         },
         RestApiId: {
-          Value: { 'Ref': `${templateAPIID({ appName })}` }
+          Value: { 'Ref': `${templateAPIID()}` }
         },
         DeploymentId: {
           Value: { 'Ref': `${templateDeploymentName({ deploymentUid })}` }
@@ -214,7 +210,6 @@ export async function deploy ({
           }
         },
         ...templateStage({
-          appName,
           stageName,
           deploymentUid,
           stageVariables
