@@ -1,25 +1,25 @@
 
-require('colors');
-import moment from 'moment';
-import promisify from 'es6-promisify';
-import indentString from 'indent-string';
-import prettyjson from 'prettyjson';
 import AWS from 'aws-sdk';
+import indentString from 'indent-string';
+import moment from 'moment';
+import prettyjson from 'prettyjson';
+import promisify from 'es6-promisify';
+
 const cwlogs = new AWS.CloudWatchLogs({});
 const filterLogEvents = promisify(cwlogs.filterLogEvents.bind(cwlogs));
 
-import { title, error, log } from './logger';
-import { SETTINGS } from './config';
+import { title, error, log } from '../logger';
+import { SETTINGS } from '../config';
 const { appName } = SETTINGS;
 
 import {
   templateLambdaName
-} from './cf_lambda';
+} from '../factories/cf_lambda';
 
 import {
   getStackResources,
   templateStackName
-} from './cf_utils';
+} from '../factories/cf_utils';
 
 const stripNewLines = str => str.replace(/\n$/, ' ');
 

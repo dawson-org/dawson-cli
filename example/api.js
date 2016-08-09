@@ -29,18 +29,6 @@ helloWorld.api = {
 //
 
 export function helloWho (params) {
-  /*
-  params:
-   { path: { [parameters from path] },
-     querystring: { [parameters from querystring] },
-     header: { [HTTP headers] },
-     stageVariables: {
-      // stageVariables will contain all the Outputs defined in
-      // dawson's and custom CloudFormation templates.
-      // You shall use this map to get physical resource names
-     },
-   }
-  */
   console.log('Hello to whom?', params);
   const html = renderFile('./templates/hello.pug', {
     params

@@ -1,9 +1,9 @@
 
-import spinner from 'simple-spinner';
-import promisify from 'es6-promisify';
 import AWS from 'aws-sdk';
+import promisify from 'es6-promisify';
+import spinner from 'simple-spinner';
 
-import { debug, error, log } from './logger';
+import { debug, error, log } from '../logger';
 
 export const AWS_REGION = AWS.config.region;
 const cloudformation = new AWS.CloudFormation({ apiVersion: '2010-05-15' });
@@ -102,6 +102,11 @@ async function doCreateChangeSet ({ stackName, cfParams }) {
       ChangeSetName: changeSetId
     });
     if (description.Status === 'FAILED') {
+      if (description.StatusReason.includes('didn\'t contain changes')) {
+        // "The submitted information didn\'t contain changes. Submit different information to create a change set."
+        return false;
+      }
+      debug('Cannot crate changeset', description);
       throw new Error('Change Set failed to create');
     }
     if (description.Status === 'CREATE_COMPLETE') {
@@ -128,7 +133,10 @@ export async function createOrUpdateStack ({ stackName, cfParams, ignoreNoUpdate
     if (stackExists) {
       delete cfParams.OnFailure;
       const changeSetId = await doCreateChangeSet({ stackName, cfParams });
-      await doExecuteChangeSet({ changeSetId });
+      if (changeSetId) {
+        // only if the ChangeSet has been created successfully
+        await doExecuteChangeSet({ changeSetId });
+      }
     } else {
       updateStackResponse = await createStack(cfParams);
     }

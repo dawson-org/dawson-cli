@@ -1,14 +1,21 @@
 
-// Build a cloudformation template and deploy
-//
-
-import { SETTINGS, API_DEFINITIONS } from './config';
-const { appName } = SETTINGS;
-
+import ProgressBar from 'progress';
 import { stripIndent } from 'common-tags';
 
-import { debug, error, log, table, danger, success, title } from './logger';
-import compiler from './compiler';
+import { SETTINGS, API_DEFINITIONS } from '../config';
+const { appName } = SETTINGS;
+
+import { debug, error, log, table, danger, success, title } from '../logger';
+import compiler from '../libs/compiler';
+
+import {
+  stackUpload
+} from '../libs/stackUpload';
+
+import {
+  zipAndUpload,
+  listZipVersions
+} from '../libs/zipUpload';
 
 import {
   templateStackName,
@@ -18,11 +25,11 @@ import {
   createOrUpdateStack,
   waitForUpdateCompleted,
   AWS_REGION
-} from './cf_utils';
+} from '../factories/cf_utils';
 
 import {
   createSupportResources
-} from './cf_support';
+} from '../factories/cf_support';
 
 import {
   templateRest,
@@ -32,44 +39,34 @@ import {
   templateDeploymentName,
   templateStage,
   templateAPIID
-} from './cf_apig';
+} from '../factories/cf_apig';
 
 import {
   templateLambda
-} from './cf_lambda';
-
-import {
-  zipAndUpload,
-  listZipVersions
-} from './zipUpload';
+} from '../factories/cf_lambda';
 
 import {
   templateAssetsBucket,
   templateAssetsBucketName
-} from './cf_s3';
+} from '../factories/cf_s3';
 
 import {
   templateCloudfrontDistribution,
   templateCloudfrontDistributionName
-} from './cf_cloudfront';
-
-import { stackUpload } from './stackUpload';
+} from '../factories/cf_cloudfront';
 
 const RESERVED_FUCTION_NAMES = ['processCFTemplate'];
 
 export async function deploy ({
   functionFilterRE,
-  quick = false,
   noUploads = false,
   dangerDeleteStorage = false
 }) {
   const stackName = templateStackName({ appName });
   try {
-    if (!quick) {
-      // create support stack (e.g.: temp s3 buckets)
-      log('updating support resources...');
-      await createSupportResources({ appName });
-    }
+    // create support stack (e.g.: temp s3 buckets)
+    log('*'.blue, 'updating support resources...');
+    await createSupportResources({ appName });
 
     const stageName = 'prod';
     const functionsHuman = [];
@@ -78,7 +75,10 @@ export async function deploy ({
     const zipVersionsList = await listZipVersions({ appName });
 
     const defs = Object.entries(API_DEFINITIONS);
-    log(`zipping and uploading ${defs.length} functions...`);
+    let currentCounter = 0;
+
+    log('*'.blue, `${noUploads ? 'loading' : 'zipping and uploading'} ${defs.length} functions:`);
+    const progressBar = new ProgressBar('  [:bar] :elapseds (ETA :etas)', { total: defs.length, width: 20 });
 
     for (const [index, def] of defs) {
       if (RESERVED_FUCTION_NAMES.includes(def.name)) {
@@ -96,6 +96,8 @@ export async function deploy ({
       } = def.api;
       const name = def.name;
       const skip = !name.match(new RegExp(functionFilterRE)) || noUploads;
+      currentCounter = currentCounter + 1;
+      progressBar.tick();
       debug(`=> #${index} Found function ${name.bold} at ${httpMethod.bold} /${resourcePath.bold}`,
         `${skip ? '* skipped' : ''}`);
       functionsHuman.push({
@@ -140,6 +142,8 @@ export async function deploy ({
       };
       lastMethodInTemplate = { resourceName, httpMethod };
     }
+
+    log('');
 
     const deploymentUid = `${Math.floor(Math.random() * 100000)}`;
     let cfInnerTemplate = {
@@ -228,35 +232,42 @@ export async function deploy ({
       await removeStackPolicy({ stackName });
     }
 
-    log('Updating stack...');
     await createOrUpdateStack({ stackName, cfParams });
-    debug('Waiting for stack update to complete...');
+    log('*'.blue, 'waiting for stack update to complete...');
 
     const outputs = await waitForUpdateCompleted({ stackName });
-    const s3AssetsDNS = outputs.find(o => o.OutputKey === 'S3AssetsDNS').OutputValue;
     const cloudfrontDNS = outputs.find(o => o.OutputKey === 'CloudFrontDNS').OutputValue;
     const apiPrefix = outputs.find(o => o.OutputKey === 'ApiGatewayUrl').OutputValue;
     const functionsTable = functionsHuman.map(f => ({
       ...f,
       resourcePath: `${apiPrefix}/${f.resourcePath}`
     }));
-    success('Deploy completed!');
-    title('\nHere are your updated endpoints:'.bold);
+    success('*'.blue, 'deploy completed!\n');
+
+    title('Your API endpoints are:'.bold);
     table(functionsTable);
-    log('Your static assets endpoint is:'.bold);
-    log(`https://${s3AssetsDNS}`);
-    log('');
-    log('Your public endpoint is:'.bold);
-    log(`https://${cloudfrontDNS}`);
-    log('Assets are served from the assets/ subfolder; other requests are forwarded to the API.');
+
+    title('Your public endpoint is:');
+    if (SETTINGS.cloudfront !== false) {
+      log(`https://${cloudfrontDNS}`);
+      log(`Make sure to point DNS records for ${SETTINGS.domains.join(', ')} to this distribution.`);
+      if (SETTINGS.cloudfrontRootOrigin === 'assets') {
+        log('Assets are served from the root; requests starting with prod/ are forwarded to the API.');
+      } else {
+        log(`The API is served from the root; requests starting with assets/ are served from the assets folder.`);
+      }
+    } else {
+      log('N/A: cloudFront is disabled from package.json settings');
+    }
+
     log('');
   } catch (e) {
-    error('Error', e.message);
+    error('An error occurred while deploying your application. Re-run this command with --verbose to debug.');
     debug('Stack trace:', e.stack);
   } finally {
     if (dangerDeleteStorage === true) {
       await restoreStackPolicy({ stackName });
-      log(`Stack policy was restored to a safe state.`);
+      debug(`Stack policy was restored to a safe state.`);
     }
   }
 }
@@ -264,7 +275,6 @@ export async function deploy ({
 export function run (argv) {
   deploy({
     functionFilterRE: argv['function-name'],
-    quick: argv.quick,
     noUploads: argv['no-uploads'],
     dangerDeleteStorage: argv['danger-delete-storage']
   })
