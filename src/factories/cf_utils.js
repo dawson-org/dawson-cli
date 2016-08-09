@@ -1,9 +1,9 @@
 
-import spinner from 'simple-spinner';
-import promisify from 'es6-promisify';
 import AWS from 'aws-sdk';
+import promisify from 'es6-promisify';
+import spinner from 'simple-spinner';
 
-import { debug, error, log } from './logger';
+import { debug, error, log } from '../logger';
 
 export const AWS_REGION = AWS.config.region;
 const cloudformation = new AWS.CloudFormation({ apiVersion: '2010-05-15' });

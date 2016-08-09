@@ -1,5 +1,6 @@
 
 require('colors');
+require('console.table');
 
 import { inspect } from 'util';
 

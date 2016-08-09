@@ -1,5 +1,5 @@
 
-import { debug } from './logger';
+import { debug } from '../logger';
 import {
   templateStackName,
   buildStackParams,

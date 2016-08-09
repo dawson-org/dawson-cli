@@ -1,15 +1,21 @@
 
-// Build a cloudformation template and deploy
-//
-
-import { SETTINGS, API_DEFINITIONS } from './config';
-const { appName } = SETTINGS;
-
 import ProgressBar from 'progress';
 import { stripIndent } from 'common-tags';
 
-import { debug, error, log, table, danger, success, title } from './logger';
-import compiler from './compiler';
+import { SETTINGS, API_DEFINITIONS } from '../config';
+const { appName } = SETTINGS;
+
+import { debug, error, log, table, danger, success, title } from '../logger';
+import compiler from '../libs/compiler';
+
+import {
+  stackUpload
+} from '../libs/stackUpload';
+
+import {
+  zipAndUpload,
+  listZipVersions
+} from '../libs/zipUpload';
 
 import {
   templateStackName,
@@ -19,11 +25,11 @@ import {
   createOrUpdateStack,
   waitForUpdateCompleted,
   AWS_REGION
-} from './cf_utils';
+} from '../factories/cf_utils';
 
 import {
   createSupportResources
-} from './cf_support';
+} from '../factories/cf_support';
 
 import {
   templateRest,
@@ -33,28 +39,21 @@ import {
   templateDeploymentName,
   templateStage,
   templateAPIID
-} from './cf_apig';
+} from '../factories/cf_apig';
 
 import {
   templateLambda
-} from './cf_lambda';
-
-import {
-  zipAndUpload,
-  listZipVersions
-} from './zipUpload';
+} from '../factories/cf_lambda';
 
 import {
   templateAssetsBucket,
   templateAssetsBucketName
-} from './cf_s3';
+} from '../factories/cf_s3';
 
 import {
   templateCloudfrontDistribution,
   templateCloudfrontDistributionName
-} from './cf_cloudfront';
-
-import { stackUpload } from './stackUpload';
+} from '../factories/cf_cloudfront';
 
 const RESERVED_FUCTION_NAMES = ['processCFTemplate'];
 

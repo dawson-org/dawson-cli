@@ -1,7 +1,6 @@
 
 import { stripIndent } from 'common-tags';
 
-
 export function templateLambdaRoleName ({ lambdaName }) {
   return `ExecutionRoleForLambda${lambdaName}`;
 }

@@ -1,14 +1,12 @@
 
-require('colors');
-
-import { error, log, table, title } from './logger';
-import { SETTINGS } from './config';
+import { error, log, table, title } from '../logger';
+import { SETTINGS } from '../config';
 const { appName } = SETTINGS;
 
 import {
   getStackOutputs,
   templateStackName
-} from './cf_utils';
+} from '../factories/cf_utils';
 
 export function run (argv) {
   const stackName = templateStackName({ appName });
