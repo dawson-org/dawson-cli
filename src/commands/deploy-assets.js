@@ -1,16 +1,17 @@
 
-import { SETTINGS } from './config';
+import { SETTINGS } from '../config';
 const { appName } = SETTINGS;
 
-import { debug, error } from './logger';
-import { assetsUpload } from './assetsUpload';
+import { success, error, title } from '../logger';
+import { assetsUpload } from '../libs/assetsUpload';
 
 import {
   getStackOutputs,
   templateStackName
-} from './cf_utils';
+} from '../factories/cf_utils';
 
 export function run () {
+  title('*'.blue, 'uploading assets/ contents...');
   const stackName = templateStackName({ appName });
   return Promise.resolve()
   .then(() => getStackOutputs({ stackName }))
@@ -24,7 +25,7 @@ export function run () {
     return assetsUpload({ bucketName });
   })
   .then(() => {
-    debug('Done!');
+    success('*'.blue, 'done!');
   })
   .catch(err => {
     error('Error uploading assets', err.message, err);

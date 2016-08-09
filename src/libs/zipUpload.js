@@ -1,17 +1,28 @@
 
-import ProgressBar from 'progress';
 import promisify from 'es6-promisify';
 import AWS from 'aws-sdk';
+import fs from 'fs';
+import temp from 'temp';
+import childProcess from 'child_process';
+
+import { debug, error } from '../logger';
+import { PROJECT_ROOT } from '../config';
+import {
+  templateSupportBucket
+} from '../factories/cf_support';
+
 const s3 = new AWS.S3({});
 const putObject = promisify(s3.putObject.bind(s3));
 const listObjectVersions = promisify(s3.listObjectVersions.bind(s3));
-
-import fs from 'fs';
 const writeFile = promisify(fs.writeFile.bind(fs));
 const mkdir = promisify(fs.mkdir.bind(fs));
 const stat = promisify(fs.stat.bind(fs));
+const exec = promisify(childProcess.exec.bind(childProcess));
 
-import temp from 'temp';
+const EXEC_MAX_OUTERR_BUFFER_SIZE = 1 * 1024 * 1024 * 1024;
+const S3_ZIP_PREFIX = 'lambda-sources';
+
+// --- handles temporary files and deletes them on exit ---
 const TEMP_FILES = [];
 const tempPath = prefix => {
   const path = temp.path(prefix);
@@ -24,20 +35,7 @@ const cleanupTemp = () => TEMP_FILES.forEach(path => {
   } catch (e) {}
 });
 process.on('exit', cleanupTemp);
-process.on('uncaughtException', () => { cleanupTemp(); process.exit(1); });
-
-import childProcess from 'child_process';
-const exec = promisify(childProcess.exec.bind(childProcess));
-
-import { debug, error } from './logger';
-import { PROJECT_ROOT } from './config';
-const EXEC_MAX_OUTERR_BUFFER_SIZE = 1 * 1024 * 1024 * 1024;
-
-import {
-  templateSupportBucket
-} from './cf_support';
-
-const S3_ZIP_PREFIX = 'lambda-sources';
+// --- / ---
 
 function createTempFiles (args) {
   const { skip } = args;
@@ -70,7 +68,6 @@ function zipRoot (args) {
     tempZipFile,
     tempIndexFile,
     skip,
-    progressBar,
     excludeList
   } = args;
   if (skip) { return Promise.resolve(args); }
@@ -78,7 +75,6 @@ function zipRoot (args) {
     ? ('--exclude ' + excludeList.map(i => `\\*${i}\\*`).join(' '))
     : '';
   debug('   zip cmd:'.gray, `zip -r ${excludeArg} ${tempZipFile} .`);
-  progressBar.tick({ text: 'zipping' });
   return Promise.resolve()
   .then(() =>
     exec(`zip -r ${tempZipFile} . ${excludeArg}`, {
@@ -129,10 +125,9 @@ function uploadS3 (args) {
     tempZipFile,
     tempZipFileSize,
     skip,
-    progressBar,
     zipVersionsList
   } = args;
-  if (!skip) { progressBar.tick({ text: `uploading ${tempZipFileSize}MB` }); }
+  if (!skip) { debug(`   zip size: ${tempZipFileSize}`); }
   const bucketName = templateSupportBucket({ appName });
   const s3Key = `${S3_ZIP_PREFIX}/${uuid}.zip`;
   const zipS3Location = {
@@ -180,15 +175,11 @@ export function zipAndUpload ({
   skip = false,
   excludeList = []
 }) {
-  const progressBar = skip
-    ? new ProgressBar('', { total: 0 })
-    : new ProgressBar(`   :current/:total :text (:elapseds)`.gray, { total: 3 });
   return Promise.resolve({
     uuid: `${appName}-${functionName}-bundle`,
     appName,
     indexFileContents,
     skip,
-    progressBar,
     excludeList,
     zipVersionsList
   })
@@ -198,9 +189,6 @@ export function zipAndUpload ({
   .then(getFileSize)
   .then(uploadS3)
   .then(({ zipS3Location }) => {
-    if (!skip) {
-      progressBar.tick({ text: 'done' });
-    }
     return Promise.resolve(zipS3Location);
   })
   .catch(err => {

@@ -1,11 +1,10 @@
 
-import { stripIndent } from 'common-tags';
-import AWS from 'aws-sdk';
-const AWS_REGION = AWS.config.region;
-
-import { templateLambdaName } from './cf_lambda';
 import assert from 'assert';
+import { stripIndent } from 'common-tags';
 
+import {
+  templateLambdaName
+} from './cf_lambda';
 
 export function templateAPIID ({ appName }) {
   return `${appName}API`;
@@ -241,7 +240,9 @@ export function templateLambdaIntegration ({
     'Type': 'AWS',
     'Credentials': { 'Fn::GetAtt': ['APIGExecutionRole', 'Arn'] },
     'Uri': { 'Fn::Join': ['', [
-      `arn:aws:apigateway:${AWS_REGION}:lambda:path/2015-03-31/functions/`,
+      `arn:aws:apigateway:`,
+      { 'Ref': 'AWS::Region' },
+      `:lambda:path/2015-03-31/functions/`,
       { 'Fn::GetAtt': [`${templateLambdaName({ lambdaName })}`, 'Arn'] },
       '/invocations'
     ]]
