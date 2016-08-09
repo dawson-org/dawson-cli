@@ -1,6 +1,6 @@
 
-# dAWSon
-An opinionated serverless web framework for nodejs on AWS (CloudFormation, API Gateway, Lambda).  
+# dawson
+A serverless web framework for nodejs on AWS (CloudFormation, API Gateway, Lambda).  
 
 [![Build Status](https://travis-ci.org/lusentis/dawson.svg?branch=master)](https://travis-ci.org/lusentis/dawson)
 ![stability-experimental](https://img.shields.io/badge/stability-experimental-orange.svg)
