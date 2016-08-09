@@ -1,0 +1,10 @@
+doctype html
+html
+  head
+    title Foo bar
+    link(rel="stylesheet", href="/assets/style.css")
+  body
+    h1 Hello
+    p from Pug, rendered serverless by AWS Lambda & API Gateway
+    p Lambda called with "event":
+    pre= JSON.stringify(params, null, 2)

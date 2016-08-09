@@ -1,0 +1,45 @@
+{
+  "name": "dawson",
+  "version": "0.12.0",
+  "description": "Serverless Web Framework for AWS Lambda and API Gateway",
+  "repository": "https://github.com/lusentis/dawson",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "npm run lint && npm run tape",
+    "lint": "semistandard | snazzy",
+    "tape": "NODE_ENV=testing tape -r babel-register **/*.spec.js | tap-dot"
+  },
+  "semistandard": {
+    "parser": "babel-eslint"
+  },
+  "author": "Simone Lusenti <lusenti.s@gmail.com>",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "aws-sdk": "^2.4.7",
+    "babel-eslint": "^6.1.2",
+    "babel-preset-es2017": "^1.4.0",
+    "colors": "^1.1.2",
+    "common-tags": "^1.3.1",
+    "console.table": "^0.7.0",
+    "es6-promisify": "^4.1.0",
+    "http-proxy": "^1.14.0",
+    "indent-string": "^3.0.0",
+    "mime": "^1.3.4",
+    "moment": "^2.14.1",
+    "prettyjson": "^1.1.3",
+    "progress": "^1.1.8",
+    "recursive-readdir": "^2.0.0",
+    "simple-spinner": "0.0.5",
+    "temp": "^0.8.3",
+    "yargs": "^4.8.1"
+  },
+  "bin": "lib/index.js",
+  "devDependencies": {
+    "babel-register": "^6.11.6",
+    "pre-commit": "^1.1.3",
+    "semistandard": "^9.0.0-beta.0",
+    "snazzy": "^4.0.1",
+    "tap-dot": "^1.0.5",
+    "tape": "^4.6.0"
+  }
+}
