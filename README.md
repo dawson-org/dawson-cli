@@ -29,78 +29,7 @@ An opinionated serverless web framework for nodejs on AWS (CloudFormation, API G
 * [X] locally run lambda functions
 
 ## Documentation
-
-You may start reading and trying out the Usage section below, then check out a [full example](https://github.com/lusentis/dawson/tree/master/example/simple-1).  
-API & CLI Documentation is [here](DOCS.md).
-
-
-## Usage
-
-### 0. Install
-
-```
-$ git clone https://github.com/lusentis/dawson
-$ cd dawson
-$ npm install
-$ npm link
-```
-
-I'll publish an updated npm package as soon as I complete a code review and the whole documentation.
-
-
-### 1. Code
-
-Set your App's name and domain in the `package.json`:
-```json
-  "dawson": {
-    "appName": "dawsonExample",
-    "domains": ["my-domain-name-for-cloudfront.com"]
-  }
-```
-
-By default, **dawson** expects an ```api.js``` file which exports the functions to deploy. Each function *must* have an ```api``` property with at least a ```path```. That's it!
-
-```javascript
-// the path "/hello" will display the string "You are awesome"
-export function index(params) {
-  // you can return promises or strings.
-  return '<html><body>You are awesome!</html></body>';
-}
-index.api = {
-  path: 'hello',
-};
-```
-
-Install the **required** runtime dependencies:
-
-```
-$ npm install --save babel-register babel-polyfill babel-preset-es2017
-$ echo '{"presets":["es2017"]}' > .babelrc
-```
-
-### 2. Deploy
-
-Export ```AWS_ACCESS_KEY_ID```, ```AWS_SECRET_ACCESS_KEY``` (or `AWS_DEFAULT_PROFILE`) and ```AWS_REGION```, then, from your project root:
-
-```bash
-$ dawson deploy
-```
-
-Later, after making some changes, you can qui**k**ly deploy only this **f**unction: `$ dawson deploy -k -f index`.  
-You can now inspect execution logs using `$ dawson log -f index` or learn more from `$ dawson --help` and [Documentation](DOCS.md).
-
-### 3. Enjoy!
-![indexFunction](http://i.imgur.com/fJd3rHC.png)
-
-
-## Throubleshooting
-
-Common error causes:
-
-* syntax error in your code, try to lint or run `babel-node api.js`
-* check that all your dependecies are listed in `package.json`
-* make sure you have run `npm install`
-* search issues
+Guide, API & CLI Documentation is [here](docs/README.md).
 
 
 ## License
