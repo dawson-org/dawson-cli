@@ -31,6 +31,10 @@ An opinionated serverless web framework for nodejs on AWS (CloudFormation, API G
 ## Documentation
 Guide, API & CLI Documentation is [here](docs/README.md).
 
+## Demo
+[![asciicast](https://asciinema.org/a/cq1t6rhfo0g19ovafabcsawlz.png)](https://asciinema.org/a/cq1t6rhfo0g19ovafabcsawlz)
+*Please note that this example uses the `cloudfront: false` setting, which tells `dawson` to skip deploying the CloudFront distribution (which would be useful in a production environment). If a CloudFront distribution needs to be created, the deploy will take approximately 12-18 minutes to complete. More info [here](docs/API.md#packagejson-fields-reference).*
+
 
 ## License
 
