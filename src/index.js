@@ -35,7 +35,13 @@ const argv = yargs
       .help()
   , deployRun)
 
-  .command('upload-assets', 'Upload contents of assets/ folder to S3', {}, assetsUploadRun)
+  .command('upload-assets', 'Upload contents of assets/ folder to S3', () =>
+    yargs
+      .describe('stage', 'Application stage to work on')
+      .default('stage', DAWSON_STAGE)
+      .alias('s')
+      .help()
+  , assetsUploadRun)
 
   .command('log', 'Get last log lines for a Lambda', () =>
     yargs
