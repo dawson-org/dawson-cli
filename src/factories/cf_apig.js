@@ -172,9 +172,7 @@ export function templateLambdaIntegration ({
     responseTemplate = {
       'application/json': stripIndent`
         #set($inputRoot = $input.path('$'))
-        {
-          "response": $inputRoot.response
-        }
+        $inputRoot.response
       `
     };
   } else if (responseContentType.includes('text/html')) {
