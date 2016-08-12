@@ -11,8 +11,10 @@ Promise.resolve()
     callback(null, { html: data });
   } else if (event.meta && event.meta.expectedResponseContentType.indexOf('application/json') !== -1) {
     callback(null, { response: JSON.stringify(data) });
+  } else if (event.meta && event.meta.expectedResponseContentType.indexOf('text/plain') !== -1) {
+    callback(null, { response: data });
   } else {
-    console.log('WARNING: Unexpected content type (in event.meta), forwarding result as-is.');
+    console.log('WARNING: Unexpected content type (in event.meta), forwarding result as-is (but it probably errors because we expect a response to be wrapped in a response property.');
     callback(null, data);
   }
 })

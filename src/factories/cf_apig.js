@@ -175,6 +175,13 @@ export function templateLambdaIntegration ({
         $inputRoot.response
       `
     };
+  } else if (responseContentType.includes('text/plain')) {
+    responseTemplate = {
+      'text/plain': stripIndent`
+        #set($inputRoot = $input.path('$'))
+        $inputRoot.response
+      `
+    };
   } else if (responseContentType.includes('text/html')) {
     responseTemplate = {
       'text/html': stripIndent`
@@ -183,7 +190,7 @@ export function templateLambdaIntegration ({
       `
     };
   } else {
-    throw new Error('Configuration Error in Lambda Integration Response: no (valid) responseContentType has been defined. Supported values are application/json and text/html, with optional encoding.');
+    throw new Error('Configuration Error in Lambda Integration Response: no (valid) responseContentType has been defined. Supported values are application/json, text/html and text/plain.');
   }
   return {
     'IntegrationHttpMethod': 'POST',
@@ -261,6 +268,12 @@ export function templateMethod ({
         'Ref': templateModelName({ modelName: responseModelName })
       }
     };
+  } else if (responseContentType.includes('text/plain')) {
+    responseModel = {
+      'text/plain': {
+        'Ref': templateModelName({ modelName: responseModelName })
+      }
+    };
   } else if (responseContentType.includes('text/html')) {
     responseModel = {
       'text/html': {
@@ -268,7 +281,7 @@ export function templateMethod ({
       }
     };
   } else {
-    throw new Error('Configuration Error in Lambda Method: no (valid) responseContentType has been defined. Supported values are application/json and text/html, with optional encoding.');
+    throw new Error('Configuration Error in Lambda Method: no (valid) responseContentType has been defined. Supported values are application/json, text/html and text/plain.');
   }
   return {
     ...templateInvokationRole({}),
