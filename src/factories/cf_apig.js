@@ -296,12 +296,16 @@ export function templateMethod ({
 
 export function templateDeployment ({
   deploymentUid,
-  dependsOnMethod: { resourceName, httpMethod },
+  dependsOnMethods,
   date = new Date().toISOString()
 }) {
+  const dependsOn = dependsOnMethods.map(methodInfo => {
+    const { resourceName, httpMethod } = methodInfo;
+    return templateMethodName({ resourceName, httpMethod });
+  });
   return {
     [`${templateDeploymentName({ deploymentUid })}`]: {
-      'DependsOn': `${templateMethodName({ resourceName, httpMethod })}`,
+      'DependsOn': dependsOn,
       'Type': 'AWS::ApiGateway::Deployment',
       'Properties': {
         'RestApiId': { 'Ref': `${templateAPIID()}` },
