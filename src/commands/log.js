@@ -23,50 +23,28 @@ import {
 
 const stripNewLines = str => str.replace(/\n$/, ' ');
 
-export function run (argv) {
+export function filterAndPrint (awsLambdaName, params, startTime = 0, follow = false) {
+  let lastTimestamp = startTime;
   const {
-    stage,
-    functionName,
-    limit,
-    requestId: filterRequestId
-  } = argv;
-  const stackName = templateStackName({ appName, stage });
-  const camelFunctionName = functionName[0].toUpperCase() + functionName.substring(1);
-  const cfLambdaName = templateLambdaName({ lambdaName: camelFunctionName });
+    requestId,
+    limit
+  } = params;
+
   return Promise.resolve()
-  .then(() => getStackResources({ stackName }))
-  .then(resources => {
-    const innerStackResourceId = resources.find(o =>
-      o.ResourceType === 'AWS::CloudFormation::Stack' && o.LogicalResourceId === 'InnerStack'
-    ).PhysicalResourceId;
-    return getStackResources({ stackName: innerStackResourceId });
-  })
-  .then(resources => {
-    const awsLambdaResource = resources.find(o =>
-      o.ResourceType === 'AWS::Lambda::Function' && o.LogicalResourceId === cfLambdaName
-    );
-    if (!awsLambdaResource) {
-      const errMsg = 'Lambda function with given name does not exist or has not been deployed yet';
-      error(errMsg);
-      return Promise.reject(errMsg);
-    }
-    const awsLambdaName = awsLambdaResource.PhysicalResourceId;
-    log(`Tailing logs for Lambda '${awsLambdaName}'`);
-    return awsLambdaName;
-  })
-  .then(awsLambdaName => {
-    const filter = filterRequestId ? { filterPattern: `"${filterRequestId}"` } : {};
+  .then(() => {
+    const filter = requestId ? { filterPattern: `"${requestId}"` } : {};
     return filterLogEvents({
       logGroupName: `/aws/lambda/${awsLambdaName}`,
       limit,
-      ...filter
-      // startTime: 0,
-      // endTime: 0,
+      ...filter,
+      startTime
     });
   })
   .then(({ events }) => {
-    title('Date\t\t\tMessage');
-    title('-'.repeat(80));
+    if (startTime === 0) {
+      title('Date\t\t\tMessage');
+      title('-'.repeat(80));
+    }
     events.forEach(e => {
       const date = moment(e.timestamp).format('lll');
       let message = stripNewLines(e.message);
@@ -97,10 +75,49 @@ export function run (argv) {
       }
 
       log(`${date.gray}\t${msgToPrint}`);
+      lastTimestamp = e.timestamp + 1;
     });
+
+    if (follow) {
+      setTimeout(() => filterAndPrint(awsLambdaName, params, lastTimestamp, follow), 2000);
+    } else {
+      log('(Log stream ends here)');
+    }
+  });
+}
+
+export function run (argv) {
+  const {
+    stage,
+    functionName,
+    follow
+  } = argv;
+  const stackName = templateStackName({ appName, stage });
+  const camelFunctionName = functionName[0].toUpperCase() + functionName.substring(1);
+  const cfLambdaName = templateLambdaName({ lambdaName: camelFunctionName });
+  return Promise.resolve()
+  .then(() => getStackResources({ stackName }))
+  .then(resources => {
+    const innerStackResourceId = resources.find(o =>
+      o.ResourceType === 'AWS::CloudFormation::Stack' && o.LogicalResourceId === 'InnerStack'
+    ).PhysicalResourceId;
+    return getStackResources({ stackName: innerStackResourceId });
   })
-  .then(() => {
-    log('(Log stream ends here)');
+  .then(resources => {
+    const awsLambdaResource = resources.find(o =>
+      o.ResourceType === 'AWS::Lambda::Function' && o.LogicalResourceId === cfLambdaName
+    );
+    if (!awsLambdaResource) {
+      const errMsg = 'Lambda function with given name does not exist or has not been deployed yet';
+      error(errMsg);
+      return Promise.reject(errMsg);
+    }
+    const awsLambdaName = awsLambdaResource.PhysicalResourceId;
+    log(`Tailing logs for Lambda '${awsLambdaName}'`);
+    return awsLambdaName;
+  })
+  .then(awsLambdaName => {
+    return filterAndPrint(awsLambdaName, argv, 0, follow);
   })
   .catch(err => {
     error('Error tailing logs', err.message, err);
