@@ -33,8 +33,6 @@ import {
   templateStackName
 } from '../factories/cf_utils';
 
-const stackName = templateStackName({ appName });
-
 function equalToIndex (toIndex, a, b) {
   // Returns true iff arrays a and b have all equal
   // elements until index toIndex (included)
@@ -136,6 +134,7 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
 
 export function run (argv) {
   const {
+    stage,
     port,
     proxyAssetsUrl,
     assetsPathname
@@ -144,6 +143,8 @@ export function run (argv) {
   assert(proxyAssetsUrl, 'Serving from a filder is not implemented yet, you should try --proxy-assets-url');
   assert(!assetsPathname, 'Option --assets-pathname is not implemented yet');
   assert(SETTINGS.cloudfrontRootOrigin === 'assets', 'This proxy currently only supports Single-Page-Applications (with cloudfrontRootOrigin === "assets" in package.json)');
+
+  const stackName = templateStackName({ appName, stage });
 
   const proxy = createProxyServer({});
   // Proxy errors

@@ -172,9 +172,14 @@ export function templateLambdaIntegration ({
     responseTemplate = {
       'application/json': stripIndent`
         #set($inputRoot = $input.path('$'))
-        {
-          "response": $inputRoot.response
-        }
+        $inputRoot.response
+      `
+    };
+  } else if (responseContentType.includes('text/plain')) {
+    responseTemplate = {
+      'text/plain': stripIndent`
+        #set($inputRoot = $input.path('$'))
+        $inputRoot.response
       `
     };
   } else if (responseContentType.includes('text/html')) {
@@ -185,7 +190,7 @@ export function templateLambdaIntegration ({
       `
     };
   } else {
-    throw new Error('Configuration Error in Lambda Integration Response: no (valid) responseContentType has been defined. Supported values are application/json and text/html, with optional encoding.');
+    throw new Error('Configuration Error in Lambda Integration Response: no (valid) responseContentType has been defined. Supported values are application/json, text/html and text/plain.');
   }
   return {
     'IntegrationHttpMethod': 'POST',
@@ -263,6 +268,12 @@ export function templateMethod ({
         'Ref': templateModelName({ modelName: responseModelName })
       }
     };
+  } else if (responseContentType.includes('text/plain')) {
+    responseModel = {
+      'text/plain': {
+        'Ref': templateModelName({ modelName: responseModelName })
+      }
+    };
   } else if (responseContentType.includes('text/html')) {
     responseModel = {
       'text/html': {
@@ -270,7 +281,7 @@ export function templateMethod ({
       }
     };
   } else {
-    throw new Error('Configuration Error in Lambda Method: no (valid) responseContentType has been defined. Supported values are application/json and text/html, with optional encoding.');
+    throw new Error('Configuration Error in Lambda Method: no (valid) responseContentType has been defined. Supported values are application/json, text/html and text/plain.');
   }
   return {
     ...templateInvokationRole({}),
@@ -296,12 +307,16 @@ export function templateMethod ({
 
 export function templateDeployment ({
   deploymentUid,
-  dependsOnMethod: { resourceName, httpMethod },
+  dependsOnMethods,
   date = new Date().toISOString()
 }) {
+  const dependsOn = dependsOnMethods.map(methodInfo => {
+    const { resourceName, httpMethod } = methodInfo;
+    return templateMethodName({ resourceName, httpMethod });
+  });
   return {
     [`${templateDeploymentName({ deploymentUid })}`]: {
-      'DependsOn': `${templateMethodName({ resourceName, httpMethod })}`,
+      'DependsOn': dependsOn,
       'Type': 'AWS::ApiGateway::Deployment',
       'Properties': {
         'RestApiId': { 'Ref': `${templateAPIID()}` },

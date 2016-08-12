@@ -76,7 +76,7 @@ export async function deploy ({
 
     const stageName = 'prod';
     const functionsHuman = [];
-    let lastMethodInTemplate = null; // used by DependsOn to prevent APIG to abort deployment because "API contains no methods"
+    const methodsInTemplate = []; // used by DependsOn to prevent APIG to abort deployment because "API contains no methods"
     let templatePartials = {};
     const zipVersionsList = await listZipVersions({ bucketName: supportBucketName });
 
@@ -145,7 +145,7 @@ export async function deploy ({
           responseContentType
         })
       };
-      lastMethodInTemplate = { resourceName, httpMethod };
+      methodsInTemplate.push({ resourceName, httpMethod });
     }
 
     log('');
@@ -158,7 +158,7 @@ export async function deploy ({
         ...templatePartials,
         ...templateDeployment({
           deploymentUid,
-          dependsOnMethod: lastMethodInTemplate
+          dependsOnMethods: methodsInTemplate
         }),
         ...templateCloudfrontDistribution({
           stageName

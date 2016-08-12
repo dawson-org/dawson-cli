@@ -182,7 +182,7 @@ test('templateDeployment', t => {
   const date = new Date().toISOString();
   const expected = {
     'Deployment1234ABC': {
-      'DependsOn': 'MethodUsersGET',
+      'DependsOn': ['MethodUsersGET'],
       'Type': 'AWS::ApiGateway::Deployment',
       'Properties': {
         'RestApiId': { 'Ref': 'API' },
@@ -193,7 +193,7 @@ test('templateDeployment', t => {
   };
   const actual = templateDeployment({
     deploymentUid: '1234ABC',
-    dependsOnMethod: { resourceName: 'Users', httpMethod: 'GET' },
+    dependsOnMethods: [{ resourceName: 'Users', httpMethod: 'GET' }],
     date
   });
   t.deepEqual(actual, expected, 'should return the deployment template');
