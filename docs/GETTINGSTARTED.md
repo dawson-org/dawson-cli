@@ -46,7 +46,7 @@ $ echo '{"presets":["es2017"]}' > .babelrc
 
 ### 2. Deploy
 
-Export ```AWS_ACCESS_KEY_ID```, ```AWS_SECRET_ACCESS_KEY``` (or `AWS_DEFAULT_PROFILE`) and ```AWS_REGION```, then, from your project root:
+Export ```AWS_ACCESS_KEY_ID```, ```AWS_SECRET_ACCESS_KEY``` (or `AWS_PROFILE`) and ```AWS_DEFAULT_REGION``` (see [CLI docs](/docs/CLI.md)), then, from your project root:
 
 ```bash
 $ dawson deploy
