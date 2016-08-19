@@ -1,7 +1,7 @@
 
 # CLI Reference
 
-You must export your [AWS credentials or a default profile](https://docs.aws.amazon.com/AWSJavaScriptSDK/guide/node-configuring.html) with proper [permissions](#user-permissions):
+You must export your [AWS credentials or a profile](https://docs.aws.amazon.com/AWSJavaScriptSDK/guide/node-configuring.html) with proper [permissions](#user-permissions):
 
 ```bash
 # 1. credentials
