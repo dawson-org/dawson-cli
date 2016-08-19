@@ -206,9 +206,9 @@ test('templateStage', t => {
       'Type': 'AWS::ApiGateway::Stage',
       'Properties': {
         'CacheClusterEnabled': false,
-        'DeploymentId': { 'Fn::GetAtt': ['InnerStack', 'Outputs.DeploymentId'] },
+        'DeploymentId': { Ref: 'Deployment1234567' },
         'Description': 'prod Stage',
-        'RestApiId': { 'Fn::GetAtt': ['InnerStack', 'Outputs.RestApiId'] },
+        'RestApiId': { Ref: 'API' },
         'StageName': 'prod',
         'Variables': {
           abc: '123'
