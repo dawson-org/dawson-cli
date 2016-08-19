@@ -16,7 +16,7 @@ test('templateLambdaRoleName', t => {
 });
 
 test('templateLambdaName', t => {
-  const expected = 'MyFunctionLambda';
+  const expected = 'LambdaMyFunction';
   const actual = templateLambdaName({ lambdaName: 'MyFunction' });
   t.equal(actual, expected, 'shoudl return lambda name suffixed by Lambda');
   t.end();
@@ -101,7 +101,7 @@ test('templateLambda', t => {
         }]
       }
     },
-    MyFunctionLambda: {
+    LambdaMyFunction: {
       'Type': 'AWS::Lambda::Function',
       'Properties': {
         'Handler': 'daniloindex.handler',

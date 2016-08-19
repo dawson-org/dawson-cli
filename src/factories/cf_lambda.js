@@ -6,7 +6,7 @@ export function templateLambdaRoleName ({ lambdaName }) {
 }
 
 export function templateLambdaName ({ lambdaName }) {
-  return `${lambdaName}Lambda`;
+  return `Lambda${lambdaName}`;
 }
 
 export function templateLambdaExecutionRole ({

@@ -19,7 +19,7 @@ export function templateMethodName ({ resourceName = 'Root', httpMethod }) {
 }
 
 export function templateStageName ({ stageName }) {
-  return `Stage${stageName}`;
+  return `Stage${stageName[0].toUpperCase()}${stageName.slice(1)}`;
 }
 
 export function templateDeploymentName ({ deploymentUid }) {
@@ -339,9 +339,9 @@ export function templateStage ({
       'Type': 'AWS::ApiGateway::Stage',
       'Properties': {
         'CacheClusterEnabled': false,
-        'DeploymentId': { 'Fn::GetAtt': ['InnerStack', 'Outputs.DeploymentId'] },
+        'DeploymentId': { 'Ref': `${templateDeploymentName({ deploymentUid })}` },
         'Description': `${stageName} Stage`,
-        'RestApiId': { 'Fn::GetAtt': ['InnerStack', 'Outputs.RestApiId'] },
+        'RestApiId': { Ref: `${templateAPIID()}` },
         'StageName': `${stageName}`,
         'Variables': {
           ...stageVariables

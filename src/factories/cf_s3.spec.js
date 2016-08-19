@@ -7,15 +7,15 @@ import {
 } from './cf_s3';
 
 test('templateAssetsBucketName', t => {
-  const expected = 'Assets';
+  const expected = 'BucketAssets';
   const actual = templateAssetsBucketName();
-  t.equal(actual, expected, 'should return Assets');
+  t.equal(actual, expected, 'should return BucketAssets');
   t.end();
 });
 
 test('templateAssetsBucket', t => {
   const expected = {
-    'Assets': {
+    'BucketAssets': {
       'Type': 'AWS::S3::Bucket',
       'Properties': {
         'WebsiteConfiguration': {
@@ -26,6 +26,6 @@ test('templateAssetsBucket', t => {
     }
   };
   const actual = templateAssetsBucket();
-  t.deepEqual(actual, expected, 'shoudl return an S3 Bucket template');
+  t.deepEqual(actual, expected, 'should return an S3 Bucket template');
   t.end();
 });

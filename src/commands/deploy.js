@@ -9,10 +9,6 @@ import { debug, error, log, table, danger, success, title } from '../logger';
 import compiler from '../libs/compiler';
 
 import {
-  stackUpload
-} from '../libs/stackUpload';
-
-import {
   zipAndUpload,
   listZipVersions
 } from '../libs/zipUpload';
@@ -150,8 +146,8 @@ export async function deploy ({
 
     log('');
 
-    const deploymentUid = `${Math.floor(Math.random() * 100000)}`;
-    let cfInnerTemplate = {
+    const deploymentUid = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+    let cfTemplate = {
       Resources: {
         ...templateAssetsBucket(),
         ...templateRest(),
@@ -190,43 +186,26 @@ export async function deploy ({
         }
       }
     };
-    if (typeof API_DEFINITIONS.processCFTemplate === 'function') {
-      cfInnerTemplate = API_DEFINITIONS.processCFTemplate(cfInnerTemplate);
-    }
-    const cfInnerTemplateJSON = JSON.stringify(cfInnerTemplate, null, 2);
-    const nestedTemplateUrl = await stackUpload({
-      bucketName: supportBucketName,
-      stackBody: cfInnerTemplateJSON
-    });
-    debug('Inner template:', nestedTemplateUrl);
 
-    const finalOutputs = {};
     const stageVariables = {};
-    Object.keys(cfInnerTemplate.Outputs).forEach(outputName => {
-      finalOutputs[outputName] = {
-        Value: { 'Fn::GetAtt': ['InnerStack', `Outputs.${outputName}`] }
-      };
+    Object.keys(cfTemplate.Outputs).forEach(outputName => {
       stageVariables[outputName] = {
-        'Fn::Base64': { 'Fn::GetAtt': ['InnerStack', `Outputs.${outputName}`] }
+        'Fn::Base64': cfTemplate.Outputs[outputName].Value
       };
     });
 
-    const cfTemplate = {
-      'Resources': {
-        InnerStack: {
-          'Type': 'AWS::CloudFormation::Stack',
-          'Properties': {
-            'TemplateURL': nestedTemplateUrl
-          }
-        },
-        ...templateStage({
-          stageName,
-          deploymentUid,
-          stageVariables
-        })
-      },
-      'Outputs': finalOutputs
+    cfTemplate.Resources = {
+      ...cfTemplate.Resources,
+      ...templateStage({
+        stageName,
+        deploymentUid,
+        stageVariables
+      })
     };
+
+    if (typeof API_DEFINITIONS.processCFTemplate === 'function') {
+      cfTemplate = API_DEFINITIONS.processCFTemplate(cfTemplate);
+    }
     const cfTemplateJSON = JSON.stringify(cfTemplate, null, 2);
 
     const cfParams = buildStackParams({ stackName, cfTemplateJSON });
