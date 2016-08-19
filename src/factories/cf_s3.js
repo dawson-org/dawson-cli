@@ -1,6 +1,6 @@
 
 export function templateAssetsBucketName () {
-  return `Assets`;
+  return `BucketAssets`;
 }
 
 export function templateAssetsBucket () {

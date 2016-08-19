@@ -7,7 +7,7 @@ import {
 } from './cf_utils';
 
 export function templateSupportBucket () {
-  return `Support`;
+  return `BucketSupport`;
 }
 
 export async function createSupportResources ({ stackName }) {
