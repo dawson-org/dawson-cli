@@ -146,7 +146,7 @@ export async function deploy ({
 
     log('');
 
-    const deploymentUid = `${Math.floor(Math.random() * 100000)}`;
+    const deploymentUid = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
     let cfTemplate = {
       Resources: {
         ...templateAssetsBucket(),
