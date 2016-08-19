@@ -58,7 +58,7 @@ export async function deploy ({
   appStage,
   functionFilterRE,
   noUploads = false,
-  dangerDeleteStorage = false
+  dangerDeleteResources = false
 }) {
   const stackName = templateStackName({ appName, stage: appStage });
   const supportStackName = templateStackName({ appName: `${appName}Support` });
@@ -209,7 +209,7 @@ export async function deploy ({
     const cfTemplateJSON = JSON.stringify(cfTemplate, null, 2);
 
     const cfParams = buildStackParams({ stackName, cfTemplateJSON });
-    if (dangerDeleteStorage === true) {
+    if (dangerDeleteResources === true) {
       danger(stripIndent`
         DANGER: You have used the '--danger-delete-storage' so, as part of this stack update
         your DynamoDB Tables and/or S3 Buckets may be deleted, including all of its content.`);
@@ -249,7 +249,7 @@ export async function deploy ({
     error('An error occurred while deploying your application. Re-run this command with --verbose to debug.');
     debug('Stack trace:', e.stack);
   } finally {
-    if (dangerDeleteStorage === true) {
+    if (dangerDeleteResources === true) {
       await restoreStackPolicy({ stackName });
       debug(`Stack policy was restored to a safe state.`);
     }
@@ -260,7 +260,7 @@ export function run (argv) {
   deploy({
     functionFilterRE: argv['function-name'],
     noUploads: argv['no-uploads'],
-    dangerDeleteStorage: argv['danger-delete-storage'],
+    dangerDeleteResources: argv['danger-delete-resources'],
     appStage: argv.stage
   })
   .catch(error => error('Uncaught error', error.message, error.stack))
