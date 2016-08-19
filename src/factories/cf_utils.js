@@ -113,9 +113,24 @@ async function doCreateChangeSet ({ stackName, cfParams }) {
       throw new Error('Change Set failed to create');
     }
     if (description.Status === 'CREATE_COMPLETE') {
-      description.Changes.forEach(change => {
-        debug(`=> ${change.ResourceChange.Action} ${change.ResourceChange.LogicalResourceId}`);
-      });
+      const debugStr = description.Changes
+      .sort((change1, change2) => (change2.ResourceChange.Action < change1.ResourceChange.Action) ? 1 : -1)
+      .map(change => {
+        let color;
+        switch (change.ResourceChange.Action) {
+          case 'Add':
+            color = 'green';
+            break;
+          case 'Modify':
+            color = 'yellow';
+            break;
+          case 'Remove':
+            color = 'red';
+            break;
+        }
+        return `${change.ResourceChange.LogicalResourceId[color]}`;
+      }).join(', ');
+      log('  resources affected by this update:', debugStr);
     }
     status = description.Status;
   }
