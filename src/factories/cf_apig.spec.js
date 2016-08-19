@@ -45,9 +45,9 @@ test('templateMethodName', t => {
 });
 
 test('templateStageName', t => {
-  const expected = 'Stageprod';
+  const expected = 'StageProd';
   const actual = templateStageName({ stageName: 'prod' });
-  t.equal(actual, expected, 'should return stage name suffixed by Stage');
+  t.equal(actual, expected, 'should return capitalized stage name suffixed by Stage');
   t.end();
 });
 
@@ -202,7 +202,7 @@ test('templateDeployment', t => {
 
 test('templateStage', t => {
   const expected = {
-    'Stageprod': {
+    'StageProd': {
       'Type': 'AWS::ApiGateway::Stage',
       'Properties': {
         'CacheClusterEnabled': false,
