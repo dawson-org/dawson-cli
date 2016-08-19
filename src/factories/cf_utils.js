@@ -247,6 +247,7 @@ function uiPollStackStatusHelper ({ stackName }, done) {
     if (action === 'error') {
       spinner.stop();
       error(`\nStack update failed:`, LAST_STACK_REASON);
+      error(`You may inspect stack events:\n$ AWS_DEFAULT_REGION=${AWS_REGION} aws cloudformation describe-stack-events --stack-name ${stackName}`);
       return;
     }
     if (action === 'succeed') {
