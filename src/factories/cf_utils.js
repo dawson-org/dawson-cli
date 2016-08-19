@@ -30,7 +30,12 @@ const SAFE_STACK_POLICY = {
     'Resource': '*',
     'Condition': {
       'StringEquals': {
-        'ResourceType': ['AWS::DynamoDB::Table', 'AWS::S3::Bucket']
+        'ResourceType': [
+          'AWS::DynamoDB::Table',
+          'AWS::ApiGateway::RestApi',
+          'AWS::CloudFront::Distribution',
+          'AWS::S3::Bucket'
+        ]
       }
     }
   }, {
