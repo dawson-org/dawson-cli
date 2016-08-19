@@ -1,7 +1,7 @@
 
 import { debug } from '../logger';
 import {
-  buildStackParams,
+  buildStack,
   createOrUpdateStack,
   waitForUpdateCompleted
 } from './cf_utils';
@@ -35,9 +35,10 @@ export async function createSupportResources ({ stackName }) {
       }
     }
   }, null, 2);
-  const cfParams = buildStackParams({
+  const cfParams = await buildStack({
     stackName,
-    cfTemplateJSON
+    cfTemplateJSON,
+    inline: true // support bucket does not exist ad this time
   });
   debug('Now updating support resources');
   await createOrUpdateStack({ stackName, cfParams, ignoreNoUpdates: true });

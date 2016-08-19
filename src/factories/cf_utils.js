@@ -5,6 +5,10 @@ import spinner from 'simple-spinner';
 
 import { debug, error, log } from '../logger';
 
+import {
+  stackUpload
+} from '../libs/stackUpload';
+
 export const AWS_REGION = AWS.config.region;
 const cloudformation = new AWS.CloudFormation({ apiVersion: '2010-05-15' });
 const createStack = promisify(cloudformation.createStack.bind(cloudformation));
@@ -77,7 +81,14 @@ function checkStackExists (stackName) {
   });
 }
 
-export function buildStackParams ({ stackName, cfTemplateJSON }) {
+export async function buildStack ({ supportBucketName = null, stackName, cfTemplateJSON, inline = false }) {
+  const templateSource = inline
+    ? ({
+      TemplateBody: cfTemplateJSON
+    })
+    : ({
+      TemplateURL: await stackUpload({ bucketName: supportBucketName, stackBody: cfTemplateJSON })
+    });
   var params = {
     StackName: stackName,
     Capabilities: ['CAPABILITY_IAM'],
@@ -86,7 +97,7 @@ export function buildStackParams ({ stackName, cfTemplateJSON }) {
       Key: 'createdBy',
       Value: 'danilo'
     }],
-    TemplateBody: cfTemplateJSON,
+    ...templateSource,
     StackPolicyBody: JSON.stringify(SAFE_STACK_POLICY),
     OnFailure: 'DO_NOTHING' // deleted when updating
   };
@@ -100,7 +111,8 @@ async function doCreateChangeSet ({ stackName, cfParams }) {
     Capabilities: [
       'CAPABILITY_IAM'
     ],
-    TemplateBody: cfParams.TemplateBody
+    TemplateBody: cfParams.TemplateBody,
+    TemplateURL: cfParams.TemplateURL
   };
   const result = await createChangeSet(params);
   const changeSetId = result.Id;
