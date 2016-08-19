@@ -15,7 +15,7 @@ import {
 
 import {
   templateStackName,
-  buildStackParams,
+  buildStack,
   restoreStackPolicy,
   removeStackPolicy,
   createOrUpdateStack,
@@ -208,7 +208,7 @@ export async function deploy ({
     }
     const cfTemplateJSON = JSON.stringify(cfTemplate, null, 2);
 
-    const cfParams = buildStackParams({ stackName, cfTemplateJSON });
+    const cfParams = await buildStack({ supportBucketName, stackName, cfTemplateJSON });
     if (dangerDeleteResources === true) {
       danger(stripIndent`
         DANGER: You have used the '--danger-delete-storage' so, as part of this stack update
