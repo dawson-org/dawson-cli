@@ -16,6 +16,7 @@
   },
   "dawson": {
     "appName": "dawsonExample",
-    "domains": ["myapp.com"]
+    "domains": [],
+    "cloudfront": true
   }
 }
