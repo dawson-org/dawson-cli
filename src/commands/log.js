@@ -98,12 +98,6 @@ export function run (argv) {
   return Promise.resolve()
   .then(() => getStackResources({ stackName }))
   .then(resources => {
-    const innerStackResourceId = resources.find(o =>
-      o.ResourceType === 'AWS::CloudFormation::Stack' && o.LogicalResourceId === 'InnerStack'
-    ).PhysicalResourceId;
-    return getStackResources({ stackName: innerStackResourceId });
-  })
-  .then(resources => {
     const awsLambdaResource = resources.find(o =>
       o.ResourceType === 'AWS::Lambda::Function' && o.LogicalResourceId === cfLambdaName
     );
