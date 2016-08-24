@@ -54,12 +54,25 @@ import {
 
 const RESERVED_FUCTION_NAMES = ['processCFTemplate'];
 
+function shouldDeployCloudfront ({ appStage }) {
+  if (SETTINGS.cloudfront === false) {
+    return false;
+  }
+  if (typeof SETTINGS.cloudfront === 'object') {
+    if (SETTINGS.cloudfront[appStage] === false) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export async function deploy ({
   appStage,
   functionFilterRE,
   noUploads = false,
   dangerDeleteResources = false
 }) {
+  const deployCloudfront = shouldDeployCloudfront({ appStage });
   const stackName = templateStackName({ appName, stage: appStage });
   const supportStackName = templateStackName({ appName: `${appName}Support` });
   try {
@@ -146,6 +159,11 @@ export async function deploy ({
 
     log('');
 
+    const cloudfrontPartial = deployCloudfront
+      ? templateCloudfrontDistribution({
+        stageName
+      })
+      : {};
     const deploymentUid = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
     let cfTemplate = {
       Resources: {
@@ -156,9 +174,7 @@ export async function deploy ({
           deploymentUid,
           dependsOnMethods: methodsInTemplate
         }),
-        ...templateCloudfrontDistribution({
-          stageName
-        })
+        ...cloudfrontPartial
       },
       Outputs: {
         ApiGatewayUrl: {
@@ -174,9 +190,9 @@ export async function deploy ({
           Value: { 'Ref': `${templateAssetsBucketName()}` }
         },
         CloudFrontDNS: {
-          Value: (SETTINGS.cloudfront === false)
-                  ? 'CloudFront disabled from config'
-                  : { 'Fn::GetAtt': [`${templateCloudfrontDistributionName()}`, 'DomainName'] }
+          Value: deployCloudfront
+                  ? { 'Fn::GetAtt': [`${templateCloudfrontDistributionName()}`, 'DomainName'] }
+                  : 'CloudFront disabled from config'
         },
         RestApiId: {
           Value: { 'Ref': `${templateAPIID()}` }
@@ -186,6 +202,10 @@ export async function deploy ({
         }
       }
     };
+
+    if (typeof API_DEFINITIONS.processCFTemplate === 'function') {
+      cfTemplate = API_DEFINITIONS.processCFTemplate(cfTemplate);
+    }
 
     const stageVariables = {};
     Object.keys(cfTemplate.Outputs).forEach(outputName => {
@@ -203,11 +223,7 @@ export async function deploy ({
       })
     };
 
-    if (typeof API_DEFINITIONS.processCFTemplate === 'function') {
-      cfTemplate = API_DEFINITIONS.processCFTemplate(cfTemplate);
-    }
     const cfTemplateJSON = JSON.stringify(cfTemplate, null, 2);
-
     const cfParams = await buildStack({ supportBucketName, stackName, cfTemplateJSON });
     if (dangerDeleteResources === true) {
       danger(stripIndent`
@@ -232,7 +248,7 @@ export async function deploy ({
     table(functionsTable);
 
     title('Your public endpoint is:');
-    if (SETTINGS.cloudfront !== false) {
+    if (deployCloudfront) {
       log(`https://${cloudfrontDNS}`);
       log(`Make sure to point DNS records for ${SETTINGS.domains.join(', ')} to this distribution.`);
       if (SETTINGS.cloudfrontRootOrigin === 'assets') {

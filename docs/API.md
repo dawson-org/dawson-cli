@@ -19,10 +19,12 @@ You must define a `dawson` property, as follows:
   NOTE: changing this causes the whole application to be deployed from scratch.
 * **domains** (**required**, list of strings): a list of at least one domain name to set as [CloudFront CNAME](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html). Domains must be unique globally in AWS.
 * **zipIgnore** (list of strings): a list of partial paths to ignore when zipping lambdas. **Do not** ignore `node_modules`.
-* **cloudfront** (boolean, defaults to `true`): if `false`, the default CloudFront distribution won't be added to the CloudFormation template, so:
-  * if you are deploying a new app, the deploy will be very quick, and no distribution will be created
-  * if you are updating an app that has been previously deployed with `cloudfront !== false`, the distribution will be **deleted** (this will take ~20min)
-  * if you are referencing the distribution from a custom resource your stack will fail
+* **cloudfront** (boolean, or object, defaults to `true`): if `false`, the default CloudFront distribution won't be added to the CloudFormation template, so:
+   * if you are deploying a new app, the deploy will be very quick, and no distribution will be created
+   * if you are updating an app that has been previously deployed with `cloudfront !== false`, the distribution will be  **deleted** (this will take ~20min)
+   * if you are referencing the distribution from a custom resource your stack will fail  
+ 
+ You can optionally specify an object which maps app stages to booleans: `{ "dev": false, "prod": true }`
  
  *This option controls the behaviour of the default CloudFront distribution that dawson creates, and does not apply to any custom resource.*
 * **cloudfrontRootOrigin** (either `assets` or `api`, defaults to `api`):

@@ -26,9 +26,6 @@ export function templateCloudfrontDistribution ({
   if (domains && domains.length > 0) {
     aliases.Aliases = domains;
   }
-  if (SETTINGS.cloudfront === false) {
-    return {};
-  }
 
   const s3Origin = {
     'DomainName': { 'Fn::Join': ['', [
