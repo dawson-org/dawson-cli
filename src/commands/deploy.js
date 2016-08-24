@@ -187,6 +187,10 @@ export async function deploy ({
       }
     };
 
+    if (typeof API_DEFINITIONS.processCFTemplate === 'function') {
+      cfTemplate = API_DEFINITIONS.processCFTemplate(cfTemplate);
+    }
+
     const stageVariables = {};
     Object.keys(cfTemplate.Outputs).forEach(outputName => {
       stageVariables[outputName] = {
@@ -203,11 +207,7 @@ export async function deploy ({
       })
     };
 
-    if (typeof API_DEFINITIONS.processCFTemplate === 'function') {
-      cfTemplate = API_DEFINITIONS.processCFTemplate(cfTemplate);
-    }
     const cfTemplateJSON = JSON.stringify(cfTemplate, null, 2);
-
     const cfParams = await buildStack({ supportBucketName, stackName, cfTemplateJSON });
     if (dangerDeleteResources === true) {
       danger(stripIndent`
