@@ -22,15 +22,34 @@ Promise.resolve()
   return callback(err);
 });
 `;
+const RUNNER_FUNCTION_BODY_UNWRAPPED = 'runner(event, context, callback);';
+const RUNNER_FUNCTION_BODY_EVENTHANDLER = `
+describeOutputs().then(outputsMap => {
+  stackOutputs = outputsMap;
+  context.templateOutputs = stackOutputs;
+  runner(event, context)
+  .then(result => callback(null, result))
+  .catch(callback);
+});
+`;
 
-
-function prepareIndexFile (apis) {
+function prepareIndexFile (apis, stackName) {
   const exp = Object.keys(apis).map(name => {
     const apiConfig = apis[name].api || {};
+    let body;
+    if (apiConfig.noWrap === true) {
+      body = RUNNER_FUNCTION_BODY_UNWRAPPED;
+    } else {
+      if (apiConfig.isEventHandler === true) {
+        body = RUNNER_FUNCTION_BODY_EVENTHANDLER;
+      } else {
+        body = RUNNER_FUNCTION_BODY;
+      }
+    }
     return `
       module.exports.${name} = function (event, context, callback) {
         const runner = require('./api').${name};
-        ${(apiConfig.noWrap !== true) ? RUNNER_FUNCTION_BODY : 'runner(event, context, callback);'}
+        ${body}
       };
     `;
   });
@@ -43,13 +62,40 @@ function prepareIndexFile (apis) {
   require("babel-polyfill");
   require('babel-register');
 
+  const AWS = require('aws-sdk');
+  const cloudformation = new AWS.CloudFormation({});
+  const stackName = '${stackName}';
+  var stackOutputs = null;
+
+  function describeOutputs() {
+      if (!stackOutputs) {
+          const params = {
+              StackName: stackName,
+          };
+          return cloudformation.describeStacks(params).promise()
+          .then(result => {
+              const outputs = result.Stacks[0].Outputs;
+              const ret = {};
+              outputs.forEach(output => {
+                 ret[output.OutputKey] = output.OutputValue; 
+              });
+              return ret;
+          })
+          .catch(err => {
+              console.error(\`Error describing stack ${stackName}\`, err.message, err.stack);
+          });
+      } else {
+          return Promise.resolve(stackOutputs);
+      }
+  }
+
   ${exp.join('\n\n')}
   `;
 }
 
-export default function compileCode (apis) {
+export default function compileCode (apis, stackName) {
   try {
-    const str = prepareIndexFile(apis);
+    const str = prepareIndexFile(apis, stackName);
     return Promise.resolve(str);
   } catch (err) {
     error('Compiler error', err);

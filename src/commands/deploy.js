@@ -93,7 +93,7 @@ export async function deploy ({
     let currentCounter = 0;
 
     log('*'.blue, `now bundling ${defs.length - 1} functions, please be patient`);
-    const indexFileContents = await compiler(API_DEFINITIONS);
+    const indexFileContents = await compiler(API_DEFINITIONS, stackName);
     const zipS3Location = await zipAndUpload({
       bucketName: supportBucketName,
       appStageName: appStage,
