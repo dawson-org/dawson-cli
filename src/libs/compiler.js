@@ -54,6 +54,56 @@ function prepareIndexFile (apis, stackName) {
     `;
   });
 
+  if (apiConfig.isEventHandler === true) {
+    return `
+    // This is the content of index.js
+    // which is require-d by lambda
+    // which before describe all ${stackName} stack outputs 
+    // which then executes the handler property
+    //
+    require("babel-polyfill");
+    require('babel-register');
+
+    const AWS = require('aws-sdk');
+    const cloudformation = new AWS.CloudFormation({});
+    const stackName = '${stackName}';
+    var stackOutputs = null;
+
+    function describeOutputs() {
+        if (!stackOutputs) {
+            const params = {
+                StackName: stackName,
+            };
+            return cloudformation.describeStacks(params).promise()
+            .then(result => {
+                const outputs = result.Stacks[0].Outputs;
+                const ret = {};
+                outputs.forEach(output => {
+                   ret[output.OutputKey] = output.OutputValue; 
+                });
+                return ret;
+            })
+            .catch(err => {
+                console.error(\`Error describing stack ${stackName}\`, err.message, err.stack);
+            });
+        } else {
+            return Promise.resolve(stackOutputs);
+        }
+    }
+
+    const runner = require('./api').${name};
+    module.exports.handler = function _handlerIndexWrapper(event, context, callback) {
+      describeOutputs().then(outputsMap => {
+        stackOutputs = outputsMap;
+        context.templateOutputs = stackOutputs;
+        runner(event, context)
+        .then(result => callback(null, result))
+        .catch(callback);
+      });
+    }
+    `;
+  }
+
   return `
   // This is the content of index.js
   // which is require-d by lambda
