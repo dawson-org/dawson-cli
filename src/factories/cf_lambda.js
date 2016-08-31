@@ -57,6 +57,21 @@ export function templateLambdaExecutionRole ({
                   ]]
                 }
               },
+              {
+                'Effect': 'Allow',
+                'Action': ['cloudformation:DescribeStacks'],
+                'Resource': {
+                  'Fn::Join': ['', [
+                    'arn:aws:cloudformation:',
+                    { 'Ref': 'AWS::Region' },
+                    ':',
+                    { 'Ref': 'AWS::AccountId' },
+                    ':stack/',
+                    { 'Ref': 'AWS::StackName' },
+                    '/*'
+                  ]]
+                }
+              },
               ...policyStatements
             ]
           }
