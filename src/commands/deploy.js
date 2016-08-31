@@ -94,7 +94,6 @@ export async function deploy ({
 
     log('*'.blue, `${noUploads ? 'loading' : 'zipping and uploading'} ${defs.length} functions:`);
     const progressBar = new ProgressBar('  [:bar] :elapseds (ETA :etas)', { total: defs.length, width: 20 });
-
     for (const [index, def] of defs) {
       if (RESERVED_FUCTION_NAMES.includes(def.name)) {
         continue;
@@ -120,7 +119,7 @@ export async function deploy ({
         httpMethod,
         resourcePath
       });
-      const indexFileContents = await compiler(name, def.api);
+      const indexFileContents = await compiler(name, def.api, stackName);
       const zipS3Location = await zipAndUpload({
         bucketName: supportBucketName,
         appStageName: appStage,
