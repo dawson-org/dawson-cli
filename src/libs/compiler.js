@@ -4,7 +4,7 @@ import { error } from '../logger';
 export const RUNNER_FUNCTION_BODY = `
 Promise.resolve()
 .then(function () {
-  return runner(event);
+  return runner(event, context);
 })
 .then(function (data) {
   if (event.meta && event.meta.expectedResponseContentType.indexOf('text/html') !== -1) {
