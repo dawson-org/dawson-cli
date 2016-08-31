@@ -42,6 +42,21 @@ export function templateLambdaExecutionRole ({
                 ],
                 'Resource': { 'Fn::Sub': 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*' } // eslint-disable-line
               },
+              {
+                'Effect': 'Allow',
+                'Action': ['cloudformation:DescribeStacks'],
+                'Resource': {
+                  'Fn::Join': ['', [
+                    'arn:aws:cloudformation:',
+                    { 'Ref': 'AWS::Region' },
+                    ':',
+                    { 'Ref': 'AWS::AccountId' },
+                    ':stack/',
+                    { 'Ref': 'AWS::StackName' },
+                    '/*'
+                  ]]
+                }
+              },
               ...policyStatements
             ]
           }
