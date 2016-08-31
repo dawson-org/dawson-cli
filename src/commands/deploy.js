@@ -103,7 +103,7 @@ export async function deploy ({
         throw new Error(`You must specify an 'api' property for '${def.name}' function`);
       }
       const {
-        path: resourcePath = null,
+        path: resourcePath = false,
         method: httpMethod = 'GET',
         policyStatements: policyStatements = [],
         responseContentType = 'text/html',
@@ -137,24 +137,31 @@ export async function deploy ({
         policyStatements,
         runtime
       });
-      const {
-        resourceName,
-        templateResourcePartial
-      } = templateResourceHelper({
-        resourcePath
-      });
-      templatePartials = {
-        ...templatePartials,
-        ...templateResourcePartial,
-        ...lambdaPartial,
-        ...templateMethod({
+      if (resourcePath === false) {
+        templatePartials = {
+          ...templatePartials,
+          ...lambdaPartial
+        };
+      } else {
+        const {
           resourceName,
-          httpMethod,
-          lambdaName,
-          responseContentType
-        })
-      };
-      methodsInTemplate.push({ resourceName, httpMethod });
+          templateResourcePartial
+        } = templateResourceHelper({
+          resourcePath
+        });
+        templatePartials = {
+          ...templatePartials,
+          ...templateResourcePartial,
+          ...lambdaPartial,
+          ...templateMethod({
+            resourceName,
+            httpMethod,
+            lambdaName,
+            responseContentType
+          })
+        };
+        methodsInTemplate.push({ resourceName, httpMethod });
+      }
     }
 
     log('');
@@ -240,7 +247,8 @@ export async function deploy ({
     const apiPrefix = outputs.find(o => o.OutputKey === 'ApiGatewayUrl').OutputValue;
     const functionsTable = functionsHuman.map(f => ({
       ...f,
-      resourcePath: `${apiPrefix}/${f.resourcePath}`
+      httpMethod: (f.resourcePath !== false) ? f.httpMethod : '',
+      resourcePath: (f.resourcePath !== false) ? `${apiPrefix}/${f.resourcePath}` : '(No endpoint)'
     }));
     success('*'.blue, 'deploy completed!\n');
 
