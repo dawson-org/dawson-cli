@@ -112,7 +112,7 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
       if (!data) {
         error(`Handler returned an empty body`);
       } else {
-        data.response = JSON.parse(data.response);
+        data = JSON.parse(data.response);
         res.write(JSON.stringify(data));
       }
       debug(' -> request end');
