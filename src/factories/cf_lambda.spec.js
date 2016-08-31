@@ -47,7 +47,23 @@ test('templateLambdaExecutionRole', t => {
                 'Effect': 'Allow',
                 'Action': ['logs:*'],
                 'Resource': 'arn:aws:logs:*:*:*'
-              }, {
+              },
+              {
+                'Effect': 'Allow',
+                'Action': ['cloudformation:DescribeStacks'],
+                'Resource': {
+                  'Fn::Join': ['', [
+                    'arn:aws:cloudformation:',
+                    { 'Ref': 'AWS::Region' },
+                    ':',
+                    { 'Ref': 'AWS::AccountId' },
+                    ':stack/',
+                    { 'Ref': 'AWS::StackName' },
+                    '/*'
+                  ]]
+                }
+              },
+              {
                 Effect: 'Deny',
                 Action: '*',
                 Resource: '*'
@@ -95,6 +111,21 @@ test('templateLambda', t => {
                 'Effect': 'Allow',
                 'Action': ['logs:*'],
                 'Resource': 'arn:aws:logs:*:*:*'
+              },
+              {
+                'Effect': 'Allow',
+                'Action': ['cloudformation:DescribeStacks'],
+                'Resource': {
+                  'Fn::Join': ['', [
+                    'arn:aws:cloudformation:',
+                    { 'Ref': 'AWS::Region' },
+                    ':',
+                    { 'Ref': 'AWS::AccountId' },
+                    ':stack/',
+                    { 'Ref': 'AWS::StackName' },
+                    '/*'
+                  ]]
+                }
               }
             ]
           }
