@@ -137,7 +137,7 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
           throw new Error('Unknown contentType: ' + contentType);
         }
       }
-      debug(' -> request end');
+      console.log(` <- END '${runner.name}' (${new Intl.NumberFormat().format(data.length / 1024)} KB)\n`.red.dim);
       res.end();
     };
     /*
@@ -147,6 +147,7 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
       - context (unused internally)
       - callback
     */
+    console.log(`\n -> START '${runner.name}'`.green.dim);
     // eslint-disable-next-line
     eval(RUNNER_FUNCTION_BODY);
   } catch (err) {
