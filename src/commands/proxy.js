@@ -2,17 +2,11 @@
 // DAWSON local development proxy (preview)
 // ========================================
 //
-// This command will parse requests to '/prod' and call the appropriate API function.
-// All requests that do not begin with '/prod' will be forwarded to the address specified
-//    by --proxy-assets-url
+// This command will simulate the CloudFront distribution behaviours
 //
 // Currently, this proxy DOES NOT SUPPORT:
 // - multiple path parameters
 // - "big" requests that does not fit in a single chunk (will restult in a JSON error)
-// - requests/responses of type other than application/json (text/html is not supported)
-//
-// Currently, this proxy assumes that you are building a Single-Page-App with a backend API, and it will only
-// be useful for this use case.
 //
 // This feature is preview-quality, we need error checking, etc...
 //
@@ -20,8 +14,10 @@
 import assert from 'assert';
 import qs from 'querystring';
 import { createProxyServer } from 'http-proxy';
+import send from 'send';
 import { createServer } from 'http';
 import { parse } from 'url';
+import pathModule from 'path';
 
 import { debug, error, success } from '../logger';
 import { SETTINGS, API_DEFINITIONS } from '../config';
@@ -77,13 +73,30 @@ function findApi ({ method, pathname }) {
   return found;
 }
 
+function getContentType (fn) {
+  return fn.api.responseContentType || 'text/html';
+}
+
 function processAPIRequest (req, res, { body, outputs, pathname, querystring }) {
   try {
     const stageVariables = {};
     outputs.forEach(output => {
       stageVariables[output.OutputKey] = output.OutputValue;
     });
-    const runner = findApi({ method: req.method, pathname });
+    try {
+      var runner = findApi({ method: req.method, pathname });
+    } catch (e) {
+      if (e.message.match(/API not found at path/)) {
+        const message = `API not found at path '${req.url}'`;
+        console.log(message.bold.red);
+        res.writeHead(404);
+        res.write(message);
+        res.end();
+        return;
+      } else {
+        throw e;
+      }
+    }
     const event = {
       params: {
         path: {
@@ -108,14 +121,23 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
         error(err);
         return;
       }
-      res.writeHead(200, { 'Content-Type': 'application/json' });
+      const contentType = getContentType(runner);
+      res.writeHead(200, { 'Content-Type': contentType });
       if (!data) {
         error(`Handler returned an empty body`);
       } else {
         data = JSON.parse(data.response);
-        res.write(JSON.stringify(data));
+        if (contentType === 'application/json') {
+          res.write(JSON.stringify(data));
+        } else if (contentType === 'text/plain') {
+          res.write(data);
+        } else if (contentType === 'text/html') {
+          res.write(data);
+        } else {
+          throw new Error('Unknown contentType: ' + contentType);
+        }
       }
-      debug(' -> request end');
+      console.log(` <- END '${runner.name}' (${new Intl.NumberFormat().format(data.length / 1024)} KB)\n`.red.dim);
       res.end();
     };
     /*
@@ -125,11 +147,41 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
       - context (unused internally)
       - callback
     */
+    console.log(`\n -> START '${runner.name}'`.green.dim);
     // eslint-disable-next-line
     eval(RUNNER_FUNCTION_BODY);
   } catch (err) {
     error('processAPIRequest error', err);
   }
+}
+
+function requestForAPI (req) {
+  if (SETTINGS.cloudfrontRootOrigin === 'assets') {
+    return req.url.startsWith('/prod');
+  } else {
+    return !req.url.startsWith('/assets');
+  }
+}
+
+function parseAPIUrl (req) {
+  let urlString;
+  if (SETTINGS.cloudfrontRootOrigin === 'assets') {
+    urlString = req.url.replace('/prod', '');
+  } else {
+    urlString = req.url;
+  }
+  const url = parse(urlString);
+  return url;
+}
+
+function parseAssetsUrlString (req) {
+  let urlString;
+  if (SETTINGS.cloudfrontRootOrigin !== 'assets') {
+    urlString = req.url.replace('/assets', '');
+  } else {
+    urlString = req.url;
+  }
+  return urlString;
 }
 
 export function run (argv) {
@@ -140,9 +192,7 @@ export function run (argv) {
     assetsPathname
   } = argv;
 
-  assert(proxyAssetsUrl, 'Serving from a filder is not implemented yet, you should try --proxy-assets-url');
-  assert(!assetsPathname, 'Option --assets-pathname is not implemented yet');
-  assert(SETTINGS.cloudfrontRootOrigin === 'assets', 'This proxy currently only supports Single-Page-Applications (with cloudfrontRootOrigin === "assets" in package.json)');
+  assert(proxyAssetsUrl || assetsPathname, 'You must specify either --proxy-assets-url or --assets-pathname');
 
   const stackName = templateStackName({ appName, stage });
 
@@ -155,9 +205,14 @@ export function run (argv) {
   const server = createServer((req, res) => {
     debug(` -> ${req.method} ${req.url}`);
 
-    if (req.url.startsWith('/prod')) {
-      req.url = req.url.replace('/prod', '');
-      const url = parse(req.url);
+    if (req.url === '/favicon.ico') {
+      res.writeHead(404);
+      res.end();
+      return;
+    }
+
+    if (requestForAPI(req)) {
+      const url = parseAPIUrl(req);
       const pathname = url.pathname;
       const querystring = qs.parse(url.query);
       let rawBody = new Buffer('');
@@ -193,9 +248,26 @@ export function run (argv) {
       });
       req.resume();
     } else {
-      proxy.web(req, res, {
-        target: proxyAssetsUrl
-      });
+      const path = parseAssetsUrlString(req); // conditionally replace assets/
+
+      if (assetsPathname) {
+        send(req, path, {
+          cacheControl: false,
+          root: pathModule.join(process.cwd(), assetsPathname)
+        })
+        .on('error', error => {
+          res.writeHead(error.status || 500);
+          const message = `Resource not found in '/assets' at path '${path}'`;
+          console.log(message.yellow.bold);
+          res.write(message);
+          res.end();
+        })
+        .pipe(res);
+      } else {
+        proxy.web(req, res, {
+          target: proxyAssetsUrl
+        });
+      }
     }
   });
 
