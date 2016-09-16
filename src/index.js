@@ -1,5 +1,7 @@
 #!env babel-node
 
+require('babel-runtime');
+
 import yargs from 'yargs';
 
 import { enableDebug, log } from './logger';
