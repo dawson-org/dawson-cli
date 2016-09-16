@@ -9,6 +9,8 @@ A serverless web framework for nodejs on AWS (CloudFormation, API Gateway, Lambd
 [![npm license](https://img.shields.io/npm/l/dawson.svg?maxAge=2592000?style=plastic)]()
 [![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=plastic)](https://github.com/Flet/semistandard)
 
+[![](https://nodei.co/npm/dawson.png?compact=true)]()
+
 ## Features
 
 * [X] zero boilerplate
