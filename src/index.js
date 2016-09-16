@@ -1,4 +1,4 @@
-#!env babel-node
+#!env node
 
 require('babel-runtime');
 
