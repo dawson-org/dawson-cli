@@ -5,7 +5,7 @@ A serverless web framework for nodejs on AWS (CloudFormation, API Gateway, Lambd
 [![Build Status](https://travis-ci.org/lusentis/dawson.svg?branch=master)](https://travis-ci.org/lusentis/dawson)
 [![stability-stable](https://img.shields.io/badge/stability-stable-green.svg)]()
 [![npm version](https://img.shields.io/npm/v/dawson.svg?maxAge=3600)]()
-[![npm dependencies](https://david-dm.org/lusentis/dawson.svg)]()
+[![npm dependencies](https://david-dm.org/lusentis/dawson.svg?maxAge=3600)]()
 [![npm license](https://img.shields.io/npm/l/dawson.svg?maxAge=2592000?style=plastic)]()
 [![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=plastic)](https://github.com/Flet/semistandard)
 
