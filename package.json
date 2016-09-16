@@ -40,7 +40,7 @@
     "temp": "^0.8.3",
     "yargs": "^4.8.1"
   },
-  "bin": "src/index.js",
+  "bin": "lib/index.js",
   "devDependencies": {
     "babel-register": "^6.11.6",
     "pre-commit": "^1.1.3",
