@@ -67,6 +67,8 @@ function zipRoot (args) {
     skip,
     excludeList
   } = args;
+  excludeList.push('.git');
+  excludeList.push('.AppleDouble');
   if (skip) { return Promise.resolve(args); }
   const excludeArg = (excludeList && excludeList.length > 0)
     ? ('--exclude ' + excludeList.map(i => `\\*${i}\\*`).join(' '))
