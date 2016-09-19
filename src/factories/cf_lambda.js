@@ -76,7 +76,9 @@ export function templateLambda ({
         'Handler': 'daniloindex.handler',
         'Role': { 'Fn::GetAtt': [`${templateLambdaRoleName({ lambdaName })}`, 'Arn'] },
         'Code': code,
-        'Runtime': runtime
+        'Runtime': runtime,
+        'MemorySize': 1024,
+        'Timeout': 30
       }
     }
   };
