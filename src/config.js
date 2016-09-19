@@ -1,4 +1,8 @@
 
+// this will compile on-the-fly the `api.js` required below
+// by `require(PROJECT_ROOT + '/api');`
+require('babel-register');
+
 import { error } from './logger';
 export const PROJECT_ROOT = process.env.PWD;
 
