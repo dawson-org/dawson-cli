@@ -68,9 +68,8 @@ function zipRoot (args) {
     excludeList
   } = args;
   if (skip) { return Promise.resolve(args); }
-  const excludeArg = (excludeList && excludeList.length > 0)
-    ? ('--exclude ' + excludeList.map(i => `\\*${i}\\*`).join(' '))
-    : '';
+  const excludeArg = '--exclude ' +
+    [...excludeList, '.git', '.AppleDouble'].map(i => `\\*${i}\\*`).join(' ');
   debug('   zip cmd:'.gray, `zip -r ${excludeArg} ${tempZipFile} .`);
   return Promise.resolve()
   .then(() =>

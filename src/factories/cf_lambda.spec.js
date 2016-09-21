@@ -111,7 +111,9 @@ test('templateLambda', t => {
           S3Key: 'demokey',
           S3ObjectVersion: 'demoversion'
         },
-        'Runtime': 'foobar'
+        'Runtime': 'foobar',
+        'MemorySize': 1024,
+        'Timeout': 30
       }
     }
   };

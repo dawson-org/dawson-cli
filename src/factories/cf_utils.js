@@ -131,7 +131,10 @@ async function doCreateChangeSet ({ stackName, cfParams }) {
     }
     if (description.Status === 'CREATE_COMPLETE') {
       const debugStr = description.Changes
-      .sort((change1, change2) => (change2.ResourceChange.Action < change1.ResourceChange.Action) ? 1 : -1)
+      .sort((change1, change2) => (
+        (change2.ResourceChange.Action + change2.ResourceChange.LogicalResourceId) <
+        (change1.ResourceChange.Action + change1.ResourceChange.LogicalResourceId)
+        ? 1 : -1))
       .map(change => {
         let color;
         switch (change.ResourceChange.Action) {

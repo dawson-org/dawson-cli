@@ -1,6 +1,4 @@
-#!env babel-node
-
-require('babel-runtime');
+#!env node
 
 import yargs from 'yargs';
 

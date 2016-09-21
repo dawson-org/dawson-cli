@@ -222,6 +222,29 @@ export function templateLambdaIntegration ({
             #if($foreach.hasNext),#end
             #end
           },
+          "context" : {
+            "apiId": "$context.apiId",
+            "authorizer": {
+              "principalId": "$context.authorizer.principalId",
+              "claims": {
+                #foreach($property in $context.authorizer.claims.keySet())
+                "$property": "$context.authorizer.claims.get($property)"
+                #if($foreach.hasNext),#end
+                #end
+              }
+            },
+            "httpMethod": "$context.httpMethod",
+            "identity": {
+              #foreach($property in $context.identity.keySet())
+              "$property": "$context.identity.get($property)"
+              #if($foreach.hasNext),#end
+              #end
+            },
+            "requestId": "$context.requestId",
+            "resourceId": "$context.resourceId",
+            "resourcePath": "$context.resourcePath",
+            "stage": "$context.stage"
+          },
           "body": $input.json('$'),
           "meta": {
             "expectedResponseContentType": "${responseContentType}"

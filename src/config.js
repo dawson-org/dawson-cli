@@ -1,5 +1,9 @@
 
-import { error, log } from './logger';
+// this will compile on-the-fly the `api.js` required below
+// by `require(PROJECT_ROOT + '/api');`
+require('babel-register');
+
+import { error } from './logger';
 export const PROJECT_ROOT = process.env.PWD;
 
 let requiredPkgJson;
@@ -17,8 +21,7 @@ if (process.env.NODE_ENV !== 'testing') {
     requiredApi = require(PROJECT_ROOT + '/api');
   } catch (e) {
     error('Error: cannot find a valid api.js in current directory');
-    log(`You may have syntax errors in your api.js (${e.message})`);
-    process.exit(1);
+    throw e;
   }
 } else {
   requiredPkgJson = { dawson: {} };

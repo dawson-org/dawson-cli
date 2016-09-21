@@ -270,7 +270,7 @@ You may add or modify whitelisted headers, see [Customizing a dawson template](#
 
 Each function exported by the top-level `api.js` must have an `api` property.
 
-* **path** (*required*, string): HTTP path to this functions. Must be unique in your whole app. You may use path parameters placeholder, as in API Gateway, by sorrounding a parameter name with `{}`. Do **not** include leading/trailing slashes.
+* **path** (*required*, string|false): HTTP path to this functions. Must be unique in your whole app. You may use path parameters placeholder, as in API Gateway, by sorrounding a parameter name with `{}`. Do **not** include leading/trailing slashes. You can specify `false` to skip deploying the API Gateway endpoint.
 * **method** (string, defaults to GET): HTTP method.
 * **responseContentType** (string, defaults to `text/html`): Content-Type to set in API Gateway's response. Valid values are: `application/json`, `text/html`, `text/plain`. When `application/json`, `JSON.stringify(function_returned_value)` is called to render the response body.
 * **policyStatements** (list of maps): Policy statements for this Lambda's Role, as you would define in a [CloudFormation template](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-iam-policy.html#cfn-iam-policies-policydocument).

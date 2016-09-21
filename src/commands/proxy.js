@@ -23,22 +23,12 @@ import { debug, error, success } from '../logger';
 import { SETTINGS, API_DEFINITIONS } from '../config';
 const { appName } = SETTINGS;
 import { RUNNER_FUNCTION_BODY } from '../libs/compiler';
+import { compare } from '../libs/pathmatch';
 
 import {
   getStackOutputs,
   templateStackName
 } from '../factories/cf_utils';
-
-function equalToIndex (toIndex, a, b) {
-  // Returns true iff arrays a and b have all equal
-  // elements until index toIndex (included)
-  let equal = true;
-  a.forEach((itemA, indexA) => {
-    if (indexA > toIndex) return;
-    if (itemA !== b[indexA]) equal = false;
-  });
-  return equal;
-}
 
 function findApi ({ method, pathname }) {
   let found = null;
@@ -47,24 +37,18 @@ function findApi ({ method, pathname }) {
     const fn = API_DEFINITIONS[name];
     const def = fn.api;
     if (!def) return;
+    if (def.path === false) return;
+    if ((def.method || 'GET') !== method) return;
     const defPath = `/${def.path}`;
-    if (defPath === pathname && (def.method || 'GET') === method) {
+    const result = compare(defPath, pathname);
+    if (result !== false) {
       debug(`API handler method: ${name}`);
       found = fn;
-    }
-    if (!def.path.includes('{')) return;
-    // @BUG @FIXME this will only support one path parameter
-    const splitDefPath = defPath.split('/');
-    const splitPath = pathname.split('/');
-    const paramNameIndex = splitDefPath.findIndex(t => t.includes('{'));
-    if (!equalToIndex(paramNameIndex - 1, splitPath, splitDefPath)) {
-      return;
-    }
-    const paramName = splitDefPath[paramNameIndex].replace('{', '').replace('}', '');
-    const paramValue = splitPath[paramNameIndex];
-    if (typeof paramValue === 'string' && paramValue.length > 0) {
-      found = fn;
-      found.pathParams = { [paramName]: paramValue };
+      found.pathParams = {}; // [paramName]: paramValue };
+      const [names, values] = result;
+      names.forEach((paramName, paramIndex) => {
+        found.pathParams[paramName] = values[paramIndex];
+      });
     }
   });
   if (!found) {
