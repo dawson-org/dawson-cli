@@ -47,6 +47,7 @@ function findApi ({ method, pathname }) {
     const fn = API_DEFINITIONS[name];
     const def = fn.api;
     if (!def) return;
+    if (def.path === false) return;
     const defPath = `/${def.path}`;
     if (defPath === pathname && (def.method || 'GET') === method) {
       debug(`API handler method: ${name}`);
