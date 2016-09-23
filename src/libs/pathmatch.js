@@ -33,7 +33,7 @@ export function replaceAll (haystack) {
 
 export function compare (defPathname, pathname) {
   if (pathname === defPathname) {
-    return true;
+    return [[], []];
   }
   const [reString, partNames] = replaceAll(defPathname);
   const re = new RegExp('^' + reString + '$');
