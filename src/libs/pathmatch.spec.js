@@ -18,7 +18,7 @@ test('replaceAll should replace all {} groups with regexps', t => {
 });
 
 test('compare', t => {
-  t.deepEqual(compare('/foo/bar', '/foo/bar'), true);
+  t.deepEqual(compare('/foo/bar', '/foo/bar'), [[], []]);
   t.deepEqual(compare('/foo/bar', '/foo'), false);
   t.deepEqual(compare('/foo/bar', '/foo/bar/baz'), false);
   t.deepEqual(compare('/foo/{bar}', '/foo/xxx'), [['bar'], ['xxx']]);
