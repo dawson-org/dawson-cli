@@ -36,9 +36,9 @@ function findApi ({ method, pathname }) {
     if (found) return;
     const fn = API_DEFINITIONS[name];
     const def = fn.api;
-    if (!def.path) return;
     if (!def) return;
     if (def.path === false) return;
+    if (typeof def.path === 'undefined') return;
     if ((def.method || 'GET') !== method) return;
     const defPath = `/${def.path}`;
     const result = compare(defPath, pathname);
