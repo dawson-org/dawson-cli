@@ -24,7 +24,7 @@ Set your App's name and domain in the `package.json` (change to something *uniqu
 ```
 
 
-By default, **dawson** expects an ```api.js``` file which exports the functions to deploy. Each function *must* have an ```api``` property with at least a ```path```, this could be `false for lambda as event handler. That's it!
+By default, **dawson** expects an ```api.js``` file which exports the functions to deploy. Each function *must* have an ```api``` property with at least a ```path```, this could be `false` for lambda as event handler. That's it!
 
 ```javascript
 // the path "/hello" will display the string "You are awesome"

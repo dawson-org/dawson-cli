@@ -289,7 +289,7 @@ Each function exported by the top-level `api.js` must have an `api` property.
 * **policyStatements** (list of maps): Policy statements for this Lambda's Role, as you would define in a [CloudFormation template](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-iam-policy.html#cfn-iam-policies-policydocument).
 * **noWrap** (boolean, defaults to `false`): If true, this function call won't be wrapped in a Promise and it will be directly exported as the lambda's handler. It will receive these arguments (may vary based on the runtime): `event`, `context`, `callback`. For `application/json` content type, you *must* invoke the callback passing your stringified response in a `response` property (e.g.: `callback(null, { response: '"wow"' })`. For `text/html` content type: `callback(null, { html: '<html>....' })`.
 * **runtime** (string, defaults to `nodejs4.3`): Lambda runtime to use. Only NodeJS runtimes make sense. Valid values are `nodejs` and `nodejs4.3`. You should only use the default runtime.
-* **isEventHanlder** (boolean, default to false): if `path` is `false you can specify a function as event handler from S3, DynamoDB, SNS ecc ecc...
+* **isEventHanlder** (boolean, default to `false`): if `path` is `false` you can specify a function as event handler for S3, DynamoDB, SNS ecc ecc...
 
 
 ##### Example
