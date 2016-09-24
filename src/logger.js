@@ -69,20 +69,6 @@ export function warning (...args) {
   process.stderr.write('\n');
 }
 
-export function warning (...args) {
-  args.map(stringify).forEach(str => {
-    process.stderr.write(str.orange + ' ');
-  });
-  process.stderr.write('\n');
-}
-
-export function warning (...args) {
-  args.map(stringify).forEach(str => {
-    process.stderr.write(str.orange + ' ');
-  });
-  process.stderr.write('\n');
-}
-
 export function enableDebug () {
   DEBUG_LEVEL = true;
 }
