@@ -15,17 +15,17 @@
 
 You must define a `dawson` property, as follows:
 
-* **appName** (**required**, string): your app name, used in template and resource names. Keep it short but unique.  
+* **appName** (**required**, string): your app name, used in template and resource names. Keep it short but unique.
   NOTE: changing this causes the whole application to be deployed from scratch.
 * **domains** (**required**, list of strings): a list of at least one domain name to set as [CloudFront CNAME](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html). Domains must be unique globally in AWS.
 * **zipIgnore** (list of strings): a list of partial paths to ignore when zipping lambdas. **Do not** ignore `node_modules`.
 * **cloudfront** (boolean, or object, defaults to `true`): if `false`, the default CloudFront distribution won't be added to the CloudFormation template, so:
    * if you are deploying a new app, the deploy will be very quick, and no distribution will be created
    * if you are updating an app that has been previously deployed with `cloudfront !== false`, the distribution will be  **deleted** (this will take ~20min)
-   * if you are referencing the distribution from a custom resource your stack will fail  
- 
+   * if you are referencing the distribution from a custom resource your stack will fail
+
  You can optionally specify an object which maps app stages to booleans: `{ "dev": false, "prod": true }`
- 
+
  *This option controls the behaviour of the default CloudFront distribution that dawson creates, and does not apply to any custom resource.*
 * **cloudfrontRootOrigin** (either `assets` or `api`, defaults to `api`):
   * if "assets", use S3 assets (uploaded via `$ dawson upload-assets`) as [Default Cache Behaviour](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-web-values-specify.html#DownloadDistValuesCacheBehavior), i.e.: serve the root directory from S3, useful for Single Page Apps. Requests starting with `/prod` are forwarded to API Gateway.
@@ -92,6 +92,19 @@ fetchMe.api = {
 }
 ```
 
+##### Event handler
+
+```js
+export async function handlerEvent (event) {
+  console.log('Records received from DynamoDB/S3/Kinesis...', event.Records)
+  return 'OK'
+}
+handlerEvent.api = {
+  path: false,
+  isEventHandler: true,
+}
+```
+
 
 ##### Using async/await
 
@@ -122,14 +135,14 @@ listProjects.api = {
 };
 ```
 
-For `api` property reference, see [Function property reference](#function-property-reference).  
+For `api` property reference, see [Function property reference](#function-property-reference).
 For function params reference, see [Lambda parameters reference](#lambda parameters-reference).
 
 
 
 #### Customizing a dawson template
 
-If you need to add more Resources or modify Resources and Outputs created by `dawson` you may export a `processCFTemplate` function from your `api.js`.  
+If you need to add more Resources or modify Resources and Outputs created by `dawson` you may export a `processCFTemplate` function from your `api.js`.
 This function takes a CloudFormation Template (object, like [this](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/quickref-lambda.html)) and must return the new (possibly updated) template. `processCFTemplate` will be invoked right before calling CloudFormation's `UpdateStack` API. `dawson` will not process or parse this template further.
 
 CloudFormation is very powerful, but sometimes it might be very complex. Keep in mind that CloudFormation [Template Reference](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-reference.html) is your friend.
@@ -144,7 +157,7 @@ const PROJECTS_TABLE = {
       "Properties": {
         "AttributeDefinitions": [{
           "AttributeName": "ProjectId",
-          "AttributeType": "S"   
+          "AttributeType": "S"
         }],
         "KeySchema": [{
           "AttributeName" : "ProjectId",
@@ -180,7 +193,7 @@ export function processCFTemplate(template) {
 
 ##### Example 2: Modifying a Template
 
-Simply merge the new properties in the template.  
+Simply merge the new properties in the template.
 You may also use `Object.assign` or any other library to make this look nicer.
 
 ```js
@@ -220,7 +233,7 @@ Please, do not forget to return the **whole** template object, and not just the 
 
 ## Lambda parameters reference
 
-Unless `api.noWrap` is `true`, your function will be called with a single argument, which will follow
+Unless either `api.noWrap` or `api.isEventHandler` are `true`, your function will be called with a single argument, which will follow
 this spec:
 
 ```js
@@ -276,6 +289,7 @@ Each function exported by the top-level `api.js` must have an `api` property.
 * **policyStatements** (list of maps): Policy statements for this Lambda's Role, as you would define in a [CloudFormation template](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-iam-policy.html#cfn-iam-policies-policydocument).
 * **noWrap** (boolean, defaults to `false`): If true, this function call won't be wrapped in a Promise and it will be directly exported as the lambda's handler. It will receive these arguments (may vary based on the runtime): `event`, `context`, `callback`. For `application/json` content type, you *must* invoke the callback passing your stringified response in a `response` property (e.g.: `callback(null, { response: '"wow"' })`. For `text/html` content type: `callback(null, { html: '<html>....' })`.
 * **runtime** (string, defaults to `nodejs4.3`): Lambda runtime to use. Only NodeJS runtimes make sense. Valid values are `nodejs` and `nodejs4.3`. You should only use the default runtime.
+* **isEventHanlder** (boolean, default to false): if `path` is `false you can specify a function as event handler from S3, DynamoDB, SNS ecc ecc...
 
 
 ##### Example
@@ -299,6 +313,8 @@ myFunction.api = {
     ]] },
   }],
   noWrap: false,
-  runtime: "nodejs4.3"
+  runtime: "nodejs4.3",
+  // if path is false
+  isEventHandler: true
 };
 ```
