@@ -164,14 +164,13 @@ function uploadS3 (args) {
 export function zipAndUpload ({
   bucketName,
   appStageName,
-  functionName,
   indexFileContents,
   zipVersionsList,
   skip = false,
   excludeList = []
 }) {
   return Promise.resolve({
-    uuid: `${appStageName}-${functionName}-bundle`,
+    uuid: `${appStageName}-bundle`,
     bucketName,
     indexFileContents,
     skip,

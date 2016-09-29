@@ -24,20 +24,16 @@ Promise.resolve()
 `;
 
 
-function prepareIndexFile (name, apiConfig) {
-  if (apiConfig.noWrap === true) {
+function prepareIndexFile (apis) {
+  const exp = Object.keys(apis).map(name => {
+    const apiConfig = apis[name].api || {};
     return `
-    // This is the content of index.js
-    // which is require-d by lambda
-    // which then executes the handler property
-    // (you are using the .noWrap option)
-    //
-    require("babel-polyfill");
-    require('babel-register');
-    const runner = require('./api').${name};
-    module.exports.handler = runner;
+      module.exports.${name} = function (event, context, callback) {
+        const runner = require('./api').${name};
+        ${(apiConfig.noWrap !== true) ? RUNNER_FUNCTION_BODY : 'runner(event, context, callback);'}
+      };
     `;
-  }
+  });
 
   return `
   // This is the content of index.js
@@ -46,16 +42,14 @@ function prepareIndexFile (name, apiConfig) {
   //
   require("babel-polyfill");
   require('babel-register');
-  const runner = require('./api').${name};
-  module.exports.handler = function _handlerIndexWrapper(event, context, callback) {
-    ${RUNNER_FUNCTION_BODY}
-  }
+
+  ${exp.join('\n\n')}
   `;
 }
 
-export default function compileCode (name, apiConfig) {
+export default function compileCode (apis) {
   try {
-    const str = prepareIndexFile(name, apiConfig);
+    const str = prepareIndexFile(apis);
     return Promise.resolve(str);
   } catch (err) {
     error('Compiler error', err);

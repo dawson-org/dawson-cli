@@ -104,7 +104,7 @@ test('templateLambda', t => {
     LambdaMyFunction: {
       'Type': 'AWS::Lambda::Function',
       'Properties': {
-        'Handler': 'daniloindex.handler',
+        'Handler': `daniloindex.myFunction`,
         'Role': { 'Fn::GetAtt': ['ExecutionRoleForLambdaMyFunction', 'Arn'] },
         'Code': {
           S3Bucket: 'demobucket',
@@ -119,6 +119,7 @@ test('templateLambda', t => {
   };
   const actual = templateLambda({
     lambdaName: 'MyFunction',
+    handlerFunctionName: 'myFunction',
     zipS3Location: { Bucket: 'demobucket', Key: 'demokey', VersionId: 'demoversion' },
     runtime: 'foobar',
     policyStatements: []

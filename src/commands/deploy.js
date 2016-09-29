@@ -1,5 +1,4 @@
 
-import ProgressBar from 'progress';
 import { stripIndent } from 'common-tags';
 
 import { SETTINGS, API_DEFINITIONS } from '../config';
@@ -89,12 +88,22 @@ export async function deploy ({
     let templatePartials = {};
     const zipVersionsList = await listZipVersions({ bucketName: supportBucketName });
 
+    const skip = noUploads;
     const defs = Object.entries(API_DEFINITIONS);
     let currentCounter = 0;
 
-    log('*'.blue, `${noUploads ? 'loading' : 'zipping and uploading'} ${defs.length} functions:`);
-    const progressBar = new ProgressBar('  [:bar] :elapseds (ETA :etas)', { total: defs.length, width: 20 });
+    log('*'.blue, `now bundling ${defs.length - 1} functions, please be patient`);
+    const indexFileContents = await compiler(API_DEFINITIONS);
+    const zipS3Location = await zipAndUpload({
+      bucketName: supportBucketName,
+      appStageName: appStage,
+      indexFileContents,
+      skip,
+      excludeList: SETTINGS.zipIgnore,
+      zipVersionsList
+    });
 
+    log('*'.blue, `building CloudFormation template...`);
     for (const [index, def] of defs) {
       if (RESERVED_FUCTION_NAMES.includes(def.name)) {
         continue;
@@ -110,29 +119,17 @@ export async function deploy ({
         runtime
       } = def.api;
       const name = def.name;
-      const skip = !name.match(new RegExp(functionFilterRE)) || noUploads;
       currentCounter = currentCounter + 1;
-      progressBar.tick();
-      debug(`=> #${index} Found function ${name.bold} at ${httpMethod.bold} /${resourcePath.bold}`,
-        `${skip ? '* skipped' : ''}`);
+      debug(`=> #${index} Found function ${name.bold} at ${httpMethod.bold} /${resourcePath.bold}`);
       functionsHuman.push({
         name,
         httpMethod,
         resourcePath
       });
-      const indexFileContents = await compiler(name, def.api);
-      const zipS3Location = await zipAndUpload({
-        bucketName: supportBucketName,
-        appStageName: appStage,
-        functionName: name,
-        indexFileContents,
-        skip,
-        excludeList: SETTINGS.zipIgnore,
-        zipVersionsList
-      });
       const lambdaName = def.name[0].toUpperCase() + def.name.substring(1);
       const lambdaPartial = templateLambda({
         lambdaName,
+        handlerFunctionName: def.name,
         zipS3Location,
         policyStatements,
         runtime
