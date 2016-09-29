@@ -111,7 +111,7 @@ export function run (argv) {
     return awsLambdaName;
   })
   .then(awsLambdaName => {
-    return filterAndPrint(awsLambdaName, argv, 0, follow);
+    return filterAndPrint(awsLambdaName, argv, Date.now() - 3600 * 1000, follow);
   })
   .catch(err => {
     error('Error tailing logs', err.message, err);

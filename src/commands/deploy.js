@@ -4,8 +4,9 @@ import { stripIndent } from 'common-tags';
 import { SETTINGS, API_DEFINITIONS } from '../config';
 const { appName } = SETTINGS;
 
-import { debug, error, log, table, danger, success, title } from '../logger';
+import { debug, error, log, danger, success } from '../logger';
 import compiler from '../libs/compiler';
+import { run as logCommand } from './log';
 
 import {
   zipAndUpload,
@@ -67,10 +68,9 @@ function shouldDeployCloudfront ({ appStage }) {
 
 export async function deploy ({
   appStage,
-  functionFilterRE,
   noUploads = false,
   dangerDeleteResources = false
-}) {
+}, argv) {
   const deployCloudfront = shouldDeployCloudfront({ appStage });
   const stackName = templateStackName({ appName, stage: appStage });
   const supportStackName = templateStackName({ appName: `${appName}Support` });
@@ -237,35 +237,17 @@ export async function deploy ({
     }
 
     await createOrUpdateStack({ stackName, cfParams });
+
     log('*'.blue, 'waiting for stack update to complete...');
+    await waitForUpdateCompleted({ stackName });
 
-    const outputs = await waitForUpdateCompleted({ stackName });
-    const cloudfrontDNS = outputs.find(o => o.OutputKey === 'CloudFrontDNS').OutputValue;
-    const apiPrefix = outputs.find(o => o.OutputKey === 'ApiGatewayUrl').OutputValue;
-    const functionsTable = functionsHuman.map(f => ({
-      ...f,
-      httpMethod: (f.resourcePath !== false) ? f.httpMethod : '',
-      resourcePath: (f.resourcePath !== false) ? `${apiPrefix}/${f.resourcePath}` : '(No endpoint)'
-    }));
     success('*'.blue, 'deploy completed!\n');
-
-    title('Your API endpoints are:'.bold);
-    table(functionsTable);
-
-    title('Your public endpoint is:');
-    if (deployCloudfront) {
-      log(`https://${cloudfrontDNS}`);
-      log(`Make sure to point DNS records for ${SETTINGS.domains.join(', ')} to this distribution.`);
-      if (SETTINGS.cloudfrontRootOrigin === 'assets') {
-        log('Assets are served from the root; requests starting with prod/ are forwarded to the API.');
-      } else {
-        log(`The API is served from the root; requests starting with assets/ are served from the assets folder.`);
-      }
-    } else {
-      log('N/A: cloudFront is disabled from package.json settings');
-    }
-
     log('');
+
+    if (argv.functionName) {
+      // we may want to tail logs for one function
+      return logCommand({ ...argv, follow: true });
+    }
   } catch (e) {
     error('An error occurred while deploying your application. Re-run this command with --verbose to debug.');
     debug('Stack trace:', e.stack);
@@ -279,11 +261,10 @@ export async function deploy ({
 
 export function run (argv) {
   deploy({
-    functionFilterRE: argv['function-name'],
     noUploads: argv['no-uploads'],
     dangerDeleteResources: argv['danger-delete-resources'],
     appStage: argv.stage
-  })
+  }, argv)
   .catch(error => error('Uncaught error', error.message, error.stack))
-  .then(() => process.exit(0));
+  .then(() => {});
 }
