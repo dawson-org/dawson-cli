@@ -45,8 +45,12 @@ test('templateLambdaExecutionRole', t => {
             'Statement': [
               {
                 'Effect': 'Allow',
-                'Action': ['logs:*'],
-                'Resource': 'arn:aws:logs:*:*:*'
+                'Action': [
+                  'logs:CreateLogGroup',
+                  'logs:CreateLogStream',
+                  'logs:PutLogEvents'
+                ],
+                'Resource': { 'Fn::Sub': 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*' } // eslint-disable-line
               }, {
                 Effect: 'Deny',
                 Action: '*',
@@ -93,8 +97,12 @@ test('templateLambda', t => {
             'Statement': [
               {
                 'Effect': 'Allow',
-                'Action': ['logs:*'],
-                'Resource': 'arn:aws:logs:*:*:*'
+                'Action': [
+                  'logs:CreateLogGroup',
+                  'logs:CreateLogStream',
+                  'logs:PutLogEvents'
+                ],
+                'Resource': { 'Fn::Sub': 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*' } // eslint-disable-line
               }
             ]
           }
