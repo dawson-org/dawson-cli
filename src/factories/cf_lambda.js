@@ -35,8 +35,12 @@ export function templateLambdaExecutionRole ({
             'Statement': [
               {
                 'Effect': 'Allow',
-                'Action': ['logs:*'],
-                'Resource': 'arn:aws:logs:*:*:*'
+                'Action': [
+                  'logs:CreateLogGroup',
+                  'logs:CreateLogStream',
+                  'logs:PutLogEvents'
+                ],
+                'Resource': { 'Fn::Sub': 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*' } // eslint-disable-line
               },
               ...policyStatements
             ]
@@ -56,6 +60,7 @@ module.exports.handler = function (event, context, callback) {
 
 export function templateLambda ({
   lambdaName,
+  handlerFunctionName,
   inlineCode = LAMBDA_DEMO_INLINE_CODE,
   zipS3Location = null,
   policyStatements,
@@ -73,7 +78,7 @@ export function templateLambda ({
     [`${templateLambdaName({ lambdaName })}`]: {
       'Type': 'AWS::Lambda::Function',
       'Properties': {
-        'Handler': 'daniloindex.handler',
+        'Handler': `daniloindex.${handlerFunctionName}`,
         'Role': { 'Fn::GetAtt': [`${templateLambdaRoleName({ lambdaName })}`, 'Arn'] },
         'Code': code,
         'Runtime': runtime,
