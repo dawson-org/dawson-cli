@@ -71,11 +71,11 @@ test('templateRest', t => {
       'Type': 'AWS::ApiGateway::RestApi',
       'Properties': {
         'Description': 'REST API for dawson app',
-        'Name': 'AppAPI'
+        'Name': 'AppAPIStage'
       }
     }
   };
-  const actual = templateRest();
+  const actual = templateRest({ appStage: 'stage' });
   t.deepEqual(actual, expected, 'should return a rest api template');
   t.end();
 });

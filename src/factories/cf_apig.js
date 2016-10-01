@@ -31,13 +31,13 @@ export function templateModelName ({ modelName }) {
 }
 
 
-export function templateRest () {
+export function templateRest ({ appStage }) {
   return {
     [`${templateAPIID()}`]: {
       'Type': 'AWS::ApiGateway::RestApi',
       'Properties': {
         'Description': `REST API for dawson app`,
-        'Name': `AppAPI`
+        'Name': `AppAPI${appStage[0].toUpperCase()}${appStage.slice(1)}`
       }
     }
   };
