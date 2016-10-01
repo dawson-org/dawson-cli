@@ -174,7 +174,7 @@ export async function deploy ({
     let cfTemplate = {
       Resources: {
         ...templateAssetsBucket(),
-        ...templateRest(),
+        ...templateRest({ appStage }),
         ...templatePartials,
         ...templateDeployment({
           deploymentUid,
