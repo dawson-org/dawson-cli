@@ -24,7 +24,7 @@ Set your App's name and domain in the `package.json` (change to something *uniqu
 ```
 
 
-By default, **dawson** expects an ```api.js``` file which exports the functions to deploy. Each function *must* have an ```api``` property with at least a ```path```. That's it!
+By default, **dawson** expects an ```api.js``` file which exports the functions to deploy. Each function *must* have an ```api``` property with at least a ```path```, this could be `false` for lambda as event handler. That's it!
 
 ```javascript
 // the path "/hello" will display the string "You are awesome"
@@ -52,7 +52,7 @@ Export ```AWS_ACCESS_KEY_ID```, ```AWS_SECRET_ACCESS_KEY``` (or `AWS_PROFILE`) a
 $ dawson deploy
 ```
 
-Later, after making some changes, you can deploy only this function: `$ dawson deploy --function index`.  
+Later, after making some changes, you can deploy only this function: `$ dawson deploy --function index`.
 You can now inspect execution logs using `$ dawson log -f index` or learn more from `$ dawson --help` and the [Documentation](./README.md).
 
 ### 3. Enjoy!

@@ -4,7 +4,7 @@ import { error } from '../logger';
 export const RUNNER_FUNCTION_BODY = `
 Promise.resolve()
 .then(function () {
-  return runner(event);
+  return runner(event, context);
 })
 .then(function (data) {
   if (event.meta && event.meta.expectedResponseContentType.indexOf('text/html') !== -1) {
@@ -24,7 +24,7 @@ Promise.resolve()
 `;
 
 
-function prepareIndexFile (name, apiConfig) {
+function prepareIndexFile (name, apiConfig, stackName) {
   if (apiConfig.noWrap === true) {
     return `
     // This is the content of index.js
@@ -36,6 +36,56 @@ function prepareIndexFile (name, apiConfig) {
     require('babel-register');
     const runner = require('./api').${name};
     module.exports.handler = runner;
+    `;
+  }
+
+  if (apiConfig.isEventHandler === true) {
+    return `
+    // This is the content of index.js
+    // which is require-d by lambda
+    // which before describe all ${stackName} stack outputs 
+    // which then executes the handler property
+    //
+    require("babel-polyfill");
+    require('babel-register');
+
+    const AWS = require('aws-sdk');
+    const cloudformation = new AWS.CloudFormation({});
+    const stackName = '${stackName}';
+    var stackOutputs = null;
+
+    function describeOutputs() {
+        if (!stackOutputs) {
+            const params = {
+                StackName: stackName,
+            };
+            return cloudformation.describeStacks(params).promise()
+            .then(result => {
+                const outputs = result.Stacks[0].Outputs;
+                const ret = {};
+                outputs.forEach(output => {
+                   ret[output.OutputKey] = output.OutputValue; 
+                });
+                return ret;
+            })
+            .catch(err => {
+                console.error(\`Error describing stack ${stackName}\`, err.message, err.stack);
+            });
+        } else {
+            return Promise.resolve(stackOutputs);
+        }
+    }
+
+    const runner = require('./api').${name};
+    module.exports.handler = function _handlerIndexWrapper(event, context, callback) {
+      describeOutputs().then(outputsMap => {
+        stackOutputs = outputsMap;
+        context.templateOutputs = stackOutputs;
+        runner(event, context)
+        .then(result => callback(null, result))
+        .catch(callback);
+      });
+    }
     `;
   }
 
@@ -53,9 +103,9 @@ function prepareIndexFile (name, apiConfig) {
   `;
 }
 
-export default function compileCode (name, apiConfig) {
+export default function compileCode (name, apiConfig, stackName) {
   try {
-    const str = prepareIndexFile(name, apiConfig);
+    const str = prepareIndexFile(name, apiConfig, stackName);
     return Promise.resolve(str);
   } catch (err) {
     error('Compiler error', err);
