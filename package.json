@@ -5,8 +5,8 @@
   "repository": "https://github.com/lusentis/dawson",
   "main": "lib/index.js",
   "scripts": {
-    "compile": "babel -s true -d lib/ src/",
-    "compile:watch": "babel --watch -s true -d lib/ src/",
+    "compile": "babel -s true -d lib/ src/ --ignore *.AppleDouble*",
+    "compile:watch": "babel --watch -s true -d lib/ src/ --ignore *.AppleDouble*",
     "dev": "npm run compile:watch",
     "clean": "rm -rf lib",
     "prepublish": "npm run clean && npm run compile",
