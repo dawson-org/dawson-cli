@@ -1,6 +1,29 @@
 
 import { error } from '../logger';
 
+export function getCWEventHanlderGlobalVariables ({ lambdaName }) {
+  return `
+    var __dawsonCWEventLambdaWasCold${lambdaName} = true;
+    var __dawsonCWEventLambdaWasColdOn${lambdaName} = Date.now();
+  `;
+}
+
+export function getCWEventHanlderBody ({ lambdaName }) {
+  return `
+    console.log(event);
+    if (__dawsonCWEventLambdaWasCold${lambdaName}) {
+      __dawsonCWEventLambdaWasCold${lambdaName} = false;
+      console.log('Warming up on', new Date());
+    } else {
+      console.log('Lambda first call was on', new Date(__dawsonCWEventLambdaWasColdOn${lambdaName}));
+      console.log('Lambda kept warm for', (Date.now() - __dawsonCWEventLambdaWasColdOn${lambdaName}) / 1000, 'seconds');
+    }
+    if (event.source && event.source === 'aws.events') {
+      return callback(null, true);
+    }
+  `;
+}
+
 export const RUNNER_FUNCTION_BODY = `
 Promise.resolve()
 .then(function () {
@@ -22,7 +45,9 @@ Promise.resolve()
   return callback(err);
 });
 `;
-const RUNNER_FUNCTION_BODY_UNWRAPPED = 'runner(event, context, callback);';
+const RUNNER_FUNCTION_BODY_UNWRAPPED = `
+runner(event, context, callback);
+`;
 const RUNNER_FUNCTION_BODY_EVENTHANDLER = `
 describeOutputs().then(outputsMap => {
   stackOutputs = outputsMap;
@@ -34,6 +59,15 @@ describeOutputs().then(outputsMap => {
 `;
 
 function prepareIndexFile (apis, stackName) {
+  const globals = Object.keys(apis).map(name => {
+    const apiConfig = apis[name].api || {};
+    if (apiConfig.keepWarm === true) {
+      return getCWEventHanlderGlobalVariables({ lambdaName: name });
+    } else {
+      return '';
+    }
+  });
+
   const exp = Object.keys(apis).map(name => {
     const apiConfig = apis[name].api || {};
     let body;
@@ -48,6 +82,7 @@ function prepareIndexFile (apis, stackName) {
     }
     return `
       module.exports.${name} = function (event, context, callback) {
+        ${(apiConfig.keepWarm === true) ? getCWEventHanlderBody({ lambdaName: name }) : ''}
         const runner = require('./api').${name};
         ${body}
       };
@@ -89,6 +124,10 @@ function prepareIndexFile (apis, stackName) {
       }
   }
 
+  // global lambda-specific variables (keepwarm etc...):
+  ${globals.join('\n\n')}
+
+  // lambdas:
   ${exp.join('\n\n')}
   `;
 }

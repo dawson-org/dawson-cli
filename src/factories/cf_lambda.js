@@ -11,8 +11,13 @@ export function templateLambdaName ({ lambdaName }) {
 
 export function templateLambdaExecutionRole ({
   lambdaName,
+  keepWarm = false,
   policyStatements = []
 }) {
+  const lambdaPrincipalService = ['lambda.amazonaws.com'];
+  if (keepWarm === true) {
+    lambdaPrincipalService.push('events.amazonaws.com');
+  }
   return {
     [`${templateLambdaRoleName({ lambdaName })}`]: {
       'Type': 'AWS::IAM::Role',
@@ -22,7 +27,7 @@ export function templateLambdaExecutionRole ({
           'Statement': [{
             'Effect': 'Allow',
             'Principal': {
-              'Service': ['lambda.amazonaws.com']
+              'Service': lambdaPrincipalService
             },
             'Action': ['sts:AssumeRole']
           }]
@@ -109,6 +114,7 @@ export function templateLambda ({
   inlineCode = LAMBDA_DEMO_INLINE_CODE,
   zipS3Location = null,
   policyStatements,
+  keepWarm = false,
   runtime = 'nodejs4.3'
 }) {
   const code = (zipS3Location)
@@ -119,7 +125,11 @@ export function templateLambda ({
     }
     : { ZipFile: inlineCode };
   return {
-    ...templateLambdaExecutionRole({ lambdaName, policyStatements }),
+    ...templateLambdaExecutionRole({
+      lambdaName,
+      policyStatements,
+      keepWarm
+    }),
     [`${templateLambdaName({ lambdaName })}`]: {
       'Type': 'AWS::Lambda::Function',
       'Properties': {

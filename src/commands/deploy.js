@@ -43,6 +43,10 @@ import {
 } from '../factories/cf_lambda';
 
 import {
+  templateCWEventRule
+} from '../factories/cf_cloudwatch';
+
+import {
   templateAssetsBucket,
   templateAssetsBucketName
 } from '../factories/cf_s3';
@@ -116,7 +120,8 @@ export async function deploy ({
         method: httpMethod = 'GET',
         policyStatements: policyStatements = [],
         responseContentType = 'text/html',
-        runtime
+        runtime,
+        keepWarm = false
       } = def.api;
       const name = def.name;
       currentCounter = currentCounter + 1;
@@ -132,7 +137,8 @@ export async function deploy ({
         handlerFunctionName: def.name,
         zipS3Location,
         policyStatements,
-        runtime
+        runtime,
+        keepWarm
       });
       if (resourcePath === false) {
         templatePartials = {
@@ -158,6 +164,14 @@ export async function deploy ({
           })
         };
         methodsInTemplate.push({ resourceName, httpMethod });
+      }
+      if (keepWarm === true) {
+        templatePartials = {
+          ...templatePartials,
+          ...templateCWEventRule({
+            lambdaName
+          })
+        };
       }
     }
 
