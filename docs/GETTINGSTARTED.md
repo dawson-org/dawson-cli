@@ -52,7 +52,7 @@ Export ```AWS_ACCESS_KEY_ID```, ```AWS_SECRET_ACCESS_KEY``` (or `AWS_PROFILE`) a
 $ dawson deploy
 ```
 
-Later, after making some changes, you can deploy only this function: `$ dawson deploy --function index`.  
+Later, after making some changes, you can deploy only this function: `$ dawson deploy --function index`.
 You can now inspect execution logs using `$ dawson log -f index` or learn more from `$ dawson --help` and the [Documentation](./README.md).
 
 ### 3. Enjoy!
