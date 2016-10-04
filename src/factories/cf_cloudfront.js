@@ -102,7 +102,6 @@ export function templateCloudfrontDistribution ({
     delete s3CB.PathPattern; // serve root from s3
     apiCB.PathPattern = 'prod/*'; // serve api from api/
     delete apiOrigin.OriginPath; // do not add trailing prod/ when fwding api
-    s3Origin.OriginPath = '/assets'; // add trailing dir when fwding s3
     defaultRootObject = 'index.html';
     defaultCB = s3CB;
     otherCB = apiCB;
