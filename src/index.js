@@ -69,6 +69,8 @@ const argv = yargs
       .describe('stage', 'Application stage to work on')
       .default('stage', DAWSON_STAGE)
       .alias('s')
+      .describe('output-name', 'Output Name for the resource for which you want the PhysicalResouceId')
+      .alias('o')
       .help()
   , describeRun)
 
