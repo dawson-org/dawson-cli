@@ -1,14 +1,14 @@
 
 import { error } from '../logger';
 
-export function getCWEventHanlderGlobalVariables ({ lambdaName }) {
+export function getCWEventHandlerGlobalVariables ({ lambdaName }) {
   return `
     var __dawsonCWEventLambdaWasCold${lambdaName} = true;
     var __dawsonCWEventLambdaWasColdOn${lambdaName} = Date.now();
   `;
 }
 
-export function getCWEventHanlderBody ({ lambdaName }) {
+export function getCWEventHandlerBody ({ lambdaName }) {
   return `
     if (__dawsonCWEventLambdaWasCold${lambdaName}) {
       __dawsonCWEventLambdaWasCold${lambdaName} = false;
@@ -61,7 +61,7 @@ function prepareIndexFile (apis, stackName) {
   const globals = Object.keys(apis).map(name => {
     const apiConfig = apis[name].api || {};
     if (apiConfig.keepWarm === true) {
-      return getCWEventHanlderGlobalVariables({ lambdaName: name });
+      return getCWEventHandlerGlobalVariables({ lambdaName: name });
     } else {
       return '';
     }
@@ -81,7 +81,7 @@ function prepareIndexFile (apis, stackName) {
     }
     return `
       module.exports.${name} = function (event, context, callback) {
-        ${(apiConfig.keepWarm === true) ? getCWEventHanlderBody({ lambdaName: name }) : ''}
+        ${(apiConfig.keepWarm === true) ? getCWEventHandlerBody({ lambdaName: name }) : ''}
         const runner = require('./api').${name};
         ${body}
       };
