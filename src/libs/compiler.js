@@ -10,7 +10,6 @@ export function getCWEventHanlderGlobalVariables ({ lambdaName }) {
 
 export function getCWEventHanlderBody ({ lambdaName }) {
   return `
-    console.log(event);
     if (__dawsonCWEventLambdaWasCold${lambdaName}) {
       __dawsonCWEventLambdaWasCold${lambdaName} = false;
       console.log('Warming up on', new Date());
