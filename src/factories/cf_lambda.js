@@ -15,9 +15,6 @@ export function templateLambdaExecutionRole ({
   policyStatements = []
 }) {
   const lambdaPrincipalService = ['lambda.amazonaws.com'];
-  if (keepWarm === true) {
-    lambdaPrincipalService.push('events.amazonaws.com');
-  }
   return {
     [`${templateLambdaRoleName({ lambdaName })}`]: {
       'Type': 'AWS::IAM::Role',

@@ -1,6 +1,5 @@
 
 import {
-  templateLambdaRoleName,
   templateLambdaName
 } from './cf_lambda';
 
@@ -31,7 +30,6 @@ export function templateCWEventRule ({ lambdaName }) {
     [`${templateCWEventRuleName({ lambdaName })}`]: {
       'Type': 'AWS::Events::Rule',
       'Properties': {
-        'RoleArn': { 'Fn::GetAtt': [`${templateLambdaRoleName({ lambdaName })}`, 'Arn'] },
         'ScheduleExpression': 'rate(2 minutes)',
         'State': 'ENABLED',
         'Targets': [{
