@@ -32,6 +32,7 @@ const argv = yargs
       .describe('stage', 'Application stage to work on')
       .default('stage', DAWSON_STAGE)
       .alias('s')
+      .describe('dryrun', 'Jump the deploy fase')
       .help()
   , deployRun)
 

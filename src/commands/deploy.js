@@ -82,8 +82,12 @@ export async function deploy ({
   const supportStackName = templateStackName({ appName: `${appName}Support` });
   try {
     // create support stack (e.g.: temp s3 buckets)
-    log('*'.blue, 'updating support resources...');
-    await createSupportResources({ stackName: supportStackName });
+    if (!argv.dryrun) {
+      log('*'.blue, 'updating support resources...');
+      await createSupportResources({ stackName: supportStackName });
+    } else {
+      log('*'.yellow, 'launch with --dryrun option, not updating support resources');
+    }
 
     const supportBucketName = (await getStackOutputs({ stackName: supportStackName }))
       .find(o => o.OutputKey === 'SupportBucket').OutputValue;
@@ -254,10 +258,14 @@ export async function deploy ({
       await removeStackPolicy({ stackName });
     }
 
-    await createOrUpdateStack({ stackName, cfParams });
+    await createOrUpdateStack({ stackName, cfParams, dryrun: argv.dryrun });
 
-    log('*'.blue, 'waiting for stack update to complete...');
-    await waitForUpdateCompleted({ stackName });
+    if (!argv.dryrun) {
+      log('*'.blue, 'waiting for stack update to complete...');
+      await waitForUpdateCompleted({ stackName });
+    } else {
+      log('*'.yellow, 'nothing has been deployed because you launch this command with --dryrun');
+    }
 
     success('*'.blue, 'deploy completed!\n');
     log('');
