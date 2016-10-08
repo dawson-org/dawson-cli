@@ -290,6 +290,7 @@ Each function exported by the top-level `api.js` must have an `api` property.
 * **noWrap** (boolean, defaults to `false`): If true, this function call won't be wrapped in a Promise and it will be directly exported as the lambda's handler. It will receive these arguments (may vary based on the runtime): `event`, `context`, `callback`. For `application/json` content type, you *must* invoke the callback passing your stringified response in a `response` property (e.g.: `callback(null, { response: '"wow"' })`. For `text/html` content type: `callback(null, { html: '<html>....' })`.
 * **runtime** (string, defaults to `nodejs4.3`): Lambda runtime to use. Only NodeJS runtimes make sense. Valid values are `nodejs` and `nodejs4.3`. You should only use the default runtime.
 * **isEventHanlder** (boolean, default to `false`): if `path` is `false` you can specify a function as event handler for S3, DynamoDB, SNS ecc ecc...
+* **keepWarm** (boolean, default to `false`): Lambda functions because of their nature have a very long (1, 2 seconds) startup time for the first time, see documentation for more information: [@@@ link the documentation](link). For avoid this drawback dawson can deploy a Cloudwatch Event Rule that call your lambda every 2 minutes and log on cloudwatch if the lambda was cold or was already warmed up. More info below.
 
 
 ##### Example
@@ -317,4 +318,30 @@ myFunction.api = {
   // if path is false
   isEventHandler: true
 };
+```
+
+##### Cloudwatch Event Rule
+Setting `keepWarm: true` on your lambda dawson will add an Event::Rule and a Lambda::Permission resources in your template. Something like:
+
+```
+  'CWEventRule${lambdaName}': {
+    'Type': 'AWS::Events::Rule',
+    'Properties': {
+      'ScheduleExpression': 'rate(2 minutes)',
+      'State': 'ENABLED',
+      'Targets': [{
+        'Arn': { 'Fn::GetAtt': '${lambdaName}', 'Arn'] },
+        'Id': 'dawson-${lambdaName}-keep-warm'
+      }]
+    }
+  },
+  'CWEventPerm${lambdaName}': {
+    'Type': 'AWS::Lambda::Permission',
+    'Properties': {
+      'FunctionName': { 'Ref': '${lambdaName}' },
+      'Action': 'lambda:InvokeFunction',
+      'Principal': 'events.amazonaws.com',
+      'SourceArn': { 'Fn::GetAtt': ['CWEventRule${lambdaName}', 'Arn'] }
+    }
+  }
 ```
