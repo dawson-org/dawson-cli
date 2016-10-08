@@ -322,7 +322,7 @@ myFunction.api = {
 ```
 
 ##### Cloudwatch Event Rule
-Setting `keepWarm: true` on your lambda dawson will add an Event::Rule and a Lambda::Permission resources in your template. Something like:
+Setting `keepWarm: true` on your lambda dawson will add an `Event::Rule` and a `Lambda::Permission` resources in your template. Something like:
 
 ```javascript
 {
