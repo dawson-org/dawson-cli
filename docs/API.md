@@ -316,7 +316,8 @@ myFunction.api = {
   noWrap: false,
   runtime: "nodejs4.3",
   // if path is false
-  isEventHandler: true
+  isEventHandler: true,
+  keepWarm: process.env.NODE_ENV === 'production'
 };
 ```
 
