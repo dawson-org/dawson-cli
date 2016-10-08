@@ -323,7 +323,8 @@ myFunction.api = {
 ##### Cloudwatch Event Rule
 Setting `keepWarm: true` on your lambda dawson will add an Event::Rule and a Lambda::Permission resources in your template. Something like:
 
-```
+```javascript
+{
   'CWEventRule${lambdaName}': {
     'Type': 'AWS::Events::Rule',
     'Properties': {
@@ -344,4 +345,5 @@ Setting `keepWarm: true` on your lambda dawson will add an Event::Rule and a Lam
       'SourceArn': { 'Fn::GetAtt': ['CWEventRule${lambdaName}', 'Arn'] }
     }
   }
+}
 ```
