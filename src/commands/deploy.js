@@ -219,6 +219,9 @@ export async function deploy ({
         },
         DeploymentId: {
           Value: { 'Ref': `${templateDeploymentName({ deploymentUid })}` }
+        },
+        DawsonStageName: {
+          Value: stageName
         }
       }
     };
