@@ -17,7 +17,7 @@ test('TemplateCWEventRuleName', t => {
 test('TemplateCWEventRulePermissionName', t => {
   const expected = 'CWEventPermMyLambdaName';
   const actual = templateCWEventInvokeLambdaNamePermission({ lambdaName: 'MyLambdaName' });
-  t.equal(actual, expected, 'should return lambda name prefixed by CWEventRule');
+  t.equal(actual, expected, 'should return lambda name prefixed by CWEventPerm');
   t.end();
 });
 
@@ -45,6 +45,6 @@ test('TemplateCWEventRuleAndLambdaPermission', t => {
     }
   };
   const actual = templateCWEventRule({ lambdaName: 'MyLambdaName' });
-  t.deepEqual(actual, expected, 'should return a CloudWatch Event Rule and Lambda Permission template');
+  t.deepEqual(actual, expected, 'should return a CloudWatch Events Rule and Lambda Permission template');
   t.end();
 });
