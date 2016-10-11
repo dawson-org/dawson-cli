@@ -159,7 +159,7 @@ export async function deploy ({
             responseContentType
           })
         };
-        methodsInTemplate.push({ resourceName, httpMethod, resourcePath });
+        methodsInTemplate.push({ resourceName, httpMethod });
       }
     }
 
@@ -225,8 +225,7 @@ export async function deploy ({
       ...templateStage({
         stageName,
         deploymentUid,
-        stageVariables,
-        dependsOnMethods: methodsInTemplate
+        stageVariables
       }),
       ...templateCloudWatchRole(),
       ...templateAccount()
