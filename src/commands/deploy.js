@@ -86,7 +86,7 @@ export async function deploy ({
       log('*'.blue, 'updating support resources...');
       await createSupportResources({ stackName: supportStackName });
     } else {
-      log('*'.yellow, 'launch with --dryrun option, not updating support resources');
+      log('*'.yellow, 'support resources were not updated because you have launched this command with --dryrun');
     }
 
     const supportBucketName = (await getStackOutputs({ stackName: supportStackName }))
