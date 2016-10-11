@@ -67,12 +67,9 @@ function zipRoot (args) {
     skip,
     excludeList
   } = args;
-  excludeList.push('.git');
-  excludeList.push('.AppleDouble');
   if (skip) { return Promise.resolve(args); }
-  const excludeArg = (excludeList && excludeList.length > 0)
-    ? ('--exclude ' + excludeList.map(i => `\\*${i}\\*`).join(' '))
-    : '';
+  const excludeArg = '--exclude ' +
+    [...excludeList, '.git', '.AppleDouble'].map(i => `\\*${i}\\*`).join(' ');
   debug('   zip cmd:'.gray, `zip -r ${excludeArg} ${tempZipFile} .`);
   return Promise.resolve()
   .then(() =>
@@ -167,14 +164,13 @@ function uploadS3 (args) {
 export function zipAndUpload ({
   bucketName,
   appStageName,
-  functionName,
   indexFileContents,
   zipVersionsList,
   skip = false,
   excludeList = []
 }) {
   return Promise.resolve({
-    uuid: `${appStageName}-${functionName}-bundle`,
+    uuid: `${appStageName}-bundle`,
     bucketName,
     indexFileContents,
     skip,

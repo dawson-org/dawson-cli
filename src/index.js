@@ -20,7 +20,7 @@ const argv = yargs
 
   .command('deploy', 'Deploy your app or a single function', () =>
     yargs
-      .describe('function-name', 'Only deploy the specified function(s) (regexp). If not specified, deploys all the functions.')
+      .describe('function-name', 'When the deploy is completed, tail logs for this function')
       .alias('f', 'function-name')
       .boolean('no-uploads')
       .default('no-uploads', false)

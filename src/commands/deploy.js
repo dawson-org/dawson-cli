@@ -1,12 +1,12 @@
 
-import ProgressBar from 'progress';
 import { stripIndent } from 'common-tags';
 
 import { SETTINGS, API_DEFINITIONS } from '../config';
 const { appName } = SETTINGS;
 
-import { debug, error, log, table, danger, success, title } from '../logger';
+import { debug, error, log, danger, success } from '../logger';
 import compiler from '../libs/compiler';
+import { run as logCommand } from './log';
 
 import {
   zipAndUpload,
@@ -68,10 +68,9 @@ function shouldDeployCloudfront ({ appStage }) {
 
 export async function deploy ({
   appStage,
-  functionFilterRE,
   noUploads = false,
   dangerDeleteResources = false
-}) {
+}, argv) {
   const deployCloudfront = shouldDeployCloudfront({ appStage });
   const stackName = templateStackName({ appName, stage: appStage });
   const supportStackName = templateStackName({ appName: `${appName}Support` });
@@ -89,12 +88,22 @@ export async function deploy ({
     let templatePartials = {};
     const zipVersionsList = await listZipVersions({ bucketName: supportBucketName });
 
+    const skip = noUploads;
     const defs = Object.entries(API_DEFINITIONS);
     let currentCounter = 0;
 
-    log('*'.blue, `${noUploads ? 'loading' : 'zipping and uploading'} ${defs.length} functions:`);
-    const progressBar = new ProgressBar('  [:bar] :elapseds (ETA :etas)', { total: defs.length, width: 20 });
+    log('*'.blue, `now bundling ${defs.length - 1} functions, please be patient`);
+    const indexFileContents = await compiler(API_DEFINITIONS);
+    const zipS3Location = await zipAndUpload({
+      bucketName: supportBucketName,
+      appStageName: appStage,
+      indexFileContents,
+      skip,
+      excludeList: SETTINGS.zipIgnore,
+      zipVersionsList
+    });
 
+    log('*'.blue, `building CloudFormation template...`);
     for (const [index, def] of defs) {
       if (RESERVED_FUCTION_NAMES.includes(def.name)) {
         continue;
@@ -103,58 +112,53 @@ export async function deploy ({
         throw new Error(`You must specify an 'api' property for '${def.name}' function`);
       }
       const {
-        path: resourcePath = null,
+        path: resourcePath = false,
         method: httpMethod = 'GET',
         policyStatements: policyStatements = [],
         responseContentType = 'text/html',
         runtime
       } = def.api;
       const name = def.name;
-      const skip = !name.match(new RegExp(functionFilterRE)) || noUploads;
       currentCounter = currentCounter + 1;
-      progressBar.tick();
-      debug(`=> #${index} Found function ${name.bold} at ${httpMethod.bold} /${resourcePath.bold}`,
-        `${skip ? '* skipped' : ''}`);
+      debug(`=> #${index} Found function ${name.bold} at ${httpMethod.bold} /${resourcePath.bold}`);
       functionsHuman.push({
         name,
         httpMethod,
         resourcePath
       });
-      const indexFileContents = await compiler(name, def.api);
-      const zipS3Location = await zipAndUpload({
-        bucketName: supportBucketName,
-        appStageName: appStage,
-        functionName: name,
-        indexFileContents,
-        skip,
-        excludeList: SETTINGS.zipIgnore,
-        zipVersionsList
-      });
       const lambdaName = def.name[0].toUpperCase() + def.name.substring(1);
       const lambdaPartial = templateLambda({
         lambdaName,
+        handlerFunctionName: def.name,
         zipS3Location,
         policyStatements,
         runtime
       });
-      const {
-        resourceName,
-        templateResourcePartial
-      } = templateResourceHelper({
-        resourcePath
-      });
-      templatePartials = {
-        ...templatePartials,
-        ...templateResourcePartial,
-        ...lambdaPartial,
-        ...templateMethod({
+      if (resourcePath === false) {
+        templatePartials = {
+          ...templatePartials,
+          ...lambdaPartial
+        };
+      } else {
+        const {
           resourceName,
-          httpMethod,
-          lambdaName,
-          responseContentType
-        })
-      };
-      methodsInTemplate.push({ resourceName, httpMethod });
+          templateResourcePartial
+        } = templateResourceHelper({
+          resourcePath
+        });
+        templatePartials = {
+          ...templatePartials,
+          ...templateResourcePartial,
+          ...lambdaPartial,
+          ...templateMethod({
+            resourceName,
+            httpMethod,
+            lambdaName,
+            responseContentType
+          })
+        };
+        methodsInTemplate.push({ resourceName, httpMethod });
+      }
     }
 
     log('');
@@ -168,7 +172,7 @@ export async function deploy ({
     let cfTemplate = {
       Resources: {
         ...templateAssetsBucket(),
-        ...templateRest(),
+        ...templateRest({ appStage }),
         ...templatePartials,
         ...templateDeployment({
           deploymentUid,
@@ -233,34 +237,17 @@ export async function deploy ({
     }
 
     await createOrUpdateStack({ stackName, cfParams });
+
     log('*'.blue, 'waiting for stack update to complete...');
+    await waitForUpdateCompleted({ stackName });
 
-    const outputs = await waitForUpdateCompleted({ stackName });
-    const cloudfrontDNS = outputs.find(o => o.OutputKey === 'CloudFrontDNS').OutputValue;
-    const apiPrefix = outputs.find(o => o.OutputKey === 'ApiGatewayUrl').OutputValue;
-    const functionsTable = functionsHuman.map(f => ({
-      ...f,
-      resourcePath: `${apiPrefix}/${f.resourcePath}`
-    }));
     success('*'.blue, 'deploy completed!\n');
-
-    title('Your API endpoints are:'.bold);
-    table(functionsTable);
-
-    title('Your public endpoint is:');
-    if (deployCloudfront) {
-      log(`https://${cloudfrontDNS}`);
-      log(`Make sure to point DNS records for ${SETTINGS.domains.join(', ')} to this distribution.`);
-      if (SETTINGS.cloudfrontRootOrigin === 'assets') {
-        log('Assets are served from the root; requests starting with prod/ are forwarded to the API.');
-      } else {
-        log(`The API is served from the root; requests starting with assets/ are served from the assets folder.`);
-      }
-    } else {
-      log('N/A: cloudFront is disabled from package.json settings');
-    }
-
     log('');
+
+    if (argv.functionName) {
+      // we may want to tail logs for one function
+      return logCommand({ ...argv, follow: true });
+    }
   } catch (e) {
     error('An error occurred while deploying your application. Re-run this command with --verbose to debug.');
     debug('Stack trace:', e.stack);
@@ -274,11 +261,10 @@ export async function deploy ({
 
 export function run (argv) {
   deploy({
-    functionFilterRE: argv['function-name'],
     noUploads: argv['no-uploads'],
     dangerDeleteResources: argv['danger-delete-resources'],
     appStage: argv.stage
-  })
+  }, argv)
   .catch(error => error('Uncaught error', error.message, error.stack))
-  .then(() => process.exit(0));
+  .then(() => {});
 }
