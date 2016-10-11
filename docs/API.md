@@ -143,9 +143,38 @@ For function params reference, see [Lambda parameters reference](#lambda paramet
 #### Customizing a dawson template
 
 If you need to add more Resources or modify Resources and Outputs created by `dawson` you may export a `processCFTemplate` function from your `api.js`.
-This function takes a CloudFormation Template (object, like [this](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/quickref-lambda.html)) and must return the new (possibly updated) template. `processCFTemplate` will be invoked right before calling CloudFormation's `UpdateStack` API. `dawson` will not process or parse this template further.
+This function takes 2 parameters: 
+* CloudFormation Template (object, like [this](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/quickref-lambda.html))
+* Options object. This object at this moment contains only the Deployment Logical Name. See below for explanation of why this is important.
+This function must return the new (possibly updated) template. `processCFTemplate` will be invoked right before calling CloudFormation's `UpdateStack` API. `dawson` will not process or parse this template further.
 
 CloudFormation is very powerful, but sometimes it might be very complex. Keep in mind that CloudFormation [Template Reference](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-reference.html) is your friend.
+
+##### `processCFTemplate` second parameter
+`processCFTemplate` second parameter is an object containing this attributes:
+```js
+{
+  deploymentLogicalName: "Deployment Logical Name"
+}
+```
+`deploymentLogicalName` is very important if you need to deploy a custom ApiGateway Method, for example an endpoint for your Elastichsearch cluster. In this case you need to update the DependsOn array and add your new resources. Your `processCFTemplate` should be something like this:
+```js
+ export function processCFTemplate(template, { deploymentLogicalName }) {
+  return {
+    ...template,
+    Resources: {
+      ...template.Resources,
+      [deploymentLogicalName]: {
+        ...template.Resources[deploymentLogicalName],
+        DependsOn: [
+          ...template.Resources[deploymentLogicalName].DependsOn,
+          'CustomMethodEndopoint'
+        ]
+      }
+    }
+  };
+}
+```
 
 ##### Example 1: Adding a DynamoDB Table
 
