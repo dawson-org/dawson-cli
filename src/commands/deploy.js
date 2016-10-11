@@ -228,7 +228,7 @@ export async function deploy ({
     };
 
     if (typeof API_DEFINITIONS.processCFTemplate === 'function') {
-      cfTemplate = API_DEFINITIONS.processCFTemplate(cfTemplate);
+      cfTemplate = API_DEFINITIONS.processCFTemplate(cfTemplate, { deploymentLogicalName: `${templateDeploymentName({ deploymentUid })}` });
     }
 
     const stageVariables = {};
