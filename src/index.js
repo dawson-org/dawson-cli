@@ -1,10 +1,9 @@
-#!env node
+#!/usr/bin/env node
 
 import yargs from 'yargs';
 
 import { enableDebug, log } from './logger';
 import { run as deployRun } from './commands/deploy';
-import { run as assetsUploadRun } from './commands/deploy-assets';
 import { run as logRun } from './commands/log';
 import { run as describeRun } from './commands/describe';
 import { run as proxyRun } from './commands/proxy';
@@ -35,14 +34,6 @@ const argv = yargs
       .help()
   , deployRun)
 
-  .command('upload-assets', 'Upload contents of assets/ folder to S3', () =>
-    yargs
-      .describe('stage', 'Application stage to work on')
-      .default('stage', DAWSON_STAGE)
-      .alias('s')
-      .help()
-  , assetsUploadRun)
-
   .command('log', 'Get last log lines for a Lambda', () =>
     yargs
       .describe('function-name', 'Function to retreive logs for')
@@ -69,6 +60,8 @@ const argv = yargs
       .describe('stage', 'Application stage to work on')
       .default('stage', DAWSON_STAGE)
       .alias('s')
+      .describe('output-name', 'You can request a single value. Specify the corresponding OutputName. The output of this command is pipeable, for using in bash scripts etc.')
+      .alias('o')
       .help()
   , describeRun)
 
