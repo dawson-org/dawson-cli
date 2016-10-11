@@ -33,7 +33,7 @@ export function index(params) {
   return '<html><body>You are awesome!</html></body>';
 }
 index.api = {
-  path: 'hello',
+  path: 'hello', // no leading slash
 };
 ```
 

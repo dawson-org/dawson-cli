@@ -128,8 +128,7 @@ async function doCreateChangeSet ({ stackName, cfParams }) {
       }
       debug('Cannot crate changeset', description);
       throw new Error('Change Set failed to create');
-    }
-    if (description.Status === 'CREATE_COMPLETE') {
+    } else if (description.Status === 'CREATE_COMPLETE') {
       const debugStr = description.Changes
       .sort((change1, change2) => (
         (change2.ResourceChange.Action + change2.ResourceChange.LogicalResourceId) <
@@ -151,6 +150,9 @@ async function doCreateChangeSet ({ stackName, cfParams }) {
         return `${change.ResourceChange.LogicalResourceId[color]}`;
       }).join(', ');
       log('  resources affected by this update:', debugStr);
+    } else {
+      // wait and loop
+      await new Promise(resolve => setTimeout(resolve, 3000));
     }
     status = description.Status;
   }

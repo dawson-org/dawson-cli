@@ -92,6 +92,19 @@ fetchMe.api = {
 }
 ```
 
+##### Creating an Event Handler Function
+
+```js
+export async function handlerEvent (event) {
+  console.log('Records received from DynamoDB/S3/Kinesis...', event.Records)
+  return 'OK' // this is not needed
+}
+handlerEvent.api = {
+  path: false,
+  isEventHandler: true, // this option will remove all the wrapping and unwrapping specific to the API Gateway integration
+}
+```
+
 
 ##### Using async/await
 
@@ -220,8 +233,10 @@ Please, do not forget to return the **whole** template object, and not just the 
 
 ## Lambda parameters reference
 
-Unless `api.noWrap` is `true`, your function will be called with a single argument, which will follow
-this spec:
+Your function should have this signature: `function (event, context) {}`
+
+
+* `event` will follow this spec:
 
 ```js
 {
@@ -245,6 +260,10 @@ this spec:
   }
 }
 ```
+
+* `context` is Lambda's context, untouched
+* If `api.noWrap` is `true`, there will be a third param: `callback` as you would expect in a vanilla *lambda* function.
+
 
 #### CloudFront default whitelisted headers
 
@@ -276,6 +295,8 @@ Each function exported by the top-level `api.js` must have an `api` property.
 * **policyStatements** (list of maps): Policy statements for this Lambda's Role, as you would define in a [CloudFormation template](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-iam-policy.html#cfn-iam-policies-policydocument).
 * **noWrap** (boolean, defaults to `false`): If true, this function call won't be wrapped in a Promise and it will be directly exported as the lambda's handler. It will receive these arguments (may vary based on the runtime): `event`, `context`, `callback`. For `application/json` content type, you *must* invoke the callback passing your stringified response in a `response` property (e.g.: `callback(null, { response: '"wow"' })`. For `text/html` content type: `callback(null, { html: '<html>....' })`.
 * **runtime** (string, defaults to `nodejs4.3`): Lambda runtime to use. Only NodeJS runtimes make sense. Valid values are `nodejs` and `nodejs4.3`. You should only use the default runtime.
+* **isEventHanlder** (boolean, defaults to `false`): set to `true` if this function will be used as an event handler (S3 Notifications, DynamoDB Streams, SNS etc.). This makes sense only if `path === false`.
+* **keepWarm** (boolean, defaults to `false`): Setting this to `true` will cause your function to be called periodically (~every 2 minutes) with a dummy event. The dummy event is handled internally and your function will be terminated without executing any code. This will improve startup time especially if your endpoints get a low traffic volume. Read [read this post](https://aws.amazon.com/blogs/compute/container-reuse-in-lambda) for more info. An `AWS::Event::Rule` will be created and you'll be [charged](https://aws.amazon.com/cloudwatch/pricing/) (~1$ each million invocations), plus Lambda standard pricing (dummy invocations should average ~1ms).
 
 
 ##### Example
@@ -290,15 +311,12 @@ myFunction.api = {
   policyStatements: [{
     Effect: "Allow",
     Action: ["dynamodb:Query", "dynamodb:GetItem"],
-    Resource: { "Fn::Join": ["", [
-      "arn:aws:dynamodb",
-      ":", { "Ref" : "AWS::Region" },
-      ":", { "Ref" : "AWS::AccountId" },
-      ":", "table/", { "Ref": "UsersTable" },
-      "*",
-    ]] },
+    Resource: { "Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${UsersTable}*" }
   }],
+  runtime: "nodejs4.3",
   noWrap: false,
-  runtime: "nodejs4.3"
+  isEventHandler: false,
+  keepWarm: false
 };
 ```
+
