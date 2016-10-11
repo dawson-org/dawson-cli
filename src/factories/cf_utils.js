@@ -165,7 +165,7 @@ async function doExecuteChangeSet ({ changeSetId }) {
   });
 }
 
-export async function createOrUpdateStack ({ stackName, cfParams, ignoreNoUpdates = false }) {
+export async function createOrUpdateStack ({ stackName, cfParams, dryrun, ignoreNoUpdates = false }) {
   const stackExists = await checkStackExists(stackName);
   let updateStackResponse;
 
@@ -174,8 +174,13 @@ export async function createOrUpdateStack ({ stackName, cfParams, ignoreNoUpdate
       delete cfParams.OnFailure;
       const changeSetId = await doCreateChangeSet({ stackName, cfParams });
       if (changeSetId) {
-        // only if the ChangeSet has been created successfully
-        await doExecuteChangeSet({ changeSetId });
+        if (dryrun) {
+          const changeSetLink = `https://console.aws.amazon.com/cloudformation/home?region=${process.env.AWS_REGION}#/changeset/detail?changeSetId=${changeSetId}`;
+          log('*'.yellow, `you have used the --dryrun option, a ChangeSet is ready but I'm not executing it: ${changeSetLink}`);
+        } else {
+          // only if the ChangeSet has been created successfully
+          await doExecuteChangeSet({ changeSetId });
+        }
       }
     } else {
       updateStackResponse = await createStack(cfParams);
