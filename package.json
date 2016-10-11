@@ -1,6 +1,6 @@
 {
   "name": "dawson",
-  "version": "1.0.0-beta.12",
+  "version": "1.0.0-beta.13",
   "description": "Serverless Web Framework for AWS Lambda and API Gateway",
   "repository": "https://github.com/lusentis/dawson",
   "main": "lib/index.js",
