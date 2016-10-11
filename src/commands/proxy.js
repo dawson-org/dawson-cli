@@ -276,5 +276,6 @@ export function run (argv) {
   });
 
   server.listen(port);
+  process.stdout.write('\x1B[2J\x1B[0f');
   success(`\nDevelopment proxy listening on http://0.0.0.0:${port}`.bold.green);
 }
