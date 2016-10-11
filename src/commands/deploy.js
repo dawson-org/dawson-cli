@@ -263,14 +263,14 @@ export async function deploy ({
     if (!argv.dryrun) {
       log('*'.blue, 'waiting for stack update to complete...');
       await waitForUpdateCompleted({ stackName });
+      success('*'.blue, 'deploy completed!\n');
     } else {
-      log('*'.yellow, 'nothing has been deployed because you launch this command with --dryrun');
+      log('*'.yellow, 'nothing has been deployed because you have launched this command with --dryrun');
     }
 
-    success('*'.blue, 'deploy completed!\n');
     log('');
 
-    if (argv.functionName) {
+    if (!argv.dryrun && argv.functionName) {
       // we may want to tail logs for one function
       return logCommand({ ...argv, follow: true });
     }
