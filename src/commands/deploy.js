@@ -35,7 +35,9 @@ import {
   templateDeployment,
   templateDeploymentName,
   templateStage,
-  templateAPIID
+  templateAPIID,
+  templateAccount,
+  templateCloudWatchRole
 } from '../factories/cf_apig';
 
 import {
@@ -224,7 +226,9 @@ export async function deploy ({
         stageName,
         deploymentUid,
         stageVariables
-      })
+      }),
+      ...templateCloudWatchRole(),
+      ...templateAccount()
     };
 
     const cfTemplateJSON = JSON.stringify(cfTemplate, null, 2);
