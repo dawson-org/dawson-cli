@@ -11,6 +11,7 @@ export function templateLambdaName ({ lambdaName }) {
 
 export function templateLambdaExecutionRole ({
   lambdaName,
+  keepWarm = false,
   policyStatements = []
 }) {
   return {
@@ -42,6 +43,21 @@ export function templateLambdaExecutionRole ({
                 ],
                 'Resource': { 'Fn::Sub': 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*' } // eslint-disable-line
               },
+              {
+                'Effect': 'Allow',
+                'Action': ['cloudformation:DescribeStacks'],
+                'Resource': {
+                  'Fn::Join': ['', [
+                    'arn:aws:cloudformation:',
+                    { 'Ref': 'AWS::Region' },
+                    ':',
+                    { 'Ref': 'AWS::AccountId' },
+                    ':stack/',
+                    { 'Ref': 'AWS::StackName' },
+                    '/*'
+                  ]]
+                }
+              },
               ...policyStatements
             ]
           }
@@ -64,6 +80,7 @@ export function templateLambda ({
   inlineCode = LAMBDA_DEMO_INLINE_CODE,
   zipS3Location = null,
   policyStatements,
+  keepWarm = false,
   runtime = 'nodejs4.3'
 }) {
   const code = (zipS3Location)
@@ -74,7 +91,11 @@ export function templateLambda ({
     }
     : { ZipFile: inlineCode };
   return {
-    ...templateLambdaExecutionRole({ lambdaName, policyStatements }),
+    ...templateLambdaExecutionRole({
+      lambdaName,
+      policyStatements,
+      keepWarm
+    }),
     [`${templateLambdaName({ lambdaName })}`]: {
       'Type': 'AWS::Lambda::Function',
       'Properties': {

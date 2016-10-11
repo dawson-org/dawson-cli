@@ -35,12 +35,18 @@ import {
   templateDeployment,
   templateDeploymentName,
   templateStage,
-  templateAPIID
+  templateAPIID,
+  templateAccount,
+  templateCloudWatchRole
 } from '../factories/cf_apig';
 
 import {
   templateLambda
 } from '../factories/cf_lambda';
+
+import {
+  templateCWEventRule
+} from '../factories/cf_cloudwatch';
 
 import {
   templateAssetsBucket,
@@ -76,8 +82,12 @@ export async function deploy ({
   const supportStackName = templateStackName({ appName: `${appName}Support` });
   try {
     // create support stack (e.g.: temp s3 buckets)
-    log('*'.blue, 'updating support resources...');
-    await createSupportResources({ stackName: supportStackName });
+    if (!argv.dryrun) {
+      log('*'.blue, 'updating support resources...');
+      await createSupportResources({ stackName: supportStackName });
+    } else {
+      log('*'.yellow, 'support resources were not updated because you have launched this command with --dryrun');
+    }
 
     const supportBucketName = (await getStackOutputs({ stackName: supportStackName }))
       .find(o => o.OutputKey === 'SupportBucket').OutputValue;
@@ -93,7 +103,7 @@ export async function deploy ({
     let currentCounter = 0;
 
     log('*'.blue, `now bundling ${defs.length - 1} functions, please be patient`);
-    const indexFileContents = await compiler(API_DEFINITIONS);
+    const indexFileContents = await compiler(API_DEFINITIONS, stackName);
     const zipS3Location = await zipAndUpload({
       bucketName: supportBucketName,
       appStageName: appStage,
@@ -116,7 +126,8 @@ export async function deploy ({
         method: httpMethod = 'GET',
         policyStatements: policyStatements = [],
         responseContentType = 'text/html',
-        runtime
+        runtime,
+        keepWarm = false
       } = def.api;
       const name = def.name;
       currentCounter = currentCounter + 1;
@@ -132,7 +143,8 @@ export async function deploy ({
         handlerFunctionName: def.name,
         zipS3Location,
         policyStatements,
-        runtime
+        runtime,
+        keepWarm
       });
       if (resourcePath === false) {
         templatePartials = {
@@ -158,6 +170,14 @@ export async function deploy ({
           })
         };
         methodsInTemplate.push({ resourceName, httpMethod });
+      }
+      if (keepWarm === true) {
+        templatePartials = {
+          ...templatePartials,
+          ...templateCWEventRule({
+            lambdaName
+          })
+        };
       }
     }
 
@@ -208,7 +228,7 @@ export async function deploy ({
     };
 
     if (typeof API_DEFINITIONS.processCFTemplate === 'function') {
-      cfTemplate = API_DEFINITIONS.processCFTemplate(cfTemplate);
+      cfTemplate = API_DEFINITIONS.processCFTemplate(cfTemplate, { deploymentLogicalName: `${templateDeploymentName({ deploymentUid })}` });
     }
 
     const stageVariables = {};
@@ -224,7 +244,9 @@ export async function deploy ({
         stageName,
         deploymentUid,
         stageVariables
-      })
+      }),
+      ...templateCloudWatchRole(),
+      ...templateAccount()
     };
 
     const cfTemplateJSON = JSON.stringify(cfTemplate, null, 2);
@@ -236,15 +258,19 @@ export async function deploy ({
       await removeStackPolicy({ stackName });
     }
 
-    await createOrUpdateStack({ stackName, cfParams });
+    await createOrUpdateStack({ stackName, cfParams, dryrun: argv.dryrun });
 
-    log('*'.blue, 'waiting for stack update to complete...');
-    await waitForUpdateCompleted({ stackName });
+    if (!argv.dryrun) {
+      log('*'.blue, 'waiting for stack update to complete...');
+      await waitForUpdateCompleted({ stackName });
+      success('*'.blue, 'deploy completed!\n');
+    } else {
+      log('*'.yellow, 'nothing has been deployed because you have launched this command with --dryrun');
+    }
 
-    success('*'.blue, 'deploy completed!\n');
     log('');
 
-    if (argv.functionName) {
+    if (!argv.dryrun && argv.functionName) {
       // we may want to tail logs for one function
       return logCommand({ ...argv, follow: true });
     }

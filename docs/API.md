@@ -15,17 +15,17 @@
 
 You must define a `dawson` property, as follows:
 
-* **appName** (**required**, string): your app name, used in template and resource names. Keep it short but unique.  
+* **appName** (**required**, string): your app name, used in template and resource names. Keep it short but unique.
   NOTE: changing this causes the whole application to be deployed from scratch.
 * **domains** (**required**, list of strings): a list of at least one domain name to set as [CloudFront CNAME](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html). Domains must be unique globally in AWS.
 * **zipIgnore** (list of strings): a list of partial paths to ignore when zipping lambdas. **Do not** ignore `node_modules`.
 * **cloudfront** (boolean, or object, defaults to `true`): if `false`, the default CloudFront distribution won't be added to the CloudFormation template, so:
    * if you are deploying a new app, the deploy will be very quick, and no distribution will be created
    * if you are updating an app that has been previously deployed with `cloudfront !== false`, the distribution will be  **deleted** (this will take ~20min)
-   * if you are referencing the distribution from a custom resource your stack will fail  
- 
+   * if you are referencing the distribution from a custom resource your stack will fail
+
  You can optionally specify an object which maps app stages to booleans: `{ "dev": false, "prod": true }`
- 
+
  *This option controls the behaviour of the default CloudFront distribution that dawson creates, and does not apply to any custom resource.*
 * **cloudfrontRootOrigin** (either `assets` or `api`, defaults to `api`):
   * if "assets", use S3 assets (uploaded via `$ dawson upload-assets`) as [Default Cache Behaviour](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-web-values-specify.html#DownloadDistValuesCacheBehavior), i.e.: serve the root directory from S3, useful for Single Page Apps. Requests starting with `/prod` are forwarded to API Gateway.
@@ -92,6 +92,19 @@ fetchMe.api = {
 }
 ```
 
+##### Creating an Event Handler Function
+
+```js
+export async function handlerEvent (event) {
+  console.log('Records received from DynamoDB/S3/Kinesis...', event.Records)
+  return 'OK' // this is not needed
+}
+handlerEvent.api = {
+  path: false,
+  isEventHandler: true, // this option will remove all the wrapping and unwrapping specific to the API Gateway integration
+}
+```
+
 
 ##### Using async/await
 
@@ -122,17 +135,34 @@ listProjects.api = {
 };
 ```
 
-For `api` property reference, see [Function property reference](#function-property-reference).  
+For `api` property reference, see [Function property reference](#function-property-reference).
 For function params reference, see [Lambda parameters reference](#lambda parameters-reference).
 
 
 
 #### Customizing a dawson template
 
-If you need to add more Resources or modify Resources and Outputs created by `dawson` you may export a `processCFTemplate` function from your `api.js`.  
-This function takes a CloudFormation Template (object, like [this](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/quickref-lambda.html)) and must return the new (possibly updated) template. `processCFTemplate` will be invoked right before calling CloudFormation's `UpdateStack` API. `dawson` will not process or parse this template further.
+If you need to add more Resources or modify Resources and Outputs created by `dawson` you may export a `processCFTemplate` function from your `api.js`.
+This function takes 2 parameters: 
+* a CloudFormation Template (object, like [this](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/quickref-lambda.html))
+* `config` (object, see below)
+
+This function must return the new (possibly updated) template. `processCFTemplate` will be invoked right before calling CloudFormation's `UpdateStack` API. The template passed to this function will **not** contain the Stage (currently, there's no way to customize a stage template).
+
+Every resource has a fixed Logical Name, which you can get from the CloudFormation console and you can rely on it. The logical name will not change unless `dawson` major version is changed (v2 may change Logical Names, v1.200 will not). There's one gotcha: currently, since CloudFormation won't allow updating a Deployment, we create a new deployment for each `deploy` command; a deployment will have a random name you can get from the `config` parameter.
 
 CloudFormation is very powerful, but sometimes it might be very complex. Keep in mind that CloudFormation [Template Reference](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-reference.html) is your friend.
+
+##### `processCFTemplate`'s `config` parameter
+The `config` parameter will follow this spec:
+```js
+{
+  deploymentLogicalName: "Deployment Logical Name"
+}
+```
+
+A possible use case for `deploymentLogicalName` is to deploy a custom ApiGateway Method. When adding a method you must add its LogicalName to the DependsOn array of the Deploment, otherwise your deployment will *not* contain that method.
+
 
 ##### Example 1: Adding a DynamoDB Table
 
@@ -144,7 +174,7 @@ const PROJECTS_TABLE = {
       "Properties": {
         "AttributeDefinitions": [{
           "AttributeName": "ProjectId",
-          "AttributeType": "S"   
+          "AttributeType": "S"
         }],
         "KeySchema": [{
           "AttributeName" : "ProjectId",
@@ -180,7 +210,7 @@ export function processCFTemplate(template) {
 
 ##### Example 2: Modifying a Template
 
-Simply merge the new properties in the template.  
+Simply merge the new properties in the template.
 You may also use `Object.assign` or any other library to make this look nicer.
 
 ```js
@@ -220,8 +250,10 @@ Please, do not forget to return the **whole** template object, and not just the 
 
 ## Lambda parameters reference
 
-Unless `api.noWrap` is `true`, your function will be called with a single argument, which will follow
-this spec:
+Your function should have this signature: `function (event, context) {}`
+
+
+* `event` will follow this spec:
 
 ```js
 {
@@ -245,6 +277,10 @@ this spec:
   }
 }
 ```
+
+* `context` is Lambda's context, untouched
+* If `api.noWrap` is `true`, there will be a third param: `callback` as you would expect in a vanilla *lambda* function.
+
 
 #### CloudFront default whitelisted headers
 
@@ -276,6 +312,8 @@ Each function exported by the top-level `api.js` must have an `api` property.
 * **policyStatements** (list of maps): Policy statements for this Lambda's Role, as you would define in a [CloudFormation template](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-iam-policy.html#cfn-iam-policies-policydocument).
 * **noWrap** (boolean, defaults to `false`): If true, this function call won't be wrapped in a Promise and it will be directly exported as the lambda's handler. It will receive these arguments (may vary based on the runtime): `event`, `context`, `callback`. For `application/json` content type, you *must* invoke the callback passing your stringified response in a `response` property (e.g.: `callback(null, { response: '"wow"' })`. For `text/html` content type: `callback(null, { html: '<html>....' })`.
 * **runtime** (string, defaults to `nodejs4.3`): Lambda runtime to use. Only NodeJS runtimes make sense. Valid values are `nodejs` and `nodejs4.3`. You should only use the default runtime.
+* **isEventHanlder** (boolean, defaults to `false`): set to `true` if this function will be used as an event handler (S3 Notifications, DynamoDB Streams, SNS etc.). This makes sense only if `path === false`.
+* **keepWarm** (boolean, defaults to `false`): Setting this to `true` will cause your function to be called periodically (~every 2 minutes) with a dummy event. The dummy event is handled internally and your function will be terminated without executing any code. This will improve startup time especially if your endpoints get a low traffic volume. Read [read this post](https://aws.amazon.com/blogs/compute/container-reuse-in-lambda) for more info. An `AWS::Event::Rule` will be created and you'll be [charged](https://aws.amazon.com/cloudwatch/pricing/) (~1$ each million invocations), plus Lambda standard pricing (dummy invocations should average ~1ms).
 
 
 ##### Example
@@ -290,15 +328,12 @@ myFunction.api = {
   policyStatements: [{
     Effect: "Allow",
     Action: ["dynamodb:Query", "dynamodb:GetItem"],
-    Resource: { "Fn::Join": ["", [
-      "arn:aws:dynamodb",
-      ":", { "Ref" : "AWS::Region" },
-      ":", { "Ref" : "AWS::AccountId" },
-      ":", "table/", { "Ref": "UsersTable" },
-      "*",
-    ]] },
+    Resource: { "Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${UsersTable}*" }
   }],
+  runtime: "nodejs4.3",
   noWrap: false,
-  runtime: "nodejs4.3"
+  isEventHandler: false,
+  keepWarm: false
 };
 ```
+

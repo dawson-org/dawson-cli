@@ -128,8 +128,7 @@ async function doCreateChangeSet ({ stackName, cfParams }) {
       }
       debug('Cannot crate changeset', description);
       throw new Error('Change Set failed to create');
-    }
-    if (description.Status === 'CREATE_COMPLETE') {
+    } else if (description.Status === 'CREATE_COMPLETE') {
       const debugStr = description.Changes
       .sort((change1, change2) => (
         (change2.ResourceChange.Action + change2.ResourceChange.LogicalResourceId) <
@@ -151,6 +150,9 @@ async function doCreateChangeSet ({ stackName, cfParams }) {
         return `${change.ResourceChange.LogicalResourceId[color]}`;
       }).join(', ');
       log('  resources affected by this update:', debugStr);
+    } else {
+      // wait and loop
+      await new Promise(resolve => setTimeout(resolve, 3000));
     }
     status = description.Status;
   }
@@ -163,7 +165,7 @@ async function doExecuteChangeSet ({ changeSetId }) {
   });
 }
 
-export async function createOrUpdateStack ({ stackName, cfParams, ignoreNoUpdates = false }) {
+export async function createOrUpdateStack ({ stackName, cfParams, dryrun, ignoreNoUpdates = false }) {
   const stackExists = await checkStackExists(stackName);
   let updateStackResponse;
 
@@ -172,8 +174,13 @@ export async function createOrUpdateStack ({ stackName, cfParams, ignoreNoUpdate
       delete cfParams.OnFailure;
       const changeSetId = await doCreateChangeSet({ stackName, cfParams });
       if (changeSetId) {
-        // only if the ChangeSet has been created successfully
-        await doExecuteChangeSet({ changeSetId });
+        if (dryrun) {
+          const changeSetLink = `https://console.aws.amazon.com/cloudformation/home?region=${process.env.AWS_REGION}#/changeset/detail?changeSetId=${changeSetId}`;
+          log('*'.yellow, `you have used the --dryrun option, a ChangeSet is ready but I'm not executing it: ${changeSetLink}`);
+        } else {
+          // only if the ChangeSet has been created successfully
+          await doExecuteChangeSet({ changeSetId });
+        }
       }
     } else {
       updateStackResponse = await createStack(cfParams);

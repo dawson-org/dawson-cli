@@ -15,7 +15,10 @@ import {
   templateLambdaIntegration,
   templateMethod,
   templateDeployment,
-  templateStage
+  templateStage,
+  templateAccount,
+  templateCloudWatchRole,
+  templateCloudWatchRoleName
 } from './cf_apig';
 
 test('templateAPIID', t => {
@@ -186,8 +189,7 @@ test('templateDeployment', t => {
       'Type': 'AWS::ApiGateway::Deployment',
       'Properties': {
         'RestApiId': { 'Ref': 'API' },
-        'Description': `Automated deployment by danilo on ${date}`,
-        'StageName': 'dummy'
+        'Description': `Automated deployment by dawson on ${date}`
       }
     }
   };
@@ -212,7 +214,13 @@ test('templateStage', t => {
         'StageName': 'prod',
         'Variables': {
           abc: '123'
-        }
+        },
+        'MethodSettings': [{
+          'HttpMethod': '*',
+          'ResourcePath': '/*',
+          'LoggingLevel': 'INFO',
+          'DataTraceEnabled': 'true'
+        }]
       }
     }
   };
@@ -221,6 +229,50 @@ test('templateStage', t => {
     deploymentUid: '1234567',
     stageVariables: { abc: '123' }
   });
+  t.deepEqual(actual, expected, 'should return the stage template');
+  t.end();
+});
+
+test('templateCloudWatchRoleName', t => {
+  const expected = 'APIGatewayCloudWatchIAMRole';
+  const actual = templateCloudWatchRoleName();
+  t.equal(actual, expected, 'should return the role name for CloudWatch');
+  t.end();
+});
+
+test('templateAccount', t => {
+  const expected = {
+    'APIGatewayAccount': {
+      'Type': 'AWS::ApiGateway::Account',
+      'Properties': {
+        'CloudWatchRoleArn': { 'Fn::GetAtt': [ 'APIGatewayCloudWatchIAMRole', 'Arn' ] }
+      }
+    }
+  };
+  const actual = templateAccount();
+  t.deepEqual(actual, expected, 'should return the stage template');
+  t.end();
+});
+
+test('templateCloudWatchRole', t => {
+  const expected = {
+    'APIGatewayCloudWatchIAMRole': {
+      'Type': 'AWS::IAM::Role',
+      'Properties': {
+        'AssumeRolePolicyDocument': {
+          'Version': '2012-10-17',
+          'Statement': [{
+            'Effect': 'Allow',
+            'Principal': { 'Service': ['apigateway.amazonaws.com'] },
+            'Action': 'sts:AssumeRole'
+          }]
+        },
+        'Path': '/',
+        'ManagedPolicyArns': ['arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs']
+      }
+    }
+  };
+  const actual = templateCloudWatchRole();
   t.deepEqual(actual, expected, 'should return the stage template');
   t.end();
 });
