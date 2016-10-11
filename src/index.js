@@ -60,7 +60,7 @@ const argv = yargs
       .describe('stage', 'Application stage to work on')
       .default('stage', DAWSON_STAGE)
       .alias('s')
-      .describe('output-name', 'Output Name for the resource for which you want the PhysicalResouceId')
+      .describe('output-name', 'You can request a single value. Specify the corresponding OutputName. The output of this command is pipeable, for using in bash scripts etc.')
       .alias('o')
       .help()
   , describeRun)
