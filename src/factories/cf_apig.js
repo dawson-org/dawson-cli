@@ -30,7 +30,7 @@ export function templateModelName ({ modelName }) {
   return `Model${modelName}`;
 }
 
-function templateCloudWatchRoleName () {
+export function templateCloudWatchRoleName () {
   return 'APIGatewayCloudWatchIAMRole';
 }
 
