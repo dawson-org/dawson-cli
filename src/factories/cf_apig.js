@@ -355,7 +355,6 @@ export function templateDeployment ({
 export function templateStage ({
   stageName,
   deploymentUid,
-  dependsOnMethods,
   stageVariables = {}
 }) {
   return {
@@ -370,12 +369,12 @@ export function templateStage ({
         'Variables': {
           ...stageVariables
         },
-        'MethodSettings': dependsOnMethods.map(method => ({
-          'HttpMethod': method.httpMethod,
-          'ResourcePath': `/${method.resourcePath.replace(/^(.)/, '~1$1').replace(/\//g, '~1')}`,
+        'MethodSettings': [{
+          'HttpMethod': '*',
+          'ResourcePath': '/*',
           'LoggingLevel': 'INFO',
           'DataTraceEnabled': 'true'
-        }))
+        }]
       }
     }
   };
