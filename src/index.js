@@ -32,7 +32,8 @@ const argv = yargs
       .describe('stage', 'Application stage to work on')
       .default('stage', DAWSON_STAGE)
       .alias('s')
-      .describe('dryrun', 'Jump the deploy fase')
+      .describe('dryrun', 'Do not execute the CloudFormation ChangeSet (no change to your infrastructure will be made)')
+      .alias('dry-run', 'dryrun')
       .help()
   , deployRun)
 
