@@ -144,37 +144,25 @@ For function params reference, see [Lambda parameters reference](#lambda paramet
 
 If you need to add more Resources or modify Resources and Outputs created by `dawson` you may export a `processCFTemplate` function from your `api.js`.
 This function takes 2 parameters: 
-* CloudFormation Template (object, like [this](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/quickref-lambda.html))
-* Options object. This object at this moment contains only the Deployment Logical Name. See below for explanation of why this is important.
-This function must return the new (possibly updated) template. `processCFTemplate` will be invoked right before calling CloudFormation's `UpdateStack` API. `dawson` will not process or parse this template further.
+* a CloudFormation Template (object, like [this](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/quickref-lambda.html))
+* `config` (object, see below)
+
+This function must return the new (possibly updated) template. `processCFTemplate` will be invoked right before calling CloudFormation's `UpdateStack` API. The template passed to this function will **not** contain the Stage (currently, there's no way to customize a stage template).
+
+Every resource has a fixed Logical Name, which you can get from the CloudFormation console and you can rely on it. The logical name will not change unless `dawson` major version is changed (v2 may change Logical Names, v1.200 will not). There's one gotcha: currently, since CloudFormation won't allow updating a Deployment, we create a new deployment for each `deploy` command; a deployment will have a random name you can get from the `config` parameter.
 
 CloudFormation is very powerful, but sometimes it might be very complex. Keep in mind that CloudFormation [Template Reference](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-reference.html) is your friend.
 
-##### `processCFTemplate` second parameter
-`processCFTemplate` second parameter is an object containing this attributes:
+##### `processCFTemplate`'s `config` parameter
+The `config` parameter will follow this spec:
 ```js
 {
   deploymentLogicalName: "Deployment Logical Name"
 }
 ```
-`deploymentLogicalName` is very important if you need to deploy a custom ApiGateway Method, for example an endpoint for your Elastichsearch cluster. In this case you need to update the DependsOn array and add your new resources. Your `processCFTemplate` should be something like this:
-```js
- export function processCFTemplate(template, { deploymentLogicalName }) {
-  return {
-    ...template,
-    Resources: {
-      ...template.Resources,
-      [deploymentLogicalName]: {
-        ...template.Resources[deploymentLogicalName],
-        DependsOn: [
-          ...template.Resources[deploymentLogicalName].DependsOn,
-          'CustomMethodEndopoint'
-        ]
-      }
-    }
-  };
-}
-```
+
+A possible use case for `deploymentLogicalName` is to deploy a custom ApiGateway Method. When adding a method you must add its LogicalName to the DependsOn array of the Deploment, otherwise your deployment will *not* contain that method.
+
 
 ##### Example 1: Adding a DynamoDB Table
 
