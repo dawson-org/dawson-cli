@@ -14,7 +14,6 @@ export function templateLambdaExecutionRole ({
   keepWarm = false,
   policyStatements = []
 }) {
-  const lambdaPrincipalService = ['lambda.amazonaws.com'];
   return {
     [`${templateLambdaRoleName({ lambdaName })}`]: {
       'Type': 'AWS::IAM::Role',
@@ -24,7 +23,7 @@ export function templateLambdaExecutionRole ({
           'Statement': [{
             'Effect': 'Allow',
             'Principal': {
-              'Service': lambdaPrincipalService
+              'Service': ['lambda.amazonaws.com']
             },
             'Action': ['sts:AssumeRole']
           }]
