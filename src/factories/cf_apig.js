@@ -30,6 +30,9 @@ export function templateModelName ({ modelName }) {
   return `Model${modelName}`;
 }
 
+function templateCloudWatchRoleName () {
+  return 'APIGatewayCloudWatchIAMRole';
+}
 
 export function templateRest ({ appStage }) {
   return {
@@ -343,10 +346,7 @@ export function templateDeployment ({
       'Type': 'AWS::ApiGateway::Deployment',
       'Properties': {
         'RestApiId': { 'Ref': `${templateAPIID()}` },
-        'Description': `Automated deployment by danilo on ${date}`,
-        'StageName': 'dummy' // From the docs: "This property is required by API Gateway.
-                              // We recommend that you specify a name using any value
-                              // and that you don't use this stage"
+        'Description': `Automated deployment by dawson on ${date}`
       }
     }
   };
@@ -355,6 +355,7 @@ export function templateDeployment ({
 export function templateStage ({
   stageName,
   deploymentUid,
+  dependsOnMethods,
   stageVariables = {}
 }) {
   return {
@@ -368,7 +369,44 @@ export function templateStage ({
         'StageName': `${stageName}`,
         'Variables': {
           ...stageVariables
-        }
+        },
+        'MethodSettings': dependsOnMethods.map(method => ({
+          'HttpMethod': method.httpMethod,
+          'ResourcePath': `/${method.resourcePath.replace(/^(.)/, '~1$1').replace(/\//g, '~1')}`,
+          'LoggingLevel': 'INFO',
+          'DataTraceEnabled': 'true'
+        }))
+      }
+    }
+  };
+}
+
+export function templateAccount () {
+  return {
+    'APIGatewayAccount': {
+      'Type': 'AWS::ApiGateway::Account',
+      'Properties': {
+        'CloudWatchRoleArn': { 'Fn::GetAtt': [ templateCloudWatchRoleName(), 'Arn' ] }
+      }
+    }
+  };
+}
+
+export function templateCloudWatchRole () {
+  return {
+    [templateCloudWatchRoleName()]: {
+      'Type': 'AWS::IAM::Role',
+      'Properties': {
+        'AssumeRolePolicyDocument': {
+          'Version': '2012-10-17',
+          'Statement': [{
+            'Effect': 'Allow',
+            'Principal': { 'Service': ['apigateway.amazonaws.com'] },
+            'Action': 'sts:AssumeRole'
+          }]
+        },
+        'Path': '/',
+        'ManagedPolicyArns': ['arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs']
       }
     }
   };
