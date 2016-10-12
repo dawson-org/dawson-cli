@@ -60,11 +60,12 @@ describeOutputs().then(outputsMap => {
 function prepareIndexFile (apis, stackName) {
   const globals = Object.keys(apis).map(name => {
     const apiConfig = apis[name].api || {};
+    const fnGlobals = [];
     if (apiConfig.keepWarm === true) {
-      return getCWEventHandlerGlobalVariables({ lambdaName: name });
-    } else {
-      return '';
+      fnGlobals.push(getCWEventHandlerGlobalVariables({ lambdaName: name }));
     }
+    fnGlobals.push(`import { ${name}Handler } from './api'`);
+    return fnGlobals.join('\n');
   });
 
   const exp = Object.keys(apis).map(name => {
@@ -80,9 +81,9 @@ function prepareIndexFile (apis, stackName) {
       }
     }
     return `
-      module.exports.${name} = function (event, context, callback) {
+      export function ${name} (event, context, callback) {
         ${(apiConfig.keepWarm === true) ? getCWEventHandlerBody({ lambdaName: name }) : ''}
-        const runner = require('./api').${name};
+        const runner = ${name}Handler;
         ${body}
       };
     `;
@@ -97,7 +98,9 @@ function prepareIndexFile (apis, stackName) {
   require("babel-polyfill");
   require('babel-register');
 
-  const AWS = require('aws-sdk');
+  require("babel-core").buildExternalHelpers();
+
+  import AWS from 'aws-sdk';
   const cloudformation = new AWS.CloudFormation({});
   const stackName = '${stackName}';
   var stackOutputs = null;

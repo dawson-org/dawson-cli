@@ -12,16 +12,18 @@
 
 import assert from 'assert';
 import qs from 'querystring';
+import fs from 'fs';
 import { createProxyServer } from 'http-proxy';
 import send from 'send';
 import { createServer } from 'http';
 import { parse } from 'url';
 import pathModule from 'path';
+import dockerLambda from 'docker-lambda';
 
-import { debug, error, success } from '../logger';
+import { log, debug, error, success } from '../logger';
 import { SETTINGS, API_DEFINITIONS } from '../config';
 const { appName } = SETTINGS;
-import { RUNNER_FUNCTION_BODY } from '../libs/compiler';
+import compileCode from '../libs/compiler';
 import { compare } from '../libs/pathmatch';
 
 import {
@@ -132,8 +134,28 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
       - callback
     */
     console.log(`\n -> START '${runner.name}'`.green.dim);
+
+    try {
+      const invokeResult = dockerLambda({
+        event,
+        handler: `daniloindex.${runner.name}`,
+        cleanup: false,
+        dockerArgs: ['-m', '512M'],
+        spawnOptions: {
+          stdio: 'pipe'
+        }
+      });
+      callback(null, invokeResult);
+    } catch (invokeError) {
+      error('Error executing lambda');
+      log(invokeError.stdout.toString('utf8'));
+      error(invokeError.stderr.toString('utf8'));
+      res.writeHead(500, {});
+      res.end('Lambda invocation error, check the console.');
+    }
+
     // eslint-disable-next-line
-    eval(RUNNER_FUNCTION_BODY);
+    // eval(RUNNER_FUNCTION_BODY);
   } catch (err) {
     error('processAPIRequest error', err);
   }
@@ -182,6 +204,12 @@ export function run (argv) {
   assert(proxyAssetsUrl || assetsPathname, 'You must specify either --proxy-assets-url or --assets-pathname');
 
   const stackName = templateStackName({ appName, stage });
+  compileCode(API_DEFINITIONS, stackName)
+    .then(indexFileContents => {
+      fs.writeFileSync('daniloindex.js', indexFileContents, { encoding: 'utf-8' });
+      log('Created root index file');
+    })
+    .catch(err => error('Cannot create root index file', err));
 
   const proxy = createProxyServer({});
   // Proxy errors
