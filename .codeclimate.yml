@@ -1,0 +1,23 @@
+---
+engines:
+  csslint:
+    enabled: false
+  duplication:
+    enabled: true
+    exclude_fingerprints:
+    - 421aa54f535a5d892e504fd12c43dcfa
+    - 03a10df46e19e479b1ac1bc79497fa23
+    - aa2aeadefa1531bbcecd8d30bb18e26b
+    - 61823d174dbc3553f9b7067e241f2c67
+    - 967ec4749c8b11aa59290f503baf5c28
+    config:
+      languages:
+      - javascript
+  eslint:
+    enabled: false
+  fixme:
+    enabled: true
+ratings:
+  paths:
+  - "**.js"
+exclude_paths: []
