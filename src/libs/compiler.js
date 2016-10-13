@@ -64,7 +64,7 @@ function prepareIndexFile (apis, stackName) {
     if (apiConfig.keepWarm === true) {
       fnGlobals.push(getCWEventHandlerGlobalVariables({ lambdaName: name }));
     }
-    fnGlobals.push(`import { ${name}Handler } from './api'`);
+    fnGlobals.push(`import { ${name} as ${name}Handler } from './api'`);
     return fnGlobals.join('\n');
   });
 
