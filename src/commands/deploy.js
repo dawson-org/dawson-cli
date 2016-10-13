@@ -190,6 +190,12 @@ export async function deploy ({
       : {};
     const deploymentUid = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
     let cfTemplate = {
+      Parameters: {
+        DawsonStage: {
+          Type: 'String',
+          Default: appStage
+        }
+      },
       Resources: {
         ...templateAssetsBucket(),
         ...templateRest({ appStage }),
