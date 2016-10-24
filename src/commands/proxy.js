@@ -166,6 +166,9 @@ function parseAssetsUrlString (req) {
   } else {
     urlString = req.url;
   }
+  if (urlString.indexOf('?') !== -1) {
+    urlString = urlString.substring(0, urlString.indexOf('?'));
+  }
   return urlString;
 }
 
