@@ -1,5 +1,6 @@
 
 import { stripIndent } from 'common-tags';
+import { execSync } from 'child_process';
 
 import { SETTINGS, API_DEFINITIONS } from '../config';
 const { appName } = SETTINGS;
@@ -72,11 +73,34 @@ function shouldDeployCloudfront ({ appStage }) {
   return true;
 }
 
+function runCommand (description, cmd) {
+  if (!cmd) {
+    debug(`Hook: ${description} was not specified.`);
+    return;
+  }
+  try {
+    debug(`Hook: ${description} > $ ${cmd}`);
+    execSync(cmd, {
+      cwd: process.env.PWD,
+      stdio: 'inherit',
+      env: process.env,
+      maxBuffer: 1024 * 1024 * 50
+    });
+    debug(`Hook: ${description} exited with statusCode 0`);
+  } catch (e) {
+    error(`An error occurred while running ${description}:`);
+    error(e.message);
+    debug('Error details:', e.message, e.stack);
+    process.exit(2);
+  }
+}
+
 export async function deploy ({
   appStage,
   noUploads = false,
   dangerDeleteResources = false
 }, argv) {
+  runCommand('pre-deploy hook', SETTINGS['pre-deploy']);
   const deployCloudfront = shouldDeployCloudfront({ appStage });
   const stackName = templateStackName({ appName, stage: appStage });
   const supportStackName = templateStackName({ appName: `${appName}Support` });
@@ -275,6 +299,7 @@ export async function deploy ({
     }
 
     log('');
+    runCommand('post-deploy hook', SETTINGS['post-deploy']);
 
     if (!argv.dryrun && argv.functionName) {
       // we may want to tail logs for one function
