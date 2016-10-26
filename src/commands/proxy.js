@@ -2,11 +2,10 @@
 // DAWSON local development proxy (preview)
 // ========================================
 //
-// This command will simulate the CloudFront distribution behaviours
+// This command will simulate the CloudFront distribution
 //
-// Currently, this proxy DOES NOT SUPPORT:
-// - multiple path parameters
-// - "big" requests that does not fit in a single chunk (will restult in a JSON error)
+// Currently, this proxy DOES NOT SUPPORT "big" requests that
+//  does not fit in a single chunk (will result in a JSON error)
 //
 // This feature is preview-quality, we need error checking, etc...
 //
@@ -166,6 +165,9 @@ function parseAssetsUrlString (req) {
   } else {
     urlString = req.url;
   }
+  if (urlString.indexOf('?') !== -1) {
+    urlString = urlString.substring(0, urlString.indexOf('?'));
+  }
   return urlString;
 }
 
@@ -233,9 +235,8 @@ export function run (argv) {
       });
       req.resume();
     } else {
-      const path = parseAssetsUrlString(req); // conditionally replace assets/
-
       if (assetsPathname) {
+        const path = parseAssetsUrlString(req);
         send(req, path, {
           cacheControl: false,
           root: pathModule.join(process.cwd(), assetsPathname)
