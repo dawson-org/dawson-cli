@@ -1,6 +1,6 @@
 {
   "name": "dawson",
-  "version": "1.0.0-beta.15",
+  "version": "1.0.0-beta.16",
   "description": "Serverless Web Framework for AWS Lambda and API Gateway",
   "repository": "https://github.com/lusentis/dawson",
   "main": "lib/index.js",
@@ -12,6 +12,7 @@
     "prepublish": "npm run clean && npm run compile",
     "test": "npm run compile && npm run lint && npm run tape",
     "lint": "semistandard | snazzy",
+    "link:watch": "nodemon -w src -x npm -- link",
     "tape": "NODE_ENV=testing tape -r babel-register src/**/*.spec.js | tap-dot"
   },
   "semistandard": {
