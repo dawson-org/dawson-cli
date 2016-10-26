@@ -93,6 +93,7 @@ function prepareIndexFile (apis, stackName) {
   // which is require-d by lambda
   // which then executes the handler property
   //
+  process.env.BABEL_CACHE_PATH = '/tmp/babel-cache';
   require("babel-polyfill");
   require('babel-register');
 
