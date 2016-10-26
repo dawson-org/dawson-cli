@@ -18,6 +18,8 @@ You must define a `dawson` property, as follows:
 * **appName** (**required**, string): your app name, used in template and resource names. Keep it short but unique.
   NOTE: changing this causes the whole application to be deployed from scratch.
 * **domains** (**required**, list of strings): a list of at least one domain name to set as [CloudFront CNAME](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html). Domains must be unique globally in AWS.
+* **pre-deploy** (string): a command to execute before starting the deployment. If command exits with status <> 0, the deployment is aborted.
+* **post-deploy** (string): a command to run after the deployment has been succesfully completed.
 * **zipIgnore** (list of strings): a list of partial paths to ignore when zipping lambdas. **Do not** ignore `node_modules`.
 * **cloudfront** (boolean, or object, defaults to `true`): if `false`, the default CloudFront distribution won't be added to the CloudFormation template, so:
    * if you are deploying a new app, the deploy will be very quick, and no distribution will be created
