@@ -64,7 +64,7 @@ function prepareIndexFile (apis, stackName) {
     if (apiConfig.keepWarm === true) {
       fnGlobals.push(getCWEventHandlerGlobalVariables({ lambdaName: name }));
     }
-    fnGlobals.push(`import { ${name} as ${name}Handler } from './api'`);
+    fnGlobals.push(`const ${name}Handler = require('./api').${name};`);
     return fnGlobals.join('\n');
   });
 
@@ -81,7 +81,7 @@ function prepareIndexFile (apis, stackName) {
       }
     }
     return `
-      export function ${name} (event, context, callback) {
+      module.exports.${name} = function ${name} (event, context, callback) {
         ${(apiConfig.keepWarm === true) ? getCWEventHandlerBody({ lambdaName: name }) : ''}
         const runner = ${name}Handler;
         ${body}
@@ -94,15 +94,14 @@ function prepareIndexFile (apis, stackName) {
   // which is require-d by lambda
   // which then executes the handler property
   //
+  'use strict';
   require('hard-rejection')();
 
   process.env.BABEL_CACHE_PATH = '/tmp/babel-cache';
   require("babel-polyfill");
   require('babel-register');
 
-  require("babel-core").buildExternalHelpers();
-
-  import AWS from 'aws-sdk';
+  const AWS = require('aws-sdk');
   const cloudformation = new AWS.CloudFormation({});
   const stackName = '${stackName}';
   var stackOutputs = null;
