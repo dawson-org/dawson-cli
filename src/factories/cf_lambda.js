@@ -9,6 +9,57 @@ export function templateLambdaName ({ lambdaName }) {
   return `Lambda${lambdaName}`;
 }
 
+function extraTrustPrincipals () {
+  if (process.env.NODE_ENV === 'production') {
+    return {};
+  }
+  // In envs deployed with NODE_ENV !== production
+  // we allow current account identities to assume this role
+  // for testing with the development proxy
+  // https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html#Principal
+  return {
+    'AWS': [{ 'Fn::Sub': 'arn:aws:iam::${AWS::AccountId}:root' }] // eslint-disable-line
+  };
+}
+
+export function templatePolicyDocument ({
+  policyStatements
+}) {
+  return {
+    'PolicyName': 'dawson-policy',
+    'PolicyDocument': {
+      'Version': '2012-10-17',
+      'Statement': [
+        {
+          'Effect': 'Allow',
+          'Action': [
+            'logs:CreateLogGroup',
+            'logs:CreateLogStream',
+            'logs:PutLogEvents'
+          ],
+          'Resource': { 'Fn::Sub': 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*' } // eslint-disable-line
+        },
+        {
+          'Effect': 'Allow',
+          'Action': ['cloudformation:DescribeStacks'],
+          'Resource': {
+            'Fn::Join': ['', [
+              'arn:aws:cloudformation:',
+              { 'Ref': 'AWS::Region' },
+              ':',
+              { 'Ref': 'AWS::AccountId' },
+              ':stack/',
+              { 'Ref': 'AWS::StackName' },
+              '/*'
+            ]]
+          }
+        },
+        ...policyStatements
+      ]
+    }
+  };
+}
+
 export function templateLambdaExecutionRole ({
   lambdaName,
   keepWarm = false,
@@ -23,45 +74,16 @@ export function templateLambdaExecutionRole ({
           'Statement': [{
             'Effect': 'Allow',
             'Principal': {
-              'Service': ['lambda.amazonaws.com']
+              'Service': ['lambda.amazonaws.com'],
+              ...extraTrustPrincipals()
             },
             'Action': ['sts:AssumeRole']
           }]
         },
         'Path': '/',
-        'Policies': [{
-          'PolicyName': 'dawson-policy',
-          'PolicyDocument': {
-            'Version': '2012-10-17',
-            'Statement': [
-              {
-                'Effect': 'Allow',
-                'Action': [
-                  'logs:CreateLogGroup',
-                  'logs:CreateLogStream',
-                  'logs:PutLogEvents'
-                ],
-                'Resource': { 'Fn::Sub': 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*' } // eslint-disable-line
-              },
-              {
-                'Effect': 'Allow',
-                'Action': ['cloudformation:DescribeStacks'],
-                'Resource': {
-                  'Fn::Join': ['', [
-                    'arn:aws:cloudformation:',
-                    { 'Ref': 'AWS::Region' },
-                    ':',
-                    { 'Ref': 'AWS::AccountId' },
-                    ':stack/',
-                    { 'Ref': 'AWS::StackName' },
-                    '/*'
-                  ]]
-                }
-              },
-              ...policyStatements
-            ]
-          }
-        }]
+        'Policies': [
+          templatePolicyDocument({ policyStatements })
+        ]
       }
     }
   };
