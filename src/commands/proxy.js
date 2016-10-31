@@ -19,6 +19,7 @@ import { createServer } from 'http';
 import { parse } from 'url';
 import pathModule from 'path';
 import dockerLambda from 'docker-lambda';
+import { stripIndent } from 'common-tags';
 
 import { log, debug, error, success } from '../logger';
 import { SETTINGS, API_DEFINITIONS } from '../config';
@@ -98,9 +99,6 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
       stageVariables
     };
     debug('Event parameter:'.gray.bold, JSON.stringify(event, null, 2).gray);
-    // eslint-disable-next-line
-    const context = {};
-    // eslint-disable-next-line
     const callback = function apiCallback (err, data) {
       if (err) {
         error(`Request Error: ${err.message}`);
@@ -122,17 +120,10 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
         } else {
           throw new Error('Unknown contentType: ' + contentType);
         }
+        console.log(` <- END '${runner.name}' (${new Intl.NumberFormat().format(data.length / 1024)} KB)\n`.red.dim);
       }
-      console.log(` <- END '${runner.name}' (${new Intl.NumberFormat().format(data.length / 1024)} KB)\n`.red.dim);
       res.end();
     };
-    /*
-      eval uses these vars:
-      - runner
-      - event
-      - context (unused internally)
-      - callback
-    */
     console.log(`\n -> START '${runner.name}'`.green.dim);
 
     try {
@@ -140,25 +131,35 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
         event,
         handler: `daniloindex.${runner.name}`,
         cleanup: false,
-        dockerArgs: ['-m', '512M'],
-        spawnOptions: {
-          stdio: 'pipe'
-        }
+        dockerArgs: ['-m', '512M']
       });
       callback(null, invokeResult);
     } catch (invokeError) {
-      error('Error executing lambda');
-      log(invokeError.stdout.toString('utf8'));
-      error(invokeError.stderr.toString('utf8'));
-      res.writeHead(500, {});
-      res.end('Lambda invocation error, check the console.');
+      const stdErr = invokeError.stderr.toString('utf8');
+      const stdOut = invokeError.stdout.toString('utf8');
+      error('Error executing lambda. Function output:');
+      error(stdErr);
+      res.writeHead(500, { 'Content-Type': 'text/html' });
+      res.end(formatError(JSON.parse(stdOut)));
     }
-
-    // eslint-disable-next-line
-    // eval(RUNNER_FUNCTION_BODY);
   } catch (err) {
     error('processAPIRequest error', err);
   }
+}
+
+function formatError (err) {
+  return stripIndent`
+    <DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { padding: 10px; color: black; background-color: red; }
+          .error { width: 100%; font-family: monospace; white-space: pre-wrap; }
+        </style>
+        <title>Lambda Execution Error</title>
+      <body>
+        <div class="error"><strong>${err.errorType}: ${err.errorMessage}</strong><br />${err.stackTrace.join('\n')}</div>
+  `;
 }
 
 function requestForAPI (req) {
