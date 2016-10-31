@@ -27,10 +27,19 @@ const { appName } = SETTINGS;
 import compileCode from '../libs/compiler';
 import { compare } from '../libs/pathmatch';
 
+import AWS from 'aws-sdk';
+const sts = new AWS.STS({});
+const iam = new AWS.IAM({});
+
 import {
   getStackOutputs,
+  getStackResources,
   templateStackName
 } from '../factories/cf_utils';
+
+import {
+  templateLambdaRoleName
+} from '../factories/cf_lambda';
 
 function findApi ({ method, pathname }) {
   let found = null;
@@ -64,7 +73,7 @@ function getContentType (fn) {
   return fn.api.responseContentType || 'text/html';
 }
 
-function processAPIRequest (req, res, { body, outputs, pathname, querystring }) {
+async function processAPIRequest (req, res, { body, resources, outputs, pathname, querystring }) {
   try {
     const stageVariables = {};
     outputs.forEach(output => {
@@ -126,12 +135,17 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
     };
     console.log(`\n -> START '${runner.name}'`.green.dim);
 
+    const credentials = await assumeRole(resources, runner);
+
     try {
       const invokeResult = dockerLambda({
         event,
         handler: `daniloindex.${runner.name}`,
-        cleanup: false,
-        dockerArgs: ['-m', '512M']
+        dockerArgs: []
+          .concat(['-m', '512M'])
+          .concat(['--env', `AWS_ACCESS_KEY_ID=${credentials.AccessKeyId}`])
+          .concat(['--env', `AWS_SECRET_ACCESS_KEY=${credentials.SecretAccessKey}`])
+          .concat(['--env', `AWS_SESSION_TOKEN=${credentials.SessionToken}`])
       });
       callback(null, invokeResult);
     } catch (invokeError) {
@@ -145,6 +159,36 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
   } catch (err) {
     error('processAPIRequest error', err);
   }
+}
+
+function findRoleName (stackResources, cfLogicalName) {
+  let found = null;
+  stackResources.forEach(resource => {
+    if (resource.LogicalResourceId === cfLogicalName) {
+      found = resource.PhysicalResourceId;
+    }
+  });
+  if (!found) {
+    throw new Error(`Cannot find an IAM Role for '${cfLogicalName}'`);
+  }
+  return found;
+}
+
+async function assumeRole (stackResources, runner) {
+  const functionName = runner.name;
+  const lambdaName = functionName[0].toUpperCase() + functionName.substring(1);
+  const cfLogicalRoleName = templateLambdaRoleName({ lambdaName });
+  const roleName = findRoleName(stackResources, cfLogicalRoleName);
+  const getRoleResult = await iam.getRole({
+    RoleName: roleName
+  }).promise();
+  const roleArn = getRoleResult.Role.Arn;
+  const assumeRoleParams = {
+    RoleArn: roleArn,
+    RoleSessionName: 'dawson-dev-proxy'
+  };
+  const assumedRole = await sts.assumeRole(assumeRoleParams).promise();
+  return assumedRole.Credentials;
 }
 
 function formatError (err) {
@@ -234,17 +278,20 @@ export function run (argv) {
       let rawBody = new Buffer('');
       let jsonBody = {};
       const next = () => {
-        getStackOutputs({ stackName })
-        .then(outputs => {
+        Promise.all([
+          getStackOutputs({ stackName }),
+          getStackResources({ stackName })
+        ])
+        .then(([ outputs, resources ]) =>
           processAPIRequest(req, res, {
             pathname,
             querystring,
             body: jsonBody,
-            outputs
-          });
-        })
+            outputs,
+            resources
+          }))
         .catch(err => {
-          error('getStackOutputs Error', err);
+          error('Error resolving promise for getStackOutputs,getStackResources', err);
         });
       };
       if (req.method === 'GET' || req.method === 'OPTIONS' || req.method === 'HEAD') {
