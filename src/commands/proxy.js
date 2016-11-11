@@ -119,17 +119,17 @@ async function processAPIRequest (req, res, { body, resources, outputs, pathname
       if (!data) {
         error(`Handler returned an empty body`);
       } else {
-        data = JSON.parse(data.response);
+        const response = JSON.parse(data.response);
         if (contentType === 'application/json') {
-          res.write(JSON.stringify(data));
+          res.write(JSON.stringify(response));
         } else if (contentType === 'text/plain') {
-          res.write(data);
+          res.write(response);
         } else if (contentType === 'text/html') {
-          res.write(data);
+          res.write(response);
         } else {
           throw new Error('Unknown contentType: ' + contentType);
         }
-        console.log(` <- END '${runner.name}' (${new Intl.NumberFormat().format(data.length / 1024)} KB)\n`.red.dim);
+        console.log(` <- END '${runner.name}' (${new Intl.NumberFormat().format(data.response.length / 1024)} KB)\n`.red.dim);
       }
       res.end();
     };
