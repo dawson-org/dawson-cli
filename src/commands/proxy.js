@@ -143,9 +143,13 @@ async function processAPIRequest (req, res, { body, resources, outputs, pathname
     const credentials = credentialsCache.get(runner);
 
     try {
+      log(`[internal] executing docker container`);
       const invokeResult = dockerLambda({
         event,
         handler: `daniloindex.${runner.name}`,
+        spawnOptions: {
+          stdio: [null, 'pipe', 'inherit'] // docker-lambda uses stdout to communicate back with us
+        },
         dockerArgs: []
           .concat(['-m', '512M'])
           .concat(['--env', `AWS_ACCESS_KEY_ID=${credentials.AccessKeyId}`])
@@ -154,15 +158,16 @@ async function processAPIRequest (req, res, { body, resources, outputs, pathname
       });
       callback(null, invokeResult);
     } catch (invokeError) {
-      const stdErr = invokeError.stderr.toString('utf8');
-      const stdOut = invokeError.stdout.toString('utf8');
+      const stdErr = invokeError.stderr ? invokeError.stderr.toString('utf8') : '"no data"';
+      const stdOut = invokeError.stdout ? invokeError.stdout.toString('utf8') : '"no data"';
       error('Error executing lambda. Function output:');
       error(stdErr);
+      error('Error reported by docker-lambda', invokeError);
       res.writeHead(500, { 'Content-Type': 'text/html' });
       res.end(formatError(JSON.parse(stdOut)));
     }
   } catch (err) {
-    error('processAPIRequest error', err);
+    error('An error occurred while executing this function.\n', err);
   }
 }
 
@@ -271,7 +276,7 @@ export function run (argv) {
   compileCode(API_DEFINITIONS, stackName)
     .then(indexFileContents => {
       fs.writeFileSync('daniloindex.js', indexFileContents, { encoding: 'utf-8' });
-      log('Created root index file');
+      log('[internal] created root index file');
     })
     .catch(err => error('Cannot create root index file', err));
 
