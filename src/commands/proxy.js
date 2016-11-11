@@ -245,6 +245,18 @@ function parseAssetsUrlString (req) {
   return urlString;
 }
 
+let outputsAndResourcesCache = null;
+async function getOutputsAndResources ({ stackName }) {
+  if (!outputsAndResourcesCache) {
+    log('[internal] describing stack');
+    outputsAndResourcesCache = await Promise.all([
+      getStackOutputs({ stackName }),
+      getStackResources({ stackName })
+    ]);
+  }
+  return outputsAndResourcesCache;
+}
+
 export function run (argv) {
   const {
     stage,
@@ -285,10 +297,8 @@ export function run (argv) {
       let rawBody = new Buffer('');
       let jsonBody = {};
       const next = () => {
-        Promise.all([
-          getStackOutputs({ stackName }),
-          getStackResources({ stackName })
-        ])
+        Promise.resolve({ stackName })
+        .then(getOutputsAndResources)
         .then(([ outputs, resources ]) =>
           processAPIRequest(req, res, {
             pathname,
