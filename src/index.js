@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import yargs from 'yargs';
+import AWS from 'aws-sdk';
 
 import { enableDebug, log } from './logger';
 import { run as deployRun } from './commands/deploy';
@@ -8,6 +9,7 @@ import { run as logRun } from './commands/log';
 import { run as describeRun } from './commands/describe';
 import { run as proxyRun } from './commands/proxy';
 
+const REGION = AWS.config.region;
 const DAWSON_STAGE = process.env.DAWSON_STAGE || 'default';
 
 const argv = yargs
@@ -84,7 +86,7 @@ const argv = yargs
   .help()
   .argv;
 
-log('*'.blue, 'working on stage', argv.stage.bold);
+log('*'.blue, 'working on stage', argv.stage.bold, 'in region', REGION);
 
 if (argv.verbose === true) {
   enableDebug();
