@@ -152,6 +152,7 @@ async function processAPIRequest (req, res, { body, resources, outputs, pathname
         },
         dockerArgs: []
           .concat(['-m', '512M'])
+          .concat(['--env', `NODE_ENV=${process.env.NODE_ENV || 'development'}`])
           .concat(['--env', `AWS_ACCESS_KEY_ID=${credentials.AccessKeyId}`])
           .concat(['--env', `AWS_SECRET_ACCESS_KEY=${credentials.SecretAccessKey}`])
           .concat(['--env', `AWS_SESSION_TOKEN=${credentials.SessionToken}`])
