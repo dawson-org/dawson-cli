@@ -12,22 +12,36 @@
 
 import assert from 'assert';
 import qs from 'querystring';
+import fs from 'fs';
 import { createProxyServer } from 'http-proxy';
 import send from 'send';
 import { createServer } from 'http';
 import { parse } from 'url';
 import pathModule from 'path';
+import dockerLambda from 'docker-lambda';
+import { stripIndent } from 'common-tags';
 
-import { debug, error, success } from '../logger';
+import { log, debug, error, success } from '../logger';
 import { SETTINGS, API_DEFINITIONS } from '../config';
 const { appName } = SETTINGS;
-import { RUNNER_FUNCTION_BODY } from '../libs/compiler';
+import compileCode from '../libs/compiler';
 import { compare } from '../libs/pathmatch';
+
+import AWS from 'aws-sdk';
+const sts = new AWS.STS({});
+const iam = new AWS.IAM({});
+
+const credentialsCache = new WeakMap();
 
 import {
   getStackOutputs,
+  getStackResources,
   templateStackName
 } from '../factories/cf_utils';
+
+import {
+  templateLambdaRoleName
+} from '../factories/cf_lambda';
 
 function findApi ({ method, pathname }) {
   let found = null;
@@ -61,7 +75,7 @@ function getContentType (fn) {
   return fn.api.responseContentType || 'text/html';
 }
 
-function processAPIRequest (req, res, { body, outputs, pathname, querystring }) {
+async function processAPIRequest (req, res, { body, resources, outputs, pathname, querystring }) {
   try {
     const stageVariables = {};
     outputs.forEach(output => {
@@ -96,9 +110,6 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
       stageVariables
     };
     debug('Event parameter:'.gray.bold, JSON.stringify(event, null, 2).gray);
-    // eslint-disable-next-line
-    const context = {};
-    // eslint-disable-next-line
     const callback = function apiCallback (err, data) {
       if (err) {
         error(`Request Error: ${err.message}`);
@@ -110,33 +121,102 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
       if (!data) {
         error(`Handler returned an empty body`);
       } else {
-        data = JSON.parse(data.response);
+        const response = JSON.parse(data.response);
         if (contentType === 'application/json') {
-          res.write(JSON.stringify(data));
+          res.write(JSON.stringify(response));
         } else if (contentType === 'text/plain') {
-          res.write(data);
+          res.write(response);
         } else if (contentType === 'text/html') {
-          res.write(data);
+          res.write(response);
         } else {
           throw new Error('Unknown contentType: ' + contentType);
         }
+        console.log(` <- END '${runner.name}' (${new Intl.NumberFormat().format(data.response.length / 1024)} KB)\n`.red.dim);
       }
-      console.log(` <- END '${runner.name}' (${new Intl.NumberFormat().format(data.length / 1024)} KB)\n`.red.dim);
       res.end();
     };
-    /*
-      eval uses these vars:
-      - runner
-      - event
-      - context (unused internally)
-      - callback
-    */
     console.log(`\n -> START '${runner.name}'`.green.dim);
-    // eslint-disable-next-line
-    eval(RUNNER_FUNCTION_BODY);
+
+    if (!credentialsCache.has(runner)) {
+      credentialsCache.set(runner, await assumeRole(resources, runner));
+    }
+    const credentials = credentialsCache.get(runner);
+
+    try {
+      log(`[internal] executing docker container`);
+      const invokeResult = dockerLambda({
+        event,
+        handler: `daniloindex.${runner.name}`,
+        spawnOptions: {
+          stdio: [null, 'pipe', 'inherit'] // docker-lambda uses stdout to communicate back with us
+        },
+        dockerArgs: []
+          .concat(['-m', '512M'])
+          .concat(['--env', `NODE_ENV=${process.env.NODE_ENV || 'development'}`])
+          .concat(['--env', `AWS_ACCESS_KEY_ID=${credentials.AccessKeyId}`])
+          .concat(['--env', `AWS_SECRET_ACCESS_KEY=${credentials.SecretAccessKey}`])
+          .concat(['--env', `AWS_SESSION_TOKEN=${credentials.SessionToken}`])
+      });
+      callback(null, invokeResult);
+    } catch (invokeError) {
+      const stdErr = invokeError.stderr ? invokeError.stderr.toString('utf8') : '"no data"';
+      const stdOut = invokeError.stdout ? invokeError.stdout.toString('utf8') : '"no data"';
+      error('Error executing lambda. Function output:');
+      error(stdErr);
+      error('Error reported by docker-lambda', invokeError);
+      res.writeHead(500, { 'Content-Type': 'text/html' });
+      res.end(formatError(JSON.parse(stdOut)));
+    }
   } catch (err) {
-    error('processAPIRequest error', err);
+    error('An error occurred while executing this function.\n', err);
   }
+}
+
+function findRoleName (stackResources, cfLogicalName) {
+  let found = null;
+  stackResources.forEach(resource => {
+    if (resource.LogicalResourceId === cfLogicalName) {
+      found = resource.PhysicalResourceId;
+    }
+  });
+  if (!found) {
+    throw new Error(`Cannot find an IAM Role for '${cfLogicalName}'`);
+  }
+  return found;
+}
+
+async function assumeRole (stackResources, runner) {
+  const functionName = runner.name;
+  const lambdaName = functionName[0].toUpperCase() + functionName.substring(1);
+  const cfLogicalRoleName = templateLambdaRoleName({ lambdaName });
+  const roleName = findRoleName(stackResources, cfLogicalRoleName);
+  log('[internal] getting Role ARN');
+  const getRoleResult = await iam.getRole({
+    RoleName: roleName
+  }).promise();
+  const roleArn = getRoleResult.Role.Arn;
+  const assumeRoleParams = {
+    RoleArn: roleArn,
+    RoleSessionName: 'dawson-dev-proxy'
+  };
+  log('[internal] calling AssumeRole');
+  const assumedRole = await sts.assumeRole(assumeRoleParams).promise();
+  return assumedRole.Credentials;
+}
+
+function formatError (err) {
+  return stripIndent`
+    <DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { padding: 10px; color: black; background-color: red; }
+          .error { width: 100%; font-family: monospace; white-space: pre-wrap; }
+        </style>
+        <title>Lambda Execution Error</title>
+      <body>
+        <div class="error"><strong>${err.errorType}: ${err.errorMessage}</strong><br />${err.stackTrace.join('\n')}</div>
+  `;
 }
 
 function requestForAPI (req) {
@@ -171,6 +251,18 @@ function parseAssetsUrlString (req) {
   return urlString;
 }
 
+let outputsAndResourcesCache = null;
+async function getOutputsAndResources ({ stackName }) {
+  if (!outputsAndResourcesCache) {
+    log('[internal] describing stack');
+    outputsAndResourcesCache = await Promise.all([
+      getStackOutputs({ stackName }),
+      getStackResources({ stackName })
+    ]);
+  }
+  return outputsAndResourcesCache;
+}
+
 export function run (argv) {
   const {
     stage,
@@ -182,6 +274,12 @@ export function run (argv) {
   assert(proxyAssetsUrl || assetsPathname, 'You must specify either --proxy-assets-url or --assets-pathname');
 
   const stackName = templateStackName({ appName, stage });
+  compileCode(API_DEFINITIONS, stackName)
+    .then(indexFileContents => {
+      fs.writeFileSync('daniloindex.js', indexFileContents, { encoding: 'utf-8' });
+      log('[internal] created root index file');
+    })
+    .catch(err => error('Cannot create root index file', err));
 
   const proxy = createProxyServer({});
   // Proxy errors
@@ -205,17 +303,18 @@ export function run (argv) {
       let rawBody = new Buffer('');
       let jsonBody = {};
       const next = () => {
-        getStackOutputs({ stackName })
-        .then(outputs => {
+        Promise.resolve({ stackName })
+        .then(getOutputsAndResources)
+        .then(([ outputs, resources ]) =>
           processAPIRequest(req, res, {
             pathname,
             querystring,
             body: jsonBody,
-            outputs
-          });
-        })
+            outputs,
+            resources
+          }))
         .catch(err => {
-          error('getStackOutputs Error', err);
+          error('Error resolving promise for getStackOutputs,getStackResources', err);
         });
       };
       if (req.method === 'GET' || req.method === 'OPTIONS' || req.method === 'HEAD') {

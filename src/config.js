@@ -1,7 +1,10 @@
 
 // this will compile on-the-fly the `api.js` required below
 // by `require(PROJECT_ROOT + '/api');`
-require('babel-register');
+require('babel-register')({
+  presets: ['es2015', 'es2017'],
+  plugins: ['syntax-object-rest-spread', 'transform-object-rest-spread', 'transform-runtime']
+});
 
 import { error } from './logger';
 export const PROJECT_ROOT = process.env.PWD;

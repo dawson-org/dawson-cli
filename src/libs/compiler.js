@@ -60,11 +60,12 @@ describeOutputs().then(outputsMap => {
 function prepareIndexFile (apis, stackName) {
   const globals = Object.keys(apis).map(name => {
     const apiConfig = apis[name].api || {};
+    const fnGlobals = [];
     if (apiConfig.keepWarm === true) {
-      return getCWEventHandlerGlobalVariables({ lambdaName: name });
-    } else {
-      return '';
+      fnGlobals.push(getCWEventHandlerGlobalVariables({ lambdaName: name }));
     }
+    fnGlobals.push(`const ${name}Handler = require('./api').${name};`);
+    return fnGlobals.join('\n');
   });
 
   const exp = Object.keys(apis).map(name => {
@@ -80,9 +81,9 @@ function prepareIndexFile (apis, stackName) {
       }
     }
     return `
-      module.exports.${name} = function (event, context, callback) {
+      module.exports.${name} = function ${name} (event, context, callback) {
         ${(apiConfig.keepWarm === true) ? getCWEventHandlerBody({ lambdaName: name }) : ''}
-        const runner = require('./api').${name};
+        const runner = ${name}Handler;
         ${body}
       };
     `;
@@ -93,6 +94,9 @@ function prepareIndexFile (apis, stackName) {
   // which is require-d by lambda
   // which then executes the handler property
   //
+  'use strict';
+  require('hard-rejection')();
+
   process.env.BABEL_CACHE_PATH = '/tmp/babel-cache';
   require("babel-polyfill");
   require('babel-register');
