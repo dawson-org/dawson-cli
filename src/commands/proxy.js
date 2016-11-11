@@ -31,6 +31,8 @@ import AWS from 'aws-sdk';
 const sts = new AWS.STS({});
 const iam = new AWS.IAM({});
 
+const credentialsCache = new WeakMap();
+
 import {
   getStackOutputs,
   getStackResources,
@@ -135,7 +137,10 @@ async function processAPIRequest (req, res, { body, resources, outputs, pathname
     };
     console.log(`\n -> START '${runner.name}'`.green.dim);
 
-    const credentials = await assumeRole(resources, runner);
+    if (!credentialsCache.has(runner)) {
+      credentialsCache.set(runner, await assumeRole(resources, runner));
+    }
+    const credentials = credentialsCache.get(runner);
 
     try {
       const invokeResult = dockerLambda({
@@ -179,6 +184,7 @@ async function assumeRole (stackResources, runner) {
   const lambdaName = functionName[0].toUpperCase() + functionName.substring(1);
   const cfLogicalRoleName = templateLambdaRoleName({ lambdaName });
   const roleName = findRoleName(stackResources, cfLogicalRoleName);
+  log('[internal] getting Role ARN');
   const getRoleResult = await iam.getRole({
     RoleName: roleName
   }).promise();
@@ -187,6 +193,7 @@ async function assumeRole (stackResources, runner) {
     RoleArn: roleArn,
     RoleSessionName: 'dawson-dev-proxy'
   };
+  log('[internal] calling AssumeRole');
   const assumedRole = await sts.assumeRole(assumeRoleParams).promise();
   return assumedRole.Credentials;
 }
