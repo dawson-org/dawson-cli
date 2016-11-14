@@ -193,7 +193,12 @@ export function templateLambdaIntegration ({
       `
     };
   } else {
-    throw new Error('Configuration Error in Lambda Integration Response: no (valid) responseContentType has been defined. Supported values are application/json, text/html and text/plain.');
+    responseTemplate = {
+      [responseContentType]: stripIndent`
+        #set($inputRoot = $input.path('$'))
+        $inputRoot.response
+      `
+    };
   }
   return {
     'IntegrationHttpMethod': 'POST',
@@ -307,7 +312,11 @@ export function templateMethod ({
       }
     };
   } else {
-    throw new Error('Configuration Error in Lambda Method: no (valid) responseContentType has been defined. Supported values are application/json, text/html and text/plain.');
+    responseModel = {
+      [responseContentType]: {
+        'Ref': templateModelName({ modelName: responseModelName })
+      }
+    };
   }
   return {
     ...templateInvokationRole({}),
