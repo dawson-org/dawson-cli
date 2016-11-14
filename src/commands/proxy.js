@@ -129,7 +129,7 @@ async function processAPIRequest (req, res, { body, resources, outputs, pathname
         } else if (contentType === 'text/html') {
           res.write(response);
         } else {
-          throw new Error('Unknown contentType: ' + contentType);
+          res.write(data);
         }
         console.log(` <- END '${runner.name}' (${new Intl.NumberFormat().format(data.response.length / 1024)} KB)\n`.red.dim);
       }

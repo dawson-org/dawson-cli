@@ -36,8 +36,8 @@ Promise.resolve()
   } else if (event.meta && event.meta.expectedResponseContentType.indexOf('text/plain') !== -1) {
     callback(null, { response: data });
   } else {
-    console.log('WARNING: Unexpected content type (in event.meta), forwarding result as-is (but it probably errors because we expect a response to be wrapped in a response property.');
-    callback(null, data);
+    console.log('WARNING: Unexpected content type (in event.meta), forwarding result without transformations.');
+    callback(null, { response: data });
   }
 })
 .catch(function (err) {
