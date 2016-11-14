@@ -118,7 +118,7 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
         } else if (contentType === 'text/html') {
           res.write(data);
         } else {
-          throw new Error('Unknown contentType: ' + contentType);
+          res.write(data);
         }
       }
       console.log(` <- END '${runner.name}' (${new Intl.NumberFormat().format(data.length / 1024)} KB)\n`.red.dim);
