@@ -151,9 +151,11 @@ export async function deploy ({
         policyStatements: policyStatements = [],
         responseContentType = 'text/html',
         runtime,
-        keepWarm = false
+        keepWarm = false,
+        authorizer
       } = def.api;
       const name = def.name;
+      const authorizerFunctionName = authorizer ? authorizer.name : null ;
       currentCounter = currentCounter + 1;
       debug(`=> #${index} Found function ${name.bold} at ${httpMethod.bold} /${resourcePath.bold}`);
       functionsHuman.push({
@@ -190,7 +192,8 @@ export async function deploy ({
             resourceName,
             httpMethod,
             lambdaName,
-            responseContentType
+            responseContentType,
+            authorizerFunctionName
           })
         };
         methodsInTemplate.push({ resourceName, httpMethod });
