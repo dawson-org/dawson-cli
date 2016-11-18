@@ -140,7 +140,7 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
     if (!authorizer) {
       doCall();
     } else {
-      runAuthorizer({ authorizer, event, req, res, successCallback: doCall })
+      runAuthorizer({ authorizer, event, stageVariables, req, res, successCallback: doCall })
     }
 
   } catch (err) {
@@ -148,11 +148,12 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
   }
 }
 
-function runAuthorizer({ authorizer, event, req, res, successCallback }) {
+function runAuthorizer({ authorizer, event, stageVariables, req, res, successCallback }) {
   // https://docs.aws.amazon.com/apigateway/latest/developerguide/use-custom-authorizer.html
   // @TODO: correctly handle 401, 403, 500 response as described in the documentation
 
-  console.log(` 🔒 Invoking authorizer, token = ${util.inspect(event.params.header.authorization)}`.yellow.dim);
+  const token = event.params.header.token;
+  console.log(` 🔒 Invoking authorizer, token = ${util.inspect(token)}`.yellow.dim);
 
   const fail = (httpStatusCode = 403, ...logs) => {
     console.error(...logs);
@@ -161,16 +162,17 @@ function runAuthorizer({ authorizer, event, req, res, successCallback }) {
     res.end();
   };
 
-  if (!event.params.header.authorization) {
-    fail(401, ' 🔒'.red, `No authorization header found. You must specify an 'authorization' header with your request.`.red);
+  if (!token) {
+    fail(401, ' 🔒'.red, `No authorization header found. You must specify a 'token' header with your request.`.red);
     return;
   }
 
   authorizer({
     type: 'TOKEN',
-    authorizationToken: event.params.header.authorization,
+    authorizationToken: token,
     methodArn: 'arn:fake'
   }, {
+    templateOutputs: stageVariables,
     succeed: ({ policyDocument }, principalId) => {
       if (!policyDocument || !Array.isArray(policyDocument.Statement)) {
         fail(403, ' 🔒'.red, `Authorizer did not return a policy document`.red, policyDocument);
