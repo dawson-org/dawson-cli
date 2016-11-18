@@ -320,7 +320,7 @@ export function templateMethod ({
     };
   }
   let authorizerConfig = {
-    'AuthorizationType': 'NONE',
+    'AuthorizationType': 'NONE'
   };
   if (authorizerFunctionName) {
     authorizerConfig = {
@@ -358,7 +358,7 @@ export function templateMethod ({
           },
           'StatusCode': 200
         }],
-        ...authorizerConfig,
+        ...authorizerConfig
       }
     }
   };
@@ -444,7 +444,7 @@ export function templateCloudWatchRole () {
   };
 }
 
-function templateAuthorizerName({
+function templateAuthorizerName ({
   authorizerFunctionName
 }) {
   return `APIGAuthorizer${authorizerFunctionName[0].toUpperCase()}${authorizerFunctionName.slice(1)}`;
@@ -457,15 +457,15 @@ export function templateAuthorizer ({
   const authorizerName = templateAuthorizerName({ authorizerFunctionName });
   return {
     [`${authorizerName}`]: {
-      "Type": "AWS::ApiGateway::Authorizer",
-      "Properties": {
-        "AuthorizerCredentials":  { "Fn::GetAtt": ["APIGExecutionRole", "Arn"] },
-        "AuthorizerResultTtlInSeconds": 0,
-        "AuthorizerUri": { 'Fn::Sub': 'arn:aws:apigateway:${AWS::Region}:lambda:path//2015-03-31/functions/${' + lambdaLogicalName + '.Arn}/invocations' },
-        "IdentitySource": 'method.request.header.token',
-        "Name": `${authorizerName}`,
-        "RestApiId": { Ref: templateAPIID() },
-        "Type": 'TOKEN'
+      'Type': 'AWS::ApiGateway::Authorizer',
+      'Properties': {
+        'AuthorizerCredentials': { 'Fn::GetAtt': ['APIGExecutionRole', 'Arn'] },
+        'AuthorizerResultTtlInSeconds': 0,
+        'AuthorizerUri': { 'Fn::Sub': 'arn:aws:apigateway:${AWS::Region}:lambda:path//2015-03-31/functions/${' + lambdaLogicalName + '.Arn}/invocations' }, // eslint-disable-line
+        'IdentitySource': 'method.request.header.token',
+        'Name': `${authorizerName}`,
+        'RestApiId': { Ref: templateAPIID() },
+        'Type': 'TOKEN'
       }
     }
   };

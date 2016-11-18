@@ -155,7 +155,7 @@ export async function deploy ({
         authorizer
       } = def.api;
       const name = def.name;
-      const authorizerFunctionName = authorizer ? authorizer.name : null ;
+      const authorizerFunctionName = authorizer ? authorizer.name : null;
       currentCounter = currentCounter + 1;
       debug(`=> #${index} Found function ${name.bold} at ${httpMethod.bold} /${resourcePath.bold}`);
       functionsHuman.push({
