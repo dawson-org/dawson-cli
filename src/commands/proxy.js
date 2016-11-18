@@ -140,15 +140,14 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
     if (!authorizer) {
       doCall();
     } else {
-      runAuthorizer({ authorizer, event, stageVariables, req, res, successCallback: doCall })
+      runAuthorizer({ authorizer, event, stageVariables, req, res, successCallback: doCall });
     }
-
   } catch (err) {
     error('processAPIRequest error', err);
   }
 }
 
-function runAuthorizer({ authorizer, event, stageVariables, req, res, successCallback }) {
+function runAuthorizer ({ authorizer, event, stageVariables, req, res, successCallback }) {
   // https://docs.aws.amazon.com/apigateway/latest/developerguide/use-custom-authorizer.html
   // @TODO: correctly handle 401, 403, 500 response as described in the documentation
 
