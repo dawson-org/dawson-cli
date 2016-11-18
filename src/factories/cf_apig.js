@@ -283,7 +283,8 @@ export function templateMethod ({
   resourceName,
   httpMethod = 'GET',
   lambdaName = null,
-  responseContentType
+  responseContentType,
+  authorizerFunctionName
 }) {
   const responseModelName = 'HelloWorldModel';
   const resourceId = !resourceName
@@ -318,23 +319,46 @@ export function templateMethod ({
       }
     };
   }
+  let authorizerConfig = {
+    'AuthorizationType': 'NONE'
+  };
+  if (authorizerFunctionName) {
+    authorizerConfig = {
+      ...authorizerConfig,
+      AuthorizationType: 'CUSTOM',
+      AuthorizerId: { Ref: `${templateAuthorizerName({ authorizerFunctionName })}` }
+    };
+  }
+  let authorizerPartial;
+  if (authorizerFunctionName) {
+    authorizerPartial = templateAuthorizer({ authorizerFunctionName });
+  }
+  let dependsOn;
+  if (authorizerFunctionName) {
+    dependsOn = {
+      DependsOn: [`${templateAuthorizerName({ authorizerFunctionName })}`]
+    };
+  }
+
   return {
     ...templateInvokationRole({}),
     ...templateModel({ modelName: responseModelName, modelSchema: '{}' }),
+    ...authorizerPartial,
     [`${templateMethodName({ resourceName, httpMethod })}`]: {
       'Type': 'AWS::ApiGateway::Method',
+      ...dependsOn,
       'Properties': {
         'RestApiId': { 'Ref': `${templateAPIID()}` },
         'ResourceId': resourceId,
         'HttpMethod': httpMethod,
-        'AuthorizationType': 'NONE',
         'Integration': integrationConfig,
         'MethodResponses': [{
           'ResponseModels': {
             ...responseModel
           },
           'StatusCode': 200
-        }]
+        }],
+        ...authorizerConfig
       }
     }
   };
@@ -415,6 +439,33 @@ export function templateCloudWatchRole () {
         },
         'Path': '/',
         'ManagedPolicyArns': ['arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs']
+      }
+    }
+  };
+}
+
+function templateAuthorizerName ({
+  authorizerFunctionName
+}) {
+  return `APIGAuthorizer${authorizerFunctionName[0].toUpperCase()}${authorizerFunctionName.slice(1)}`;
+}
+
+export function templateAuthorizer ({
+  authorizerFunctionName
+}) {
+  const lambdaLogicalName = templateLambdaName({ lambdaName: `${authorizerFunctionName[0].toUpperCase()}${authorizerFunctionName.slice(1)}` });
+  const authorizerName = templateAuthorizerName({ authorizerFunctionName });
+  return {
+    [`${authorizerName}`]: {
+      'Type': 'AWS::ApiGateway::Authorizer',
+      'Properties': {
+        'AuthorizerCredentials': { 'Fn::GetAtt': ['APIGExecutionRole', 'Arn'] },
+        'AuthorizerResultTtlInSeconds': 0,
+        'AuthorizerUri': { 'Fn::Sub': 'arn:aws:apigateway:${AWS::Region}:lambda:path//2015-03-31/functions/${' + lambdaLogicalName + '.Arn}/invocations' }, // eslint-disable-line
+        'IdentitySource': 'method.request.header.token',
+        'Name': `${authorizerName}`,
+        'RestApiId': { Ref: templateAPIID() },
+        'Type': 'TOKEN'
       }
     }
   };
