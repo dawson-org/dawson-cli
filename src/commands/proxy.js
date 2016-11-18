@@ -17,6 +17,7 @@ import send from 'send';
 import { createServer } from 'http';
 import { parse } from 'url';
 import pathModule from 'path';
+import util from 'util';
 
 import { debug, error, success } from '../logger';
 import { SETTINGS, API_DEFINITIONS } from '../config';
@@ -132,11 +133,63 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
       - callback
     */
     console.log(`\n -> START '${runner.name}'`.green.dim);
-    // eslint-disable-next-line
-    eval(RUNNER_FUNCTION_BODY);
+
+    const doCall = () => eval(RUNNER_FUNCTION_BODY); // eslint-disable-line
+    const authorizer = runner.api.authorizer;
+
+    if (!authorizer) {
+      doCall();
+    } else {
+      runAuthorizer({ authorizer, event, req, res, successCallback: doCall })
+    }
+
   } catch (err) {
     error('processAPIRequest error', err);
   }
+}
+
+function runAuthorizer({ authorizer, event, req, res, successCallback }) {
+  // https://docs.aws.amazon.com/apigateway/latest/developerguide/use-custom-authorizer.html
+  // @TODO: correctly handle 401, 403, 500 response as described in the documentation
+
+  console.log(` 🔒 Invoking authorizer, token = ${util.inspect(event.params.header.authorization)}`.yellow.dim);
+
+  const fail = (httpStatusCode = 403, ...logs) => {
+    console.error(...logs);
+    res.writeHead(httpStatusCode, { 'Content-Type': 'application/json' });
+    res.write(JSON.stringify({ message: 'Unauthorized' }));
+    res.end();
+  };
+
+  if (!event.params.header.authorization) {
+    fail(401, ' 🔒'.red, `No authorization header found. You must specify an 'authorization' header with your request.`.red);
+    return;
+  }
+
+  authorizer({
+    type: 'TOKEN',
+    authorizationToken: event.params.header.authorization,
+    methodArn: 'arn:fake'
+  }, {
+    succeed: ({ policyDocument }, principalId) => {
+      if (!policyDocument || !Array.isArray(policyDocument.Statement)) {
+        fail(403, ' 🔒'.red, `Authorizer did not return a policy document`.red, policyDocument);
+        return;
+      }
+      if (!policyDocument.Statement.find(item => item.Effect === 'Allow' && item.Action === 'execute-api:Invoke' && item.Resource === 'arn:fake')) {
+        fail(403, ' 🔒'.red, `Authorizer did not return a valid policy document`.red, policyDocument);
+        return;
+      }
+      event.authorizer = {
+        principalId
+      };
+      console.log(` 🔓 Authorization succeeded`.yellow.dim);
+      successCallback();
+    },
+    fail: message => {
+      fail(403, ' 🔒'.red, `Authorizer failed with message: '${message}'`.red);
+    }
+  });
 }
 
 function requestForAPI (req) {
