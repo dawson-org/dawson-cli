@@ -157,7 +157,7 @@ defaultAuthorizer.api = {
   policyStatements: [{
     Effect: 'Allow',
     Action: 'dynamodb:GetItem',
-    Resource: { 'Fn::Ref': 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${MyTable}' } // eslint-disable-line
+    Resource: { 'Fn::Sub': 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${MyTable}' } // eslint-disable-line
   }]
 };
 
@@ -166,6 +166,6 @@ export function privateContent (params) {
   return '42';
 }
 privateContent.api = {
-  path: '',
+  path: 'private',
   authorizer: defaultAuthorizer
 };
