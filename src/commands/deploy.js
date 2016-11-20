@@ -317,7 +317,9 @@ export async function deploy ({
       return logCommand({ ...argv, follow: true });
     }
   } catch (e) {
-    error('An error occurred while deploying your application. Re-run this command with --verbose to debug.');
+    error('An error occurred while deploying your application:');
+    error('> ', e.message);
+    error('Re-run this command with --verbose to debug.');
     debug('Stack trace:', e.stack);
   } finally {
     if (dangerDeleteResources === true) {
