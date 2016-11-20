@@ -155,9 +155,17 @@ export async function deploy ({
         authorizer
       } = def.api;
       const name = def.name;
-      const authorizerFunctionName = authorizer ? authorizer.name : null;
-      currentCounter = currentCounter + 1;
       debug(`=> #${index} Found function ${name.bold} at ${httpMethod.bold} /${resourcePath.bold}`);
+      const authorizerFunctionName = authorizer ? authorizer.name : null;
+      if (authorizerFunctionName) {
+        if (typeof API_DEFINITIONS[authorizerFunctionName] !== 'function') {
+          throw new Error(`The authorizer function '${authorizerFunctionName}' must also be exported`);
+        }
+        if (!API_DEFINITIONS[authorizerFunctionName].api || !API_DEFINITIONS[authorizerFunctionName].api.isEventHandler) {
+          throw new Error(`The authorizer function '${authorizerFunctionName}' must have api.isEventHandler set to true`);
+        }
+      }
+      currentCounter = currentCounter + 1;
       functionsHuman.push({
         name,
         httpMethod,
@@ -309,7 +317,9 @@ export async function deploy ({
       return logCommand({ ...argv, follow: true });
     }
   } catch (e) {
-    error('An error occurred while deploying your application. Re-run this command with --verbose to debug.');
+    error('An error occurred while deploying your application:');
+    error('> ', e.message);
+    error('Re-run this command with --verbose to debug.');
     debug('Stack trace:', e.stack);
   } finally {
     if (dangerDeleteResources === true) {
