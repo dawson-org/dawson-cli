@@ -282,7 +282,7 @@ function uiPollStackStatusHelper ({ stackName, cloudformation }, done) {
     if (action === 'error') {
       spinner.stop();
       error(`\nStack update failed:`, LAST_STACK_REASON);
-      error(`You may inspect stack events:\n$ AWS_DEFAULT_REGION=${AWS_REGION} aws cloudformation describe-stack-events --stack-name ${stackName} --query "StackEvents[?ResourceStatus == 'UPDATE_FAILED'].{ resource: LogicalResourceId, message: ResourceStatusReason, properties: ResourceProperties }"`);
+      error(`You may inspect stack events:\n$ AWS_DEFAULT_REGION=${getCfn(cloudformation).config.region} aws cloudformation describe-stack-events --stack-name ${stackName} --query "StackEvents[?ResourceStatus == 'UPDATE_FAILED'].{ resource: LogicalResourceId, message: ResourceStatusReason, properties: ResourceProperties }"`);
       return;
     }
     if (action === 'succeed') {
