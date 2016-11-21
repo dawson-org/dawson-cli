@@ -4,6 +4,7 @@ import { execSync } from 'child_process';
 import AWS from 'aws-sdk';
 
 import { SETTINGS, API_DEFINITIONS, APP_NAME, getCloudFrontSettings, getHostedZoneId } from '../config';
+const { cloudfront: cloudfrontStagesSettings } = SETTINGS;
 
 import { debug, error, log, danger, success } from '../logger';
 import compiler from '../libs/compiler';
@@ -26,7 +27,8 @@ import {
 } from '../factories/cf_utils';
 
 import {
-  createSupportResources
+  createSupportResources,
+  templateACMCertName
 } from '../factories/cf_support';
 
 import {
@@ -97,11 +99,18 @@ export async function deploy ({
   const hostedZoneId = getHostedZoneId({ appStage });
   const stackName = templateStackName({ appName: APP_NAME, stage: appStage });
   const supportStackName = templateStackName({ appName: `${APP_NAME}Support` });
+  let acmCertificateArn;
   try {
     // create support stack (e.g.: temp s3 buckets)
     if (!argv.dryrun) {
       log('*'.blue, 'updating support resources...');
-      await createSupportResources({ stackName: supportStackName });
+      await createSupportResources({ stackName: supportStackName, cloudfrontStagesSettings });
+      const supportOutputs = await getStackOutputs({ stackName: supportStackName });
+      const acmCertLogicalName = templateACMCertName({ stageName: appStage });
+      const acmCertificateOutput = supportOutputs.find(o => o.OutputKey === acmCertLogicalName);
+      if (acmCertificateOutput) {
+        acmCertificateArn = acmCertificateOutput.OutputValue;
+      }
     } else {
       log('*'.yellow, 'support resources were not updated because you have launched this command with --dryrun');
     }
@@ -215,7 +224,8 @@ export async function deploy ({
     const cloudfrontPartial = (cloudfrontSettings !== false)
       ? templateCloudfrontDistribution({
         stageName,
-        alias: cloudfrontCustomDomain
+        alias: cloudfrontCustomDomain,
+        acmCertificateArn
       })
       : {};
 
