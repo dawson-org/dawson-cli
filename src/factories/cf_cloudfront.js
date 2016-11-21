@@ -57,9 +57,30 @@ export function templateCloudfrontDistributionName () {
   return `WWWDistribution`;
 }
 
+function templateViewerCertificate ({
+  stageName,
+  alias,
+  acmCertificateArn
+}) {
+  if (!alias) {
+    return {
+      'ViewerCertificate': {
+        'CloudFrontDefaultCertificate': 'true'
+      }
+    };
+  }
+  return {
+    'ViewerCertificate': {
+      'AcmCertificateArn': acmCertificateArn,
+      'SslSupportMethod': 'sni-only'
+    }
+  };
+}
+
 export function templateCloudfrontDistribution ({
   stageName,
-  alias
+  alias,
+  acmCertificateArn
 }) {
   const aliasesConfig = {};
   if (alias) {
@@ -185,7 +206,7 @@ export function templateCloudfrontDistribution ({
           'DefaultCacheBehavior': defaultCB,
           'CacheBehaviors': [otherCB],
           'PriceClass': 'PriceClass_200',
-          'ViewerCertificate': { 'CloudFrontDefaultCertificate': 'true' },
+          ...templateViewerCertificate({ stageName, alias, acmCertificateArn }),
           ...partialWebACLId(),
           ...CustomErrorResponses
         }
