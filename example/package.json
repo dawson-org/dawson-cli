@@ -1,5 +1,5 @@
 {
-  "name": "dawson-example-1",
+  "name": "dawsonExample",
   "version": "1.0.0",
   "description": "",
   "main": "api.js",
@@ -17,7 +17,6 @@
     "pug": "^2.0.0-beta4"
   },
   "dawson": {
-    "appName": "dawsonExample",
     "domains": [],
     "cloudfront": false
   }
