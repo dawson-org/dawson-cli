@@ -17,18 +17,19 @@ You must set the **`name`** field in your `package.json`; this `name` will be us
 
 Optionally, you can define a `dawson` property, as follows:
 
-* **domains** (list of strings): a list of at least one domain name to set as [CloudFront CNAME](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html). Domains must be unique globally in AWS.
 * **pre-deploy** (string): a command to execute before starting the deployment. If command exits with status <> 0, the deployment is aborted.
 * **post-deploy** (string): a command to run after the deployment has been succesfully completed.
 * **zipIgnore** (list of strings): a list of partial paths to ignore when zipping lambdas. **Do not** ignore `node_modules`.
-* **cloudfront** (boolean, or object, defaults to `true`): if `false`, the default CloudFront distribution won't be added to the CloudFormation template, so:
-   * if you are deploying a new app, the deploy will be very quick, and no distribution will be created
-   * if you are updating an app that has been previously deployed with `cloudfront !== false`, the distribution will be  **deleted** (this will take ~20min)
-   * if you are referencing the distribution from a custom resource your stack will fail
-
- You can optionally specify an object which maps app stages to booleans: `{ "dev": false, "prod": true }`
-
- *This option controls the behaviour of the default CloudFront distribution that dawson creates, and does not apply to any custom resource.*
+* **cloudfront** (object: string -> string|boolean, defaults to `{}`): an object which maps app stages to domain names, e.g.:
+  ```json
+{"default": "myapp123.com", "test": true, "dev": false }
+  ```
+  * If `false`, no CloudFront Distribution will be created for that stage.  
+  * If `"string"`, a CloudFront Distribution will be created and `"string"` will be set as an [Alias (CNAME)](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html).  
+  * If `true` (**default** for stages not specified here), a CloudFront Distribution will ben created, without any Alias (CNAME).  
+*Please note that updating/creating/deleting CloudFront distributions will take approximately 20 minutes.*  
+*Please note that the CNAME must be globally unique in AWS. If the CNAME specified here is already in use, the deployment will fail.*
+ 
 * **cloudfrontRootOrigin** (either `assets` or `api`, defaults to `api`):
   * if "assets", use S3 assets (uploaded via `$ dawson upload-assets`) as [Default Cache Behaviour](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-web-values-specify.html#DownloadDistValuesCacheBehavior), i.e.: serve the root directory from S3, useful for Single Page Apps. Requests starting with `/prod` are forwarded to API Gateway.
   * if "api", use your API as Default Cache Behaviour. Requests starting with `/assets` are forwarded to S3 assets bucket.
@@ -36,13 +37,12 @@ Optionally, you can define a `dawson` property, as follows:
 ##### Example
 ```js
 "dawson": {
-  "domains": [
-    "mydomain123.example.com" // required, unique
-  ],
   "zipIgnore": [
     "frontend"
   ],
-  "cloudfront": true,
+  "cloudfront": {
+    "default": true
+  },
   "cloudfrontRootOrigin": "api"
 },
 ```
