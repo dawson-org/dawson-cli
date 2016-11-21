@@ -13,11 +13,11 @@
 
 ## `package.json` fields reference
 
-You must define a `dawson` property, as follows:
+You must set the **`name`** field in your `package.json`; this `name` will be used as a prefix for all the `CloudFormation` stacks and must be unique in a given AWS account.
 
-* **appName** (**required**, string): your app name, used in template and resource names. Keep it short but unique.
-  NOTE: changing this causes the whole application to be deployed from scratch.
-* **domains** (**required**, list of strings): a list of at least one domain name to set as [CloudFront CNAME](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html). Domains must be unique globally in AWS.
+Optionally, you can define a `dawson` property, as follows:
+
+* **domains** (list of strings): a list of at least one domain name to set as [CloudFront CNAME](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html). Domains must be unique globally in AWS.
 * **pre-deploy** (string): a command to execute before starting the deployment. If command exits with status <> 0, the deployment is aborted.
 * **post-deploy** (string): a command to run after the deployment has been succesfully completed.
 * **zipIgnore** (list of strings): a list of partial paths to ignore when zipping lambdas. **Do not** ignore `node_modules`.
@@ -36,7 +36,6 @@ You must define a `dawson` property, as follows:
 ##### Example
 ```js
 "dawson": {
-  "appName": "myapp", // required, unique
   "domains": [
     "mydomain123.example.com" // required, unique
   ],

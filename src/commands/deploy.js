@@ -2,8 +2,7 @@
 import { stripIndent } from 'common-tags';
 import { execSync } from 'child_process';
 
-import { SETTINGS, API_DEFINITIONS } from '../config';
-const { appName } = SETTINGS;
+import { SETTINGS, API_DEFINITIONS, APP_NAME } from '../config';
 
 import { debug, error, log, danger, success } from '../logger';
 import compiler from '../libs/compiler';
@@ -102,8 +101,8 @@ export async function deploy ({
 }, argv) {
   runCommand('pre-deploy hook', SETTINGS['pre-deploy']);
   const deployCloudfront = shouldDeployCloudfront({ appStage });
-  const stackName = templateStackName({ appName, stage: appStage });
-  const supportStackName = templateStackName({ appName: `${appName}Support` });
+  const stackName = templateStackName({ appName: APP_NAME, stage: appStage });
+  const supportStackName = templateStackName({ appName: `${APP_NAME}Support` });
   try {
     // create support stack (e.g.: temp s3 buckets)
     if (!argv.dryrun) {

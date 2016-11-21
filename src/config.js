@@ -23,11 +23,17 @@ if (process.env.NODE_ENV !== 'testing') {
     error('Error: cannot find a valid api.js in current directory');
     throw e;
   }
+
+  if (!requiredPkgJson.name) {
+    error('You must specify a `name` field in your package.json.');
+    process.exit(1);
+  }
 } else {
   requiredPkgJson = { dawson: {} };
   requiredApi = {};
 }
 
 export const PKG_JSON = requiredPkgJson;
-export const SETTINGS = PKG_JSON.dawson;
+export const APP_NAME = PKG_JSON.name;
+export const SETTINGS = PKG_JSON.dawson || {};
 export const API_DEFINITIONS = requiredApi;

@@ -1,7 +1,6 @@
 
 import { error, log, table, title } from '../logger';
-import { SETTINGS } from '../config';
-const { appName } = SETTINGS;
+import { APP_NAME } from '../config';
 
 import {
   getStackOutputs,
@@ -13,7 +12,7 @@ export function run (argv) {
     stage,
     outputName
   } = argv;
-  const stackName = templateStackName({ appName, stage });
+  const stackName = templateStackName({ appName: APP_NAME, stage });
   return Promise.resolve()
   .then(() => getStackOutputs({ stackName }))
   .then(outputs => {

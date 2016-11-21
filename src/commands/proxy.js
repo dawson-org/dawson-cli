@@ -20,8 +20,7 @@ import pathModule from 'path';
 import util from 'util';
 
 import { debug, error, success } from '../logger';
-import { SETTINGS, API_DEFINITIONS } from '../config';
-const { appName } = SETTINGS;
+import { SETTINGS, API_DEFINITIONS, APP_NAME } from '../config';
 import { RUNNER_FUNCTION_BODY } from '../libs/compiler';
 import { compare } from '../libs/pathmatch';
 
@@ -235,7 +234,7 @@ export function run (argv) {
 
   assert(proxyAssetsUrl || assetsPathname, 'You must specify either --proxy-assets-url or --assets-pathname');
 
-  const stackName = templateStackName({ appName, stage });
+  const stackName = templateStackName({ appName: APP_NAME, stage });
 
   const proxy = createProxyServer({});
   // Proxy errors
