@@ -15,6 +15,45 @@ if (cloudfrontRootOrigin !== 'assets' && cloudfrontRootOrigin !== 'api') {
   throw new Error('Invalid parameter value for cloudfrontRootOrigin. Allowed values are: assets, api');
 }
 
+// WebACL
+//
+
+function wantsWebACL () {
+  return process.env.NODE_ENV === 'production';
+}
+
+export function templateWAFWebACLName () {
+  return `WWWACL`;
+}
+
+export function templateWAFWebACL () {
+  if (!wantsWebACL()) {
+    return {};
+  }
+  return {
+    [`WebACL${templateWAFWebACLName()}`]: {
+      'Type': 'AWS::WAF::WebACL',
+      'Properties': {
+        'DefaultAction': { 'Type': 'ALLOW' },
+        'MetricName': 'WWWACL',
+        'Name': `${templateWAFWebACLName()}`
+      }
+    }
+  };
+}
+
+export function partialWebACLId () {
+  if (!wantsWebACL()) {
+    return {};
+  }
+  return {
+    'WebACLId': { 'Ref': `WebACL${templateWAFWebACLName()}` }
+  };
+}
+
+// CloudFront Distribution
+//
+
 export function templateCloudfrontDistributionName () {
   return `WWWDistribution`;
 }
@@ -126,6 +165,7 @@ export function templateCloudfrontDistribution ({
   }
 
   return {
+    ...templateWAFWebACL(),
     [`${templateCloudfrontDistributionName()}`]: {
       'Type': 'AWS::CloudFront::Distribution',
       'DependsOn': [
@@ -146,6 +186,7 @@ export function templateCloudfrontDistribution ({
           'CacheBehaviors': [otherCB],
           'PriceClass': 'PriceClass_200',
           'ViewerCertificate': { 'CloudFrontDefaultCertificate': 'true' },
+          ...partialWebACLId(),
           ...CustomErrorResponses
         }
       }
