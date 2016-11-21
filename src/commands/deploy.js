@@ -301,6 +301,18 @@ export async function deploy ({
     log('');
     runCommand('post-deploy hook', SETTINGS['post-deploy']);
 
+    if (cloudfrontSettings) {
+      const outputs = await getStackOutputs({ stackName });
+      const cloudfrontDNS = outputs.find(o => o.OutputKey === 'CloudFrontDNS').OutputValue;
+
+      if (cloudfrontCustomDomain) {
+        success('*'.blue, `Now configure your DNS: ${cloudfrontCustomDomain} CNAME ${cloudfrontDNS}`);
+        success('*'.blue, `and navigate to http://${cloudfrontCustomDomain} or https://${cloudfrontDNS}`);
+      } else {
+        success('*'.blue, `Open your browser and enjoy: https://${cloudfrontDNS}`);
+      }
+    }
+
     if (!argv.dryrun && argv.functionName) {
       // we may want to tail logs for one function
       return logCommand({ ...argv, follow: true });
