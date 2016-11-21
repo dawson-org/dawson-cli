@@ -9,8 +9,7 @@ const cwlogs = new AWS.CloudWatchLogs({});
 const filterLogEvents = promisify(cwlogs.filterLogEvents.bind(cwlogs));
 
 import { title, error, log } from '../logger';
-import { SETTINGS } from '../config';
-const { appName } = SETTINGS;
+import { APP_NAME } from '../config';
 
 import {
   templateLambdaName
@@ -92,7 +91,7 @@ export function run (argv) {
     functionName,
     follow
   } = argv;
-  const stackName = templateStackName({ appName, stage });
+  const stackName = templateStackName({ appName: APP_NAME, stage });
   const camelFunctionName = functionName[0].toUpperCase() + functionName.substring(1);
   const cfLambdaName = templateLambdaName({ lambdaName: camelFunctionName });
   return Promise.resolve()
