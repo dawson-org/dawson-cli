@@ -29,9 +29,30 @@ function validateCloudFrontConfig (cloudfront) {
   return true;
 }
 
+function validateRoute53Config (route53) {
+  const message = stripIndent`
+    The value of the 'route53' property in your package.json is invalid.
+    Please check the documentation: https://github.com/lusentis/dawson/blob/master/docs/API.md#packagejson-fields-reference
+  `;
+  if (typeof route53 === 'undefined') { return true; }
+  if (typeof route53 !== 'object') {
+    return message;
+  }
+  const valuesAreOK = Object.values(route53).every(val => typeof val === 'string');
+  if (!valuesAreOK) {
+    return message;
+  }
+  return true;
+}
+
 function validateDawsonConfig (dawson) {
   const cloudfrontIsValid = validateCloudFrontConfig(dawson.cloudfront);
-  return cloudfrontIsValid;
+  if (cloudfrontIsValid !== true) { return cloudfrontIsValid; }
+
+  const route53IsValid = validateRoute53Config(dawson.route53);
+  if (route53IsValid !== true) { return route53IsValid; }
+
+  return true;
 }
 
 function validatePackageJSON (source) {
@@ -73,3 +94,4 @@ export const SETTINGS = PKG_JSON.dawson || {};
 export const API_DEFINITIONS = requiredApi;
 
 export const getCloudFrontSettings = ({ appStage }) => SETTINGS.cloudfront ? SETTINGS.cloudfront[appStage] : true;
+export const getHostedZoneId = ({ appStage }) => SETTINGS.route53 ? SETTINGS.route53[appStage] : null;

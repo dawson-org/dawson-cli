@@ -1,8 +1,9 @@
 
 import { stripIndent } from 'common-tags';
 import { execSync } from 'child_process';
+import AWS from 'aws-sdk';
 
-import { SETTINGS, API_DEFINITIONS, APP_NAME, getCloudFrontSettings } from '../config';
+import { SETTINGS, API_DEFINITIONS, APP_NAME, getCloudFrontSettings, getHostedZoneId } from '../config';
 
 import { debug, error, log, danger, success } from '../logger';
 import compiler from '../libs/compiler';
@@ -58,6 +59,10 @@ import {
   templateCloudfrontDistributionName
 } from '../factories/cf_cloudfront';
 
+import {
+  templateRoute53
+} from '../factories/cf_route53';
+
 const RESERVED_FUCTION_NAMES = ['processCFTemplate'];
 
 function runCommand (description, cmd) {
@@ -89,6 +94,7 @@ export async function deploy ({
 }, argv) {
   runCommand('pre-deploy hook', SETTINGS['pre-deploy']);
   const cloudfrontSettings = getCloudFrontSettings({ appStage });
+  const hostedZoneId = getHostedZoneId({ appStage });
   const stackName = templateStackName({ appName: APP_NAME, stage: appStage });
   const supportStackName = templateStackName({ appName: `${APP_NAME}Support` });
   try {
@@ -212,6 +218,23 @@ export async function deploy ({
         alias: cloudfrontCustomDomain
       })
       : {};
+
+    const route53Enabled = (cloudfrontCustomDomain && hostedZoneId);
+    const route53Partial = route53Enabled ? templateRoute53({ hostedZoneId, cloudfrontCustomDomain }) : {};
+
+    if (route53Enabled) {
+      const r53 = new AWS.Route53({});
+      const zoneInfo = await r53.getHostedZone({ Id: hostedZoneId }).promise();
+      const domainName = zoneInfo.HostedZone.Name;
+      if (!`${cloudfrontCustomDomain}.`.includes(domainName) &&
+           domainName !== `${cloudfrontCustomDomain}.`) {
+        throw new Error(stripIndent`
+          Route53 Zone '${hostedZoneId}' (${domainName}) cannot 
+          contain this record: '${cloudfrontCustomDomain}.', please fix your package.json.
+        `);
+      }
+    }
+
     const deploymentUid = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
     let cfTemplate = {
       Parameters: {
@@ -228,7 +251,8 @@ export async function deploy ({
           deploymentUid,
           dependsOnMethods: methodsInTemplate
         }),
-        ...cloudfrontPartial
+        ...cloudfrontPartial,
+        ...route53Partial
       },
       Outputs: {
         ApiGatewayUrl: {
