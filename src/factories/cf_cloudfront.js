@@ -1,6 +1,5 @@
 
 import { SETTINGS } from '../config';
-const domains = SETTINGS.domains || [];
 
 import {
   templateAPIID
@@ -59,11 +58,12 @@ export function templateCloudfrontDistributionName () {
 }
 
 export function templateCloudfrontDistribution ({
-  stageName
+  stageName,
+  alias
 }) {
-  const aliases = {};
-  if (domains && domains.length > 0) {
-    aliases.Aliases = domains;
+  const aliasesConfig = {};
+  if (alias) {
+    aliasesConfig.Aliases = [alias];
   }
 
   const s3Origin = {
@@ -174,7 +174,7 @@ export function templateCloudfrontDistribution ({
       ],
       'Properties': {
         'DistributionConfig': {
-          ...aliases,
+          ...aliasesConfig,
           'Origins': [
             s3Origin,
             apiOrigin

@@ -2,7 +2,7 @@
 import { stripIndent } from 'common-tags';
 import { execSync } from 'child_process';
 
-import { SETTINGS, API_DEFINITIONS, APP_NAME } from '../config';
+import { SETTINGS, API_DEFINITIONS, APP_NAME, getCloudFrontSettings } from '../config';
 
 import { debug, error, log, danger, success } from '../logger';
 import compiler from '../libs/compiler';
@@ -60,18 +60,6 @@ import {
 
 const RESERVED_FUCTION_NAMES = ['processCFTemplate'];
 
-function shouldDeployCloudfront ({ appStage }) {
-  if (SETTINGS.cloudfront === false) {
-    return false;
-  }
-  if (typeof SETTINGS.cloudfront === 'object') {
-    if (SETTINGS.cloudfront[appStage] === false) {
-      return false;
-    }
-  }
-  return true;
-}
-
 function runCommand (description, cmd) {
   if (!cmd) {
     debug(`Hook: ${description} was not specified.`);
@@ -100,7 +88,7 @@ export async function deploy ({
   dangerDeleteResources = false
 }, argv) {
   runCommand('pre-deploy hook', SETTINGS['pre-deploy']);
-  const deployCloudfront = shouldDeployCloudfront({ appStage });
+  const cloudfrontSettings = getCloudFrontSettings({ appStage });
   const stackName = templateStackName({ appName: APP_NAME, stage: appStage });
   const supportStackName = templateStackName({ appName: `${APP_NAME}Support` });
   try {
@@ -217,9 +205,11 @@ export async function deploy ({
 
     log('');
 
-    const cloudfrontPartial = deployCloudfront
+    const cloudfrontCustomDomain = typeof cloudfrontSettings === 'string' ? cloudfrontSettings : null;
+    const cloudfrontPartial = (cloudfrontSettings !== false)
       ? templateCloudfrontDistribution({
-        stageName
+        stageName,
+        alias: cloudfrontCustomDomain
       })
       : {};
     const deploymentUid = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
@@ -254,7 +244,7 @@ export async function deploy ({
           Value: { 'Ref': `${templateAssetsBucketName()}` }
         },
         CloudFrontDNS: {
-          Value: deployCloudfront
+          Value: cloudfrontSettings
                   ? { 'Fn::GetAtt': [`${templateCloudfrontDistributionName()}`, 'DomainName'] }
                   : 'CloudFront disabled from config'
         },
