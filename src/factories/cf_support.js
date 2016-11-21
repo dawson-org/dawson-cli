@@ -6,6 +6,8 @@ import {
   waitForUpdateCompleted
 } from './cf_utils';
 
+import AWS from 'aws-sdk';
+
 export function templateSupportBucket () {
   return `BucketSupport`;
 }
@@ -35,13 +37,20 @@ export async function createSupportResources ({ stackName }) {
       }
     }
   }, null, 2);
+  // !!! REGION WARNING !!!
+  // Support stack is always created in us-east-1 because we can only
+  // associate to CloudFront AWS ACM certificates that are located in us-east-1
+  const cloudformation = new AWS.CloudFormation({
+    region: 'us-east-1'
+  });
   const cfParams = await buildStack({
     stackName,
     cfTemplateJSON,
-    inline: true // support bucket does not exist ad this time
+    inline: true, // support bucket does not exist ad this time
+    cloudformation
   });
-  debug('Now updating support resources');
-  await createOrUpdateStack({ stackName, cfParams, ignoreNoUpdates: true });
-  await waitForUpdateCompleted({ stackName });
+  debug('Now updating support resources in Region');
+  await createOrUpdateStack({ stackName, cfParams, ignoreNoUpdates: true, cloudformation });
+  await waitForUpdateCompleted({ stackName, cloudformation });
   debug(`Support Stack update completed`);
 }
