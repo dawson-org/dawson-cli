@@ -168,7 +168,8 @@ export function templateInvokationRole () {
 
 export function templateLambdaIntegration ({
   lambdaName,
-  responseContentType
+  responseContentType,
+  redirects
 }) {
   let responseTemplate;
   if (responseContentType.includes('application/json')) {
@@ -200,15 +201,32 @@ export function templateLambdaIntegration ({
       `
     };
   }
+  let apigResponseContentType = responseContentType;
+  let defaultStatusCode = 200;
+  let responseParameters = {};
+  if (redirects) {
+    defaultStatusCode = 307;
+    responseParameters = {
+      ...responseParameters,
+      'method.response.header.Location': 'integration.response.body.response.Location'
+    };
+    apigResponseContentType = 'text/plain';
+    responseTemplate = {
+      'text/plain': stripIndent`
+        #set($inputRoot = $input.path('$'))
+        You are being redirected to $inputRoot.response.Location
+      `
+    };
+  }
   return {
     'IntegrationHttpMethod': 'POST',
     'IntegrationResponses': [{
-      // "ResponseParameters": {},
+      'ResponseParameters': responseParameters,
       'ResponseTemplates': {
         ...responseTemplate
       },
       // "SelectionPattern": "regexp"
-      'StatusCode': 200
+      'StatusCode': defaultStatusCode
     }],
     // "RequestParameters" : { String:String, ... },
     'PassthroughBehavior': 'NEVER',
@@ -255,7 +273,7 @@ export function templateLambdaIntegration ({
           },
           "body": $input.json('$'),
           "meta": {
-            "expectedResponseContentType": "${responseContentType}"
+            "expectedResponseContentType": "${apigResponseContentType}"
           },
           "stageVariables" : {
             #foreach($name in $stageVariables.keySet())
@@ -284,14 +302,15 @@ export function templateMethod ({
   httpMethod = 'GET',
   lambdaName = null,
   responseContentType,
-  authorizerFunctionName
+  authorizerFunctionName,
+  redirects
 }) {
   const responseModelName = 'HelloWorldModel';
   const resourceId = !resourceName
     ? { 'Fn::GetAtt': [`${templateAPIID()}`, 'RootResourceId'] }
     : { 'Ref': `${templateResourceName({ resourceName })}` };
   const integrationConfig = lambdaName
-    ? templateLambdaIntegration({ lambdaName, responseContentType })
+    ? templateLambdaIntegration({ lambdaName, responseContentType, redirects })
     : templateMockIntegration({});
   let responseModel;
   if (responseContentType.includes('application/json')) {
@@ -357,6 +376,14 @@ export function templateMethod ({
             ...responseModel
           },
           'StatusCode': 200
+        }, {
+          'ResponseModels': {
+            ...responseModel
+          },
+          'StatusCode': 307,
+          'ResponseParameters': {
+            'method.response.header.Location': false
+          }
         }],
         ...authorizerConfig
       }
