@@ -104,12 +104,26 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
     const context = {};
     // eslint-disable-next-line
     const callback = function apiCallback (err, data) {
+      const contentType = getContentType(runner);
       if (err) {
         error(`Request Error: ${err.message}`);
         error(err);
+        const errorResponse = JSON.parse(err.message);
+        res.writeHead(errorResponse.httpStatus, {
+          'Content-Type': contentType
+        });
+        if (contentType === 'application/json') {
+          res.write(JSON.stringify(errorResponse));
+        } else if (contentType === 'text/plain') {
+          res.write(errorResponse.response);
+        } else if (contentType === 'text/html') {
+          res.write(errorResponse.response);
+        } else {
+          res.write(errorResponse.response);
+        }
+        res.end();
         return;
       }
-      const contentType = getContentType(runner);
       if (runner.api.redirects) {
         const location = data.response.Location;
         res.writeHead(307, {
@@ -124,15 +138,14 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
       if (!data) {
         error(`Handler returned an empty body`);
       } else {
-        data = JSON.parse(data.response);
         if (contentType === 'application/json') {
-          res.write(JSON.stringify(data));
+          res.write(data.response);
         } else if (contentType === 'text/plain') {
-          res.write(data);
+          res.write(data.response);
         } else if (contentType === 'text/html') {
-          res.write(data);
+          res.write(data.html);
         } else {
-          res.write(data);
+          res.write(data.response);
         }
       }
       console.log(` <- END '${runner.name}' (${new Intl.NumberFormat().format(data.length / 1024)} KB)\n`.red.dim);

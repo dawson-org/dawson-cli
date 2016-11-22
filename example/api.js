@@ -10,7 +10,8 @@ export function index (params) {
   return 'I am the root';
 }
 index.api = {
-  path: ''
+  path: '',
+  responseContentType: 'application/json'
 };
 
 export function testRedirect (params) {
@@ -34,6 +35,40 @@ export function helloWorld (params) {
 }
 helloWorld.api = {
   path: 'hello'
+};
+
+export function testError (params) {
+  console.log('I will throw an error');
+  // If responseContentType is application/json, the whole error payload is rendered to the client
+  //  in all other cases, the "response" property is returned as response
+  //  supported error codes: 400 403 404 500.
+  // Please note that the Error constructor accepts just a String as first argument,
+  //  so you need to use JSON.stringify.
+  throw new Error(JSON.stringify({
+    httpStatus: 500,
+    response: 'I wanted to throw a 500 error'
+  }));
+}
+testError.api = {
+  path: 'error'
+};
+
+export function testErrorJSON (params) {
+  console.log('I will throw an error');
+  // If responseContentType is application/json, the whole error payload is rendered to the client
+  //  in all other cases, the "response" property is returned as response
+  //  supported error codes: 400 403 404 500.
+  // Please note that the Error constructor accepts just a String as first argument,
+  //  so you need to use JSON.stringify.
+  throw new Error(JSON.stringify({
+    httpStatus: 403,
+    response: 'I wanted to throw a 403 error',
+    id: 'foobar'
+  }));
+}
+testErrorJSON.api = {
+  path: 'error403',
+  responseContentType: 'application/json'
 };
 
 // 2. Basic function with a path parameter
