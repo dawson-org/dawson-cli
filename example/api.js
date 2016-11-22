@@ -10,7 +10,8 @@ export function index (params) {
   return 'I am the root';
 }
 index.api = {
-  path: ''
+  path: '',
+  responseContentType: 'application/json'
 };
 
 export function testRedirect (params) {

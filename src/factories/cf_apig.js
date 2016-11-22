@@ -256,22 +256,22 @@ export function templateLambdaIntegration ({
     }, {
       'ResponseParameters': responseParameters,
       'ResponseTemplates': { ...errorResponseTemplate },
-      "SelectionPattern": `.*"httpStatus":500.*`,
+      'SelectionPattern': `.*"httpStatus":500.*`,
       'StatusCode': 500
     }, {
       'ResponseParameters': responseParameters,
       'ResponseTemplates': { ...errorResponseTemplate },
-      "SelectionPattern": `.*"httpStatus":400.*`,
+      'SelectionPattern': `.*"httpStatus":400.*`,
       'StatusCode': 400
     }, {
       'ResponseParameters': responseParameters,
       'ResponseTemplates': { ...errorResponseTemplate },
-      "SelectionPattern": `.*"httpStatus":403.*`,
+      'SelectionPattern': `.*"httpStatus":403.*`,
       'StatusCode': 403
     }, {
       'ResponseParameters': responseParameters,
       'ResponseTemplates': { ...errorResponseTemplate },
-      "SelectionPattern": `.*"httpStatus":404.*`,
+      'SelectionPattern': `.*"httpStatus":404.*`,
       'StatusCode': 404
     }],
     // "RequestParameters" : { String:String, ... },
