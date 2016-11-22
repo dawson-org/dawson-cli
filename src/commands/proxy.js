@@ -78,6 +78,10 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
         throw e;
       }
     }
+    let expectedResponseContentType = runner.api.responseContentType || 'text/html';
+    if (runner.api.redirects) {
+      expectedResponseContentType = 'text/plain';
+    }
     const event = {
       params: {
         path: {
@@ -88,7 +92,7 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
       },
       body,
       meta: {
-        expectedResponseContentType: 'application/json'
+        expectedResponseContentType
       },
       stageVariables
     };
@@ -103,6 +107,16 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
         return;
       }
       const contentType = getContentType(runner);
+      if (runner.api.redirects) {
+        const location = data.response.Location;
+        res.writeHead(307, {
+          'Content-Type': 'text/plain',
+          'Location': location
+        });
+        res.write(`You are being redirected to ${location}`);
+        res.end();
+        return;
+      }
       res.writeHead(200, { 'Content-Type': contentType });
       if (!data) {
         error(`Handler returned an empty body`);
