@@ -13,6 +13,17 @@ index.api = {
   path: ''
 };
 
+export function testRedirect (params) {
+  console.log('You won\'t see me, I\'m redirecting to news.google.com');
+  return {
+    Location: 'https://news.google.com'
+  };
+}
+testRedirect.api = {
+  path: '/redir',
+  redirects: true
+};
+
 export function helloWorld (params) {
   console.log('foobar', params);
   console.log('functions can return either promises or plain strings!');

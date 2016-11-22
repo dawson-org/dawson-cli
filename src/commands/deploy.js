@@ -154,7 +154,8 @@ export async function deploy ({
         responseContentType = 'text/html',
         runtime,
         keepWarm = false,
-        authorizer
+        authorizer,
+        redirects = false
       } = def.api;
       const name = def.name;
       debug(`=> #${index} Found function ${name.bold} at ${httpMethod.bold} /${resourcePath.bold}`);
@@ -203,7 +204,8 @@ export async function deploy ({
             httpMethod,
             lambdaName,
             responseContentType,
-            authorizerFunctionName
+            authorizerFunctionName,
+            redirects
           })
         };
         methodsInTemplate.push({ resourceName, httpMethod });

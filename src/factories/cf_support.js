@@ -34,28 +34,30 @@ function templateACMCertificatePartial ({ logicalName, domainName }) {
 function templateACMCertificates ({ cloudfrontStagesSettings }) {
   let resources = {};
   let outputs = {};
-  Object.entries(cloudfrontStagesSettings).forEach(([stageName, domainName]) => {
-    if (typeof domainName === 'string') {
-      warning(oneLine`
-        An SSL/TLS certificate will be requested for the domain ${domainName.bold} and the deploy 
-        will pause until you've validated all of your certificates.
-        Domain contacts and administrative emails will receive an email asking for confirmation.
-        Refer to AWS ACM documentation for further info:
-        https://docs.aws.amazon.com/acm/latest/userguide/setup-email.html
-      `);
-      const logicalName = templateACMCertName({ stageName });
-      resources = {
-        ...resources,
-        ...templateACMCertificatePartial({ logicalName, domainName })
-      };
-      outputs = {
-        ...outputs,
-        [`${logicalName}`]: {
-          Value: { Ref: logicalName }
-        }
-      };
-    }
-  });
+  if (typeof cloudfrontStagesSettings === 'object') {
+    Object.entries(cloudfrontStagesSettings).forEach(([stageName, domainName]) => {
+      if (typeof domainName === 'string') {
+        warning(oneLine`
+          An SSL/TLS certificate will be requested for the domain ${domainName.bold} and the deploy 
+          will pause until you've validated all of your certificates.
+          Domain contacts and administrative emails will receive an email asking for confirmation.
+          Refer to AWS ACM documentation for further info:
+          https://docs.aws.amazon.com/acm/latest/userguide/setup-email.html
+        `);
+        const logicalName = templateACMCertName({ stageName });
+        resources = {
+          ...resources,
+          ...templateACMCertificatePartial({ logicalName, domainName })
+        };
+        outputs = {
+          ...outputs,
+          [`${logicalName}`]: {
+            Value: { Ref: logicalName }
+          }
+        };
+      }
+    });
+  }
   return {
     Resources: resources,
     Outputs: outputs
