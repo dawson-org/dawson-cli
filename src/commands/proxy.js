@@ -17,8 +17,7 @@ import pathModule from 'path';
 import util from 'util';
 
 import { debug, error, success } from '../logger';
-import { SETTINGS, API_DEFINITIONS } from '../config';
-const { appName } = SETTINGS;
+import { SETTINGS, API_DEFINITIONS, APP_NAME } from '../config';
 import { RUNNER_FUNCTION_BODY } from '../libs/compiler';
 import { compare } from '../libs/pathmatch';
 
@@ -79,6 +78,10 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
         throw e;
       }
     }
+    let expectedResponseContentType = runner.api.responseContentType || 'text/html';
+    if (runner.api.redirects) {
+      expectedResponseContentType = 'text/plain';
+    }
     const event = {
       params: {
         path: {
@@ -89,7 +92,7 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
       },
       body,
       meta: {
-        expectedResponseContentType: 'application/json'
+        expectedResponseContentType
       },
       stageVariables
     };
@@ -98,25 +101,48 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
     const context = {};
     // eslint-disable-next-line
     const callback = function apiCallback (err, data) {
+      const contentType = getContentType(runner);
       if (err) {
         error(`Request Error: ${err.message}`);
         error(err);
+        const errorResponse = JSON.parse(err.message);
+        res.writeHead(errorResponse.httpStatus, {
+          'Content-Type': contentType
+        });
+        if (contentType === 'application/json') {
+          res.write(JSON.stringify(errorResponse));
+        } else if (contentType === 'text/plain') {
+          res.write(errorResponse.response);
+        } else if (contentType === 'text/html') {
+          res.write(errorResponse.response);
+        } else {
+          res.write(errorResponse.response);
+        }
+        res.end();
         return;
       }
-      const contentType = getContentType(runner);
+      if (runner.api.redirects) {
+        const location = data.response.Location;
+        res.writeHead(307, {
+          'Content-Type': 'text/plain',
+          'Location': location
+        });
+        res.write(`You are being redirected to ${location}`);
+        res.end();
+        return;
+      }
       res.writeHead(200, { 'Content-Type': contentType });
       if (!data) {
         error(`Handler returned an empty body`);
       } else {
-        data = JSON.parse(data.response);
         if (contentType === 'application/json') {
-          res.write(JSON.stringify(data));
+          res.write(data.response);
         } else if (contentType === 'text/plain') {
-          res.write(data);
+          res.write(data.response);
         } else if (contentType === 'text/html') {
-          res.write(data);
+          res.write(data.html);
         } else {
-          res.write(data);
+          res.write(data.response);
         }
       }
       console.log(` <- END '${runner.name}' (${new Intl.NumberFormat().format(data.length / 1024)} KB)\n`.red.dim);
@@ -232,7 +258,7 @@ export function run (argv) {
 
   assert(proxyAssetsUrl || assetsPathname, 'You must specify either --proxy-assets-url or --assets-pathname');
 
-  const stackName = templateStackName({ appName, stage });
+  const stackName = templateStackName({ appName: APP_NAME, stage });
 
   const proxy = createProxyServer({});
   // Proxy errors

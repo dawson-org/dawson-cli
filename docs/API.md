@@ -13,22 +13,30 @@
 
 ## `package.json` fields reference
 
-You must define a `dawson` property, as follows:
+You must set the **`name`** field in your `package.json`; this `name` will be used as a prefix for all the `CloudFormation` stacks and must be unique in a given AWS account.
 
-* **appName** (**required**, string): your app name, used in template and resource names. Keep it short but unique.
-  NOTE: changing this causes the whole application to be deployed from scratch.
-* **domains** (**required**, list of strings): a list of at least one domain name to set as [CloudFront CNAME](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html). Domains must be unique globally in AWS.
+Optionally, you can define a `dawson` property, as follows:
+
 * **pre-deploy** (string): a command to execute before starting the deployment. If command exits with status <> 0, the deployment is aborted.
 * **post-deploy** (string): a command to run after the deployment has been succesfully completed.
 * **zipIgnore** (list of strings): a list of partial paths to ignore when zipping lambdas. **Do not** ignore `node_modules`.
-* **cloudfront** (boolean, or object, defaults to `true`): if `false`, the default CloudFront distribution won't be added to the CloudFormation template, so:
-   * if you are deploying a new app, the deploy will be very quick, and no distribution will be created
-   * if you are updating an app that has been previously deployed with `cloudfront !== false`, the distribution will be  **deleted** (this will take ~20min)
-   * if you are referencing the distribution from a custom resource your stack will fail
+* **cloudfront** (object: string -> string|boolean, defaults to `{}`): an object which maps app stages to domain names, e.g.:
+  ```json
+{ "default": "myapp123.com", "test": true, "dev": false }
+  ```
+  * If `false`, no CloudFront Distribution will be created for that stage.  
+  * If `"string"`, a CloudFront Distribution will be created and `"string"` will be set as an [Alias (CNAME)](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html).  
+  * If `true` (**default** for stages not specified here), a CloudFront Distribution will ben created, without any Alias (CNAME).  
+*Please note that updating/creating/deleting CloudFront distributions will take approximately 20 minutes.*  
+*Please note that the CNAME must be globally unique in AWS. If the CNAME specified here is already in use, the deployment will fail.*
+ 
+* **route53** (object: string -> string, defaults to `{}`): an object which maps app stages to Route53 Hosted Zone IDs, e.g.:
+  ```json
+{ "default": "Z187MLBSXQKXXX" }
+  ```
+  If an Hosted Zone ID is specified, the record corresponding to the CloudFront Alias (CNAME) is created (as an `A` `ALIAS` to the CloudFront distribution).  
+  *Please note that the Route53 Hosted Zone must be an Alias' ancestor.*.
 
- You can optionally specify an object which maps app stages to booleans: `{ "dev": false, "prod": true }`
-
- *This option controls the behaviour of the default CloudFront distribution that dawson creates, and does not apply to any custom resource.*
 * **cloudfrontRootOrigin** (either `assets` or `api`, defaults to `api`):
   * if "assets", use S3 assets (uploaded via `$ dawson upload-assets`) as [Default Cache Behaviour](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-web-values-specify.html#DownloadDistValuesCacheBehavior), i.e.: serve the root directory from S3, useful for Single Page Apps. Requests starting with `/prod` are forwarded to API Gateway.
   * if "api", use your API as Default Cache Behaviour. Requests starting with `/assets` are forwarded to S3 assets bucket.
@@ -36,14 +44,15 @@ You must define a `dawson` property, as follows:
 ##### Example
 ```js
 "dawson": {
-  "appName": "myapp", // required, unique
-  "domains": [
-    "mydomain123.example.com" // required, unique
-  ],
   "zipIgnore": [
     "frontend"
   ],
-  "cloudfront": true,
+  "route53": {
+    "default": "Z187MLBSXQKXXX"
+  },
+  "cloudfront": {
+    "default": true
+  },
   "cloudfrontRootOrigin": "api"
 },
 ```
@@ -310,6 +319,7 @@ Each function exported by the top-level `api.js` must have an `api` property.
 
 * **path** (*required*, string|false): HTTP path to this function. Must be unique in your whole app. You may use path parameters placeholder, as in API Gateway, by sorrounding a parameter name with `{}` (`/hello/{name}` is valid, `/hello/{name}.html` is [**invalid**](https://docs.aws.amazon.com/apigateway/latest/developerguide/getting-started-mappings.html)). Do **not** include leading/trailing slashes. You can specify `false` to skip deploying the API Gateway endpoint.
 * **method** (string, defaults to GET): HTTP method.
+* **redirects** (boolean, defaults to `false`): if `true`, dawson expect this function to always return an object with a `Location` key; the HTTP response will then contain the appropriate Location header. Due to limitations in API Gateway, you cannot return any payload and you cannot mix redirecting and non-redirecting responses.
 * **authorizer** (function): an optional function to use as [API Gateway Custom Authorizer](https://docs.aws.amazon.com/apigateway/latest/developerguide/use-custom-authorizer.html) for this endpoint. The authorizer function must be exported from `api.js` and its `isEventHandler` property must be set to `true`.
 * **responseContentType** (string, defaults to `text/html`): Content-Type to set in API Gateway's response. Valid values are: `application/json`, `text/html`, `text/plain`. When `application/json`, `JSON.stringify(function_returned_value)` is called to render the response body.
 * **policyStatements** (list of maps): Policy statements for this Lambda's Role, as you would define in a [CloudFormation template](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-iam-policy.html#cfn-iam-policies-policydocument).
