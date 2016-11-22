@@ -20,7 +20,7 @@ export function testRedirect (params) {
   };
 }
 testRedirect.api = {
-  path: '/redir',
+  path: 'redir',
   redirects: true
 };
 
