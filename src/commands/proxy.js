@@ -4,9 +4,6 @@
 //
 // This command will simulate the CloudFront distribution
 //
-// Currently, this proxy DOES NOT SUPPORT "big" requests that
-//  does not fit in a single chunk (will result in a JSON error)
-//
 // This feature is preview-quality, we need error checking, etc...
 //
 
@@ -323,6 +320,9 @@ export function run (argv) {
       }
       req.on('data', chunk => {
         rawBody = Buffer.concat([rawBody, chunk]);
+      });
+      req.on('end', () => {
+        rawBody = Buffer.concat([rawBody]);
         const rawUTFBody = rawBody.toString('utf8');
         try {
           jsonBody = JSON.parse(rawUTFBody);
