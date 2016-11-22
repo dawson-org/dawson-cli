@@ -172,11 +172,17 @@ export function templateLambdaIntegration ({
   redirects
 }) {
   let responseTemplate;
+  let errorResponseTemplate;
   if (responseContentType.includes('application/json')) {
     responseTemplate = {
       'application/json': stripIndent`
         #set($inputRoot = $input.path('$'))
         $inputRoot.response
+      `
+    };
+    errorResponseTemplate = {
+      'application/json': stripIndent`
+        $input.path('$.errorMessage')
       `
     };
   } else if (responseContentType.includes('text/plain')) {
@@ -186,6 +192,12 @@ export function templateLambdaIntegration ({
         $inputRoot.response
       `
     };
+    errorResponseTemplate = {
+      'text/plain': stripIndent`
+        #set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+        $errorMessageObj.response
+      `
+    };
   } else if (responseContentType.includes('text/html')) {
     responseTemplate = {
       'text/html': stripIndent`
@@ -193,11 +205,23 @@ export function templateLambdaIntegration ({
         $inputRoot.html
       `
     };
+    errorResponseTemplate = {
+      'text/html': stripIndent`
+        #set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+        $errorMessageObj.response
+      `
+    };
   } else {
     responseTemplate = {
       [responseContentType]: stripIndent`
         #set($inputRoot = $input.path('$'))
         $inputRoot.response
+      `
+    };
+    errorResponseTemplate = {
+      [responseContentType]: stripIndent`
+        #set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+        $errorMessageObj.response
       `
     };
   }
@@ -217,16 +241,38 @@ export function templateLambdaIntegration ({
         You are being redirected to $inputRoot.response.Location
       `
     };
+    errorResponseTemplate = {
+      'text/plain': stripIndent`
+        Cannot redirect because of an error
+      `
+    };
   }
   return {
     'IntegrationHttpMethod': 'POST',
     'IntegrationResponses': [{
       'ResponseParameters': responseParameters,
-      'ResponseTemplates': {
-        ...responseTemplate
-      },
-      // "SelectionPattern": "regexp"
+      'ResponseTemplates': { ...responseTemplate },
       'StatusCode': defaultStatusCode
+    }, {
+      'ResponseParameters': responseParameters,
+      'ResponseTemplates': { ...errorResponseTemplate },
+      "SelectionPattern": `.*"httpStatus":500.*`,
+      'StatusCode': 500
+    }, {
+      'ResponseParameters': responseParameters,
+      'ResponseTemplates': { ...errorResponseTemplate },
+      "SelectionPattern": `.*"httpStatus":400.*`,
+      'StatusCode': 400
+    }, {
+      'ResponseParameters': responseParameters,
+      'ResponseTemplates': { ...errorResponseTemplate },
+      "SelectionPattern": `.*"httpStatus":403.*`,
+      'StatusCode': 403
+    }, {
+      'ResponseParameters': responseParameters,
+      'ResponseTemplates': { ...errorResponseTemplate },
+      "SelectionPattern": `.*"httpStatus":404.*`,
+      'StatusCode': 404
     }],
     // "RequestParameters" : { String:String, ... },
     'PassthroughBehavior': 'NEVER',
@@ -372,14 +418,22 @@ export function templateMethod ({
         'HttpMethod': httpMethod,
         'Integration': integrationConfig,
         'MethodResponses': [{
-          'ResponseModels': {
-            ...responseModel
-          },
+          'ResponseModels': { ...responseModel },
           'StatusCode': 200
         }, {
-          'ResponseModels': {
-            ...responseModel
-          },
+          'ResponseModels': { ...responseModel },
+          'StatusCode': 400
+        }, {
+          'ResponseModels': { ...responseModel },
+          'StatusCode': 403
+        }, {
+          'ResponseModels': { ...responseModel },
+          'StatusCode': 404
+        }, {
+          'ResponseModels': { ...responseModel },
+          'StatusCode': 500
+        }, {
+          'ResponseModels': { ...responseModel },
           'StatusCode': 307,
           'ResponseParameters': {
             'method.response.header.Location': false
