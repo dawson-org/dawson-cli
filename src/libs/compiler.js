@@ -41,6 +41,7 @@ Promise.resolve()
   }
 })
 .catch(function (err) {
+  console.error('Lambda will terminate with error', err);
   return callback(err);
 });
 `;

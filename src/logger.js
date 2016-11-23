@@ -64,7 +64,7 @@ export function danger (...args) {
 
 export function warning (...args) {
   args.map(stringify).forEach(str => {
-    process.stderr.write(str.orange + ' ');
+    process.stderr.write(str.yellow + ' ');
   });
   process.stderr.write('\n');
 }

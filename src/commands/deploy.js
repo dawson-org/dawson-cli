@@ -1,9 +1,10 @@
 
 import { stripIndent } from 'common-tags';
 import { execSync } from 'child_process';
+import AWS from 'aws-sdk';
 
-import { SETTINGS, API_DEFINITIONS } from '../config';
-const { appName } = SETTINGS;
+import { SETTINGS, API_DEFINITIONS, APP_NAME, getCloudFrontSettings, getHostedZoneId } from '../config';
+const { cloudfront: cloudfrontStagesSettings } = SETTINGS;
 
 import { debug, error, log, danger, success } from '../logger';
 import compiler from '../libs/compiler';
@@ -26,7 +27,8 @@ import {
 } from '../factories/cf_utils';
 
 import {
-  createSupportResources
+  createSupportResources,
+  templateACMCertName
 } from '../factories/cf_support';
 
 import {
@@ -59,19 +61,11 @@ import {
   templateCloudfrontDistributionName
 } from '../factories/cf_cloudfront';
 
-const RESERVED_FUCTION_NAMES = ['processCFTemplate'];
+import {
+  templateRoute53
+} from '../factories/cf_route53';
 
-function shouldDeployCloudfront ({ appStage }) {
-  if (SETTINGS.cloudfront === false) {
-    return false;
-  }
-  if (typeof SETTINGS.cloudfront === 'object') {
-    if (SETTINGS.cloudfront[appStage] === false) {
-      return false;
-    }
-  }
-  return true;
-}
+const RESERVED_FUCTION_NAMES = ['processCFTemplate'];
 
 function runCommand (description, cmd) {
   if (!cmd) {
@@ -101,14 +95,22 @@ export async function deploy ({
   dangerDeleteResources = false
 }, argv) {
   runCommand('pre-deploy hook', SETTINGS['pre-deploy']);
-  const deployCloudfront = shouldDeployCloudfront({ appStage });
-  const stackName = templateStackName({ appName, stage: appStage });
-  const supportStackName = templateStackName({ appName: `${appName}Support` });
+  const cloudfrontSettings = getCloudFrontSettings({ appStage });
+  const hostedZoneId = getHostedZoneId({ appStage });
+  const stackName = templateStackName({ appName: APP_NAME, stage: appStage });
+  const supportStackName = templateStackName({ appName: `${APP_NAME}Support` });
+  let acmCertificateArn;
   try {
     // create support stack (e.g.: temp s3 buckets)
     if (!argv.dryrun) {
       log('*'.blue, 'updating support resources...');
-      await createSupportResources({ stackName: supportStackName });
+      await createSupportResources({ stackName: supportStackName, cloudfrontStagesSettings });
+      const supportOutputs = await getStackOutputs({ stackName: supportStackName });
+      const acmCertLogicalName = templateACMCertName({ stageName: appStage });
+      const acmCertificateOutput = supportOutputs.find(o => o.OutputKey === acmCertLogicalName);
+      if (acmCertificateOutput) {
+        acmCertificateArn = acmCertificateOutput.OutputValue;
+      }
     } else {
       log('*'.yellow, 'support resources were not updated because you have launched this command with --dryrun');
     }
@@ -151,11 +153,22 @@ export async function deploy ({
         policyStatements: policyStatements = [],
         responseContentType = 'text/html',
         runtime,
-        keepWarm = false
+        keepWarm = false,
+        authorizer,
+        redirects = false
       } = def.api;
       const name = def.name;
-      currentCounter = currentCounter + 1;
       debug(`=> #${index} Found function ${name.bold} at ${httpMethod.bold} /${resourcePath.bold}`);
+      const authorizerFunctionName = authorizer ? authorizer.name : null;
+      if (authorizerFunctionName) {
+        if (typeof API_DEFINITIONS[authorizerFunctionName] !== 'function') {
+          throw new Error(`The authorizer function '${authorizerFunctionName}' must also be exported`);
+        }
+        if (!API_DEFINITIONS[authorizerFunctionName].api || !API_DEFINITIONS[authorizerFunctionName].api.isEventHandler) {
+          throw new Error(`The authorizer function '${authorizerFunctionName}' must have api.isEventHandler set to true`);
+        }
+      }
+      currentCounter = currentCounter + 1;
       functionsHuman.push({
         name,
         httpMethod,
@@ -190,7 +203,9 @@ export async function deploy ({
             resourceName,
             httpMethod,
             lambdaName,
-            responseContentType
+            responseContentType,
+            authorizerFunctionName,
+            redirects
           })
         };
         methodsInTemplate.push({ resourceName, httpMethod });
@@ -207,11 +222,31 @@ export async function deploy ({
 
     log('');
 
-    const cloudfrontPartial = deployCloudfront
+    const cloudfrontCustomDomain = typeof cloudfrontSettings === 'string' ? cloudfrontSettings : null;
+    const cloudfrontPartial = (cloudfrontSettings !== false)
       ? templateCloudfrontDistribution({
-        stageName
+        stageName,
+        alias: cloudfrontCustomDomain,
+        acmCertificateArn
       })
       : {};
+
+    const route53Enabled = (cloudfrontCustomDomain && hostedZoneId);
+    const route53Partial = route53Enabled ? templateRoute53({ hostedZoneId, cloudfrontCustomDomain }) : {};
+
+    if (route53Enabled) {
+      const r53 = new AWS.Route53({});
+      const zoneInfo = await r53.getHostedZone({ Id: hostedZoneId }).promise();
+      const domainName = zoneInfo.HostedZone.Name;
+      if (!`${cloudfrontCustomDomain}.`.includes(domainName) &&
+           domainName !== `${cloudfrontCustomDomain}.`) {
+        throw new Error(stripIndent`
+          Route53 Zone '${hostedZoneId}' (${domainName}) cannot 
+          contain this record: '${cloudfrontCustomDomain}.', please fix your package.json.
+        `);
+      }
+    }
+
     const deploymentUid = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
     let cfTemplate = {
       Parameters: {
@@ -228,7 +263,8 @@ export async function deploy ({
           deploymentUid,
           dependsOnMethods: methodsInTemplate
         }),
-        ...cloudfrontPartial
+        ...cloudfrontPartial,
+        ...route53Partial
       },
       Outputs: {
         ApiGatewayUrl: {
@@ -244,7 +280,7 @@ export async function deploy ({
           Value: { 'Ref': `${templateAssetsBucketName()}` }
         },
         CloudFrontDNS: {
-          Value: deployCloudfront
+          Value: cloudfrontSettings
                   ? { 'Fn::GetAtt': [`${templateCloudfrontDistributionName()}`, 'DomainName'] }
                   : 'CloudFront disabled from config'
         },
@@ -301,12 +337,26 @@ export async function deploy ({
     log('');
     runCommand('post-deploy hook', SETTINGS['post-deploy']);
 
+    if (cloudfrontSettings) {
+      const outputs = await getStackOutputs({ stackName });
+      const cloudfrontDNS = outputs.find(o => o.OutputKey === 'CloudFrontDNS').OutputValue;
+
+      if (cloudfrontCustomDomain) {
+        success('*'.blue, `Now configure your DNS: ${cloudfrontCustomDomain} CNAME ${cloudfrontDNS}`);
+        success('*'.blue, `and navigate to http://${cloudfrontCustomDomain} or https://${cloudfrontDNS}`);
+      } else {
+        success('*'.blue, `Open your browser and enjoy: https://${cloudfrontDNS}`);
+      }
+    }
+
     if (!argv.dryrun && argv.functionName) {
       // we may want to tail logs for one function
       return logCommand({ ...argv, follow: true });
     }
   } catch (e) {
-    error('An error occurred while deploying your application. Re-run this command with --verbose to debug.');
+    error('An error occurred while deploying your application:');
+    error('> ', e.message);
+    error('Re-run this command with --verbose to debug.');
     debug('Stack trace:', e.stack);
   } finally {
     if (dangerDeleteResources === true) {

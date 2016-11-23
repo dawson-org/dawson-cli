@@ -168,14 +168,21 @@ export function templateInvokationRole () {
 
 export function templateLambdaIntegration ({
   lambdaName,
-  responseContentType
+  responseContentType,
+  redirects
 }) {
   let responseTemplate;
+  let errorResponseTemplate;
   if (responseContentType.includes('application/json')) {
     responseTemplate = {
       'application/json': stripIndent`
         #set($inputRoot = $input.path('$'))
         $inputRoot.response
+      `
+    };
+    errorResponseTemplate = {
+      'application/json': stripIndent`
+        $input.path('$.errorMessage')
       `
     };
   } else if (responseContentType.includes('text/plain')) {
@@ -185,11 +192,23 @@ export function templateLambdaIntegration ({
         $inputRoot.response
       `
     };
+    errorResponseTemplate = {
+      'text/plain': stripIndent`
+        #set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+        $errorMessageObj.response
+      `
+    };
   } else if (responseContentType.includes('text/html')) {
     responseTemplate = {
       'text/html': stripIndent`
         #set($inputRoot = $input.path('$'))
         $inputRoot.html
+      `
+    };
+    errorResponseTemplate = {
+      'text/html': stripIndent`
+        #set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+        $errorMessageObj.response
       `
     };
   } else {
@@ -199,16 +218,61 @@ export function templateLambdaIntegration ({
         $inputRoot.response
       `
     };
+    errorResponseTemplate = {
+      [responseContentType]: stripIndent`
+        #set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+        $errorMessageObj.response
+      `
+    };
+  }
+  let apigResponseContentType = responseContentType;
+  let defaultStatusCode = 200;
+  let responseParameters = {};
+  if (redirects) {
+    defaultStatusCode = 307;
+    responseParameters = {
+      ...responseParameters,
+      'method.response.header.Location': 'integration.response.body.response.Location'
+    };
+    apigResponseContentType = 'text/plain';
+    responseTemplate = {
+      'text/plain': stripIndent`
+        #set($inputRoot = $input.path('$'))
+        You are being redirected to $inputRoot.response.Location
+      `
+    };
+    errorResponseTemplate = {
+      'text/plain': stripIndent`
+        Cannot redirect because of an error
+      `
+    };
   }
   return {
     'IntegrationHttpMethod': 'POST',
     'IntegrationResponses': [{
-      // "ResponseParameters": {},
-      'ResponseTemplates': {
-        ...responseTemplate
-      },
-      // "SelectionPattern": "regexp"
-      'StatusCode': 200
+      'ResponseParameters': responseParameters,
+      'ResponseTemplates': { ...responseTemplate },
+      'StatusCode': defaultStatusCode
+    }, {
+      'ResponseParameters': responseParameters,
+      'ResponseTemplates': { ...errorResponseTemplate },
+      'SelectionPattern': `.*"httpStatus":500.*`,
+      'StatusCode': 500
+    }, {
+      'ResponseParameters': responseParameters,
+      'ResponseTemplates': { ...errorResponseTemplate },
+      'SelectionPattern': `.*"httpStatus":400.*`,
+      'StatusCode': 400
+    }, {
+      'ResponseParameters': responseParameters,
+      'ResponseTemplates': { ...errorResponseTemplate },
+      'SelectionPattern': `.*"httpStatus":403.*`,
+      'StatusCode': 403
+    }, {
+      'ResponseParameters': responseParameters,
+      'ResponseTemplates': { ...errorResponseTemplate },
+      'SelectionPattern': `.*"httpStatus":404.*`,
+      'StatusCode': 404
     }],
     // "RequestParameters" : { String:String, ... },
     'PassthroughBehavior': 'NEVER',
@@ -255,7 +319,7 @@ export function templateLambdaIntegration ({
           },
           "body": $input.json('$'),
           "meta": {
-            "expectedResponseContentType": "${responseContentType}"
+            "expectedResponseContentType": "${apigResponseContentType}"
           },
           "stageVariables" : {
             #foreach($name in $stageVariables.keySet())
@@ -283,14 +347,16 @@ export function templateMethod ({
   resourceName,
   httpMethod = 'GET',
   lambdaName = null,
-  responseContentType
+  responseContentType,
+  authorizerFunctionName,
+  redirects
 }) {
   const responseModelName = 'HelloWorldModel';
   const resourceId = !resourceName
     ? { 'Fn::GetAtt': [`${templateAPIID()}`, 'RootResourceId'] }
     : { 'Ref': `${templateResourceName({ resourceName })}` };
   const integrationConfig = lambdaName
-    ? templateLambdaIntegration({ lambdaName, responseContentType })
+    ? templateLambdaIntegration({ lambdaName, responseContentType, redirects })
     : templateMockIntegration({});
   let responseModel;
   if (responseContentType.includes('application/json')) {
@@ -318,23 +384,62 @@ export function templateMethod ({
       }
     };
   }
+  let authorizerConfig = {
+    'AuthorizationType': 'NONE'
+  };
+  if (authorizerFunctionName) {
+    authorizerConfig = {
+      ...authorizerConfig,
+      AuthorizationType: 'CUSTOM',
+      AuthorizerId: { Ref: `${templateAuthorizerName({ authorizerFunctionName })}` }
+    };
+  }
+  let authorizerPartial;
+  if (authorizerFunctionName) {
+    authorizerPartial = templateAuthorizer({ authorizerFunctionName });
+  }
+  let dependsOn;
+  if (authorizerFunctionName) {
+    dependsOn = {
+      DependsOn: [`${templateAuthorizerName({ authorizerFunctionName })}`]
+    };
+  }
+
   return {
     ...templateInvokationRole({}),
     ...templateModel({ modelName: responseModelName, modelSchema: '{}' }),
+    ...authorizerPartial,
     [`${templateMethodName({ resourceName, httpMethod })}`]: {
       'Type': 'AWS::ApiGateway::Method',
+      ...dependsOn,
       'Properties': {
         'RestApiId': { 'Ref': `${templateAPIID()}` },
         'ResourceId': resourceId,
         'HttpMethod': httpMethod,
-        'AuthorizationType': 'NONE',
         'Integration': integrationConfig,
         'MethodResponses': [{
-          'ResponseModels': {
-            ...responseModel
-          },
+          'ResponseModels': { ...responseModel },
           'StatusCode': 200
-        }]
+        }, {
+          'ResponseModels': { ...responseModel },
+          'StatusCode': 400
+        }, {
+          'ResponseModels': { ...responseModel },
+          'StatusCode': 403
+        }, {
+          'ResponseModels': { ...responseModel },
+          'StatusCode': 404
+        }, {
+          'ResponseModels': { ...responseModel },
+          'StatusCode': 500
+        }, {
+          'ResponseModels': { ...responseModel },
+          'StatusCode': 307,
+          'ResponseParameters': {
+            'method.response.header.Location': false
+          }
+        }],
+        ...authorizerConfig
       }
     }
   };
@@ -415,6 +520,33 @@ export function templateCloudWatchRole () {
         },
         'Path': '/',
         'ManagedPolicyArns': ['arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs']
+      }
+    }
+  };
+}
+
+function templateAuthorizerName ({
+  authorizerFunctionName
+}) {
+  return `APIGAuthorizer${authorizerFunctionName[0].toUpperCase()}${authorizerFunctionName.slice(1)}`;
+}
+
+export function templateAuthorizer ({
+  authorizerFunctionName
+}) {
+  const lambdaLogicalName = templateLambdaName({ lambdaName: `${authorizerFunctionName[0].toUpperCase()}${authorizerFunctionName.slice(1)}` });
+  const authorizerName = templateAuthorizerName({ authorizerFunctionName });
+  return {
+    [`${authorizerName}`]: {
+      'Type': 'AWS::ApiGateway::Authorizer',
+      'Properties': {
+        'AuthorizerCredentials': { 'Fn::GetAtt': ['APIGExecutionRole', 'Arn'] },
+        'AuthorizerResultTtlInSeconds': 0,
+        'AuthorizerUri': { 'Fn::Sub': 'arn:aws:apigateway:${AWS::Region}:lambda:path//2015-03-31/functions/${' + lambdaLogicalName + '.Arn}/invocations' }, // eslint-disable-line
+        'IdentitySource': 'method.request.header.token',
+        'Name': `${authorizerName}`,
+        'RestApiId': { Ref: templateAPIID() },
+        'Type': 'TOKEN'
       }
     }
   };

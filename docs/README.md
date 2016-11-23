@@ -1,14 +1,16 @@
 
-# Documentation
+## Guides
 * [Runtime dependencies](#runtime-dependencies)
 * [Getting Started](./GETTINGSTARTED.md)
 * [Examples](../example)
-* [CLI Reference](./CLI.md)
-* [API Documentation](./API.md)
 * [Troubleshooting](./TROUBLESHOOTING.md)
 
+## Documentation
+* [CLI Reference](./CLI.md)
+* [API Documentation & Function Reference](./API.md)
 
-## Runtime dependencies
+
+### Runtime dependencies
 
 `dawson` uses babel to transpile your code for the `nodejs4.3` runtime. These packages are **required**:
 

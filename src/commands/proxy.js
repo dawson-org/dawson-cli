@@ -4,9 +4,6 @@
 //
 // This command will simulate the CloudFront distribution
 //
-// Currently, this proxy DOES NOT SUPPORT "big" requests that
-//  does not fit in a single chunk (will result in a JSON error)
-//
 // This feature is preview-quality, we need error checking, etc...
 //
 
@@ -17,10 +14,10 @@ import send from 'send';
 import { createServer } from 'http';
 import { parse } from 'url';
 import pathModule from 'path';
+import util from 'util';
 
 import { debug, error, success } from '../logger';
-import { SETTINGS, API_DEFINITIONS } from '../config';
-const { appName } = SETTINGS;
+import { SETTINGS, API_DEFINITIONS, APP_NAME } from '../config';
 import { RUNNER_FUNCTION_BODY } from '../libs/compiler';
 import { compare } from '../libs/pathmatch';
 
@@ -81,6 +78,10 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
         throw e;
       }
     }
+    let expectedResponseContentType = runner.api.responseContentType || 'text/html';
+    if (runner.api.redirects) {
+      expectedResponseContentType = 'text/plain';
+    }
     const event = {
       params: {
         path: {
@@ -91,7 +92,7 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
       },
       body,
       meta: {
-        expectedResponseContentType: 'application/json'
+        expectedResponseContentType
       },
       stageVariables
     };
@@ -100,25 +101,48 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
     const context = {};
     // eslint-disable-next-line
     const callback = function apiCallback (err, data) {
+      const contentType = getContentType(runner);
       if (err) {
         error(`Request Error: ${err.message}`);
         error(err);
+        const errorResponse = JSON.parse(err.message);
+        res.writeHead(errorResponse.httpStatus, {
+          'Content-Type': contentType
+        });
+        if (contentType === 'application/json') {
+          res.write(JSON.stringify(errorResponse));
+        } else if (contentType === 'text/plain') {
+          res.write(errorResponse.response);
+        } else if (contentType === 'text/html') {
+          res.write(errorResponse.response);
+        } else {
+          res.write(errorResponse.response);
+        }
+        res.end();
         return;
       }
-      const contentType = getContentType(runner);
+      if (runner.api.redirects) {
+        const location = data.response.Location;
+        res.writeHead(307, {
+          'Content-Type': 'text/plain',
+          'Location': location
+        });
+        res.write(`You are being redirected to ${location}`);
+        res.end();
+        return;
+      }
       res.writeHead(200, { 'Content-Type': contentType });
       if (!data) {
         error(`Handler returned an empty body`);
       } else {
-        data = JSON.parse(data.response);
         if (contentType === 'application/json') {
-          res.write(JSON.stringify(data));
+          res.write(data.response);
         } else if (contentType === 'text/plain') {
-          res.write(data);
+          res.write(data.response);
         } else if (contentType === 'text/html') {
-          res.write(data);
+          res.write(data.html);
         } else {
-          res.write(data);
+          res.write(data.response);
         }
       }
       console.log(` <- END '${runner.name}' (${new Intl.NumberFormat().format(data.length / 1024)} KB)\n`.red.dim);
@@ -132,11 +156,64 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
       - callback
     */
     console.log(`\n -> START '${runner.name}'`.green.dim);
-    // eslint-disable-next-line
-    eval(RUNNER_FUNCTION_BODY);
+
+    const doCall = () => eval(RUNNER_FUNCTION_BODY); // eslint-disable-line
+    const authorizer = runner.api.authorizer;
+
+    if (!authorizer) {
+      doCall();
+    } else {
+      runAuthorizer({ authorizer, event, stageVariables, req, res, successCallback: doCall });
+    }
   } catch (err) {
     error('processAPIRequest error', err);
   }
+}
+
+function runAuthorizer ({ authorizer, event, stageVariables, req, res, successCallback }) {
+  // https://docs.aws.amazon.com/apigateway/latest/developerguide/use-custom-authorizer.html
+  // @TODO: correctly handle 401, 403, 500 response as described in the documentation
+
+  const token = event.params.header.token;
+  console.log(` 🔒 Invoking authorizer, token = ${util.inspect(token)}`.yellow.dim);
+
+  const fail = (httpStatusCode = 403, ...logs) => {
+    console.error(...logs);
+    res.writeHead(httpStatusCode, { 'Content-Type': 'application/json' });
+    res.write(JSON.stringify({ message: 'Unauthorized' }));
+    res.end();
+  };
+
+  if (!token) {
+    fail(401, ' 🔒'.red, `No authorization header found. You must specify a 'token' header with your request.`.red);
+    return;
+  }
+
+  authorizer({
+    type: 'TOKEN',
+    authorizationToken: token,
+    methodArn: 'arn:fake'
+  }, {
+    templateOutputs: stageVariables,
+    succeed: ({ policyDocument }, principalId) => {
+      if (!policyDocument || !Array.isArray(policyDocument.Statement)) {
+        fail(403, ' 🔒'.red, `Authorizer did not return a policy document`.red, policyDocument);
+        return;
+      }
+      if (!policyDocument.Statement.find(item => item.Effect === 'Allow' && item.Action === 'execute-api:Invoke' && item.Resource === 'arn:fake')) {
+        fail(403, ' 🔒'.red, `Authorizer did not return a valid policy document`.red, policyDocument);
+        return;
+      }
+      event.authorizer = {
+        principalId
+      };
+      console.log(` 🔓 Authorization succeeded`.yellow.dim);
+      successCallback();
+    },
+    fail: message => {
+      fail(403, ' 🔒'.red, `Authorizer failed with message: '${message}'`.red);
+    }
+  });
 }
 
 function requestForAPI (req) {
@@ -181,7 +258,7 @@ export function run (argv) {
 
   assert(proxyAssetsUrl || assetsPathname, 'You must specify either --proxy-assets-url or --assets-pathname');
 
-  const stackName = templateStackName({ appName, stage });
+  const stackName = templateStackName({ appName: APP_NAME, stage });
 
   const proxy = createProxyServer({});
   // Proxy errors
@@ -224,6 +301,9 @@ export function run (argv) {
       }
       req.on('data', chunk => {
         rawBody = Buffer.concat([rawBody, chunk]);
+      });
+      req.on('end', () => {
+        rawBody = Buffer.concat([rawBody]);
         const rawUTFBody = rawBody.toString('utf8');
         try {
           jsonBody = JSON.parse(rawUTFBody);
