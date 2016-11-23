@@ -12,7 +12,6 @@ const s3 = new AWS.S3({});
 const putObject = promisify(s3.putObject.bind(s3));
 const listObjectVersions = promisify(s3.listObjectVersions.bind(s3));
 const writeFile = promisify(fs.writeFile.bind(fs));
-const mkdir = promisify(fs.mkdir.bind(fs));
 const stat = promisify(fs.stat.bind(fs));
 const exec = promisify(childProcess.exec.bind(childProcess));
 
@@ -38,22 +37,29 @@ function createTempFiles (args) {
   const { skip } = args;
   if (skip) { return Promise.resolve(args); }
   const tempZipFile = tempPath('danilo-zip');
-  const tempIndexFileDir = tempPath('danilo-index');
-  const tempIndexFile = tempIndexFileDir + '/daniloindex.js';
   return Promise.resolve()
-  .then(() => mkdir(tempIndexFileDir))
+  .then(() => exec('rm -rf ' + process.cwd() + '/.dawson-dist'))
+  .then(() => console.log('[internal] cleanup .dawson-dist OK'))
   .then(() => ({
     ...args,
-    tempZipFile,
-    tempIndexFile
+    tempZipFile
   }));
 }
 
+function compile (args) {
+  return Promise.resolve()
+  .then(() => exec(process.cwd() + '/node_modules/.bin/babel . --out-dir .dawson-dist/ --ignore node_modules --copy-files'))
+  .then(() => console.log('[internal] compile to .dawson-dist OK'))
+  .then(() => exec('cd ' + process.cwd() + '/.dawson-dist && yarn'))
+  .then(() => console.log('[internal] install dependencies'))
+  .then(() => args);
+}
+
 function writeIndex (args) {
-  const { skip, tempIndexFile, indexFileContents } = args;
+  const { skip, indexFileContents } = args;
   if (skip) { return Promise.resolve(args); }
   return writeFile(
-    tempIndexFile,
+    process.cwd() + '/.dawson-dist/daniloindex.js',
     indexFileContents,
     { encoding: 'utf8' })
   .then(() => Promise.resolve(args))
@@ -63,7 +69,6 @@ function writeIndex (args) {
 function zipRoot (args) {
   const {
     tempZipFile,
-    tempIndexFile,
     skip,
     excludeList
   } = args;
@@ -73,13 +78,7 @@ function zipRoot (args) {
   debug('   zip cmd:'.gray, `zip -r ${excludeArg} ${tempZipFile} .`);
   return Promise.resolve()
   .then(() =>
-    exec(`zip -r ${tempZipFile} . ${excludeArg}`, {
-      cwd: PROJECT_ROOT,
-      maxBuffer: EXEC_MAX_OUTERR_BUFFER_SIZE
-    })
-  )
-  .then(() =>
-    exec(`zip -j ${tempZipFile} ${tempIndexFile}`, { // -j: junk paths
+    exec(`cd .dawson-dist && zip -r ${tempZipFile} . ${excludeArg}`, {
       cwd: PROJECT_ROOT,
       maxBuffer: EXEC_MAX_OUTERR_BUFFER_SIZE
     })
@@ -178,6 +177,7 @@ export function zipAndUpload ({
     zipVersionsList
   })
   .then(createTempFiles)
+  .then(compile)
   .then(writeIndex)
   .then(zipRoot)
   .then(getFileSize)
