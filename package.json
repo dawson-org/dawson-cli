@@ -1,8 +1,8 @@
 {
   "name": "dawson",
   "version": "1.0.0-beta.17",
-  "description": "Serverless Web Framework for AWS Lambda and API Gateway",
-  "repository": "https://github.com/lusentis/dawson",
+  "description": "A serverless web framework for Node.js on AWS (CloudFormation, APIGateway, Lambda)",
+  "repository": "https://github.com/dawson-org/dawson-cli",
   "main": "lib/index.js",
   "scripts": {
     "compile": "babel -s true -d lib/ src/ --ignore *.AppleDouble*",
