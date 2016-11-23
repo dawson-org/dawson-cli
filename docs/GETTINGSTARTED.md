@@ -20,7 +20,7 @@ Each function *must* have an ```api``` property with at least a ```path```.
 // the path "/hello" will display the string "You are awesome"
 export function index(params) {
   // you can return promises or strings.
-  return '<html><body>You are awesome!</html></body>';
+  return '<html><body>You are awesome!</body></html>';
 }
 index.api = {
   path: 'hello', // no leading slash
