@@ -1,65 +1,16 @@
 
-# API Documentation
+API Documentation
+=================
 
-* [`package.json` fields reference](#packagejson-fields-reference)
-* [`api.js` fields specification](#apijs-fields-specification)
+* [`package.json` fields](./PACKAGEJSON-FIELDS.md)
+* [`api.js` file contents](#apijs-file-contents)
   * [Customizing a dawson template](#customizing-a-dawson-template)
-* [`Lambda parameters reference`](#lambda-parameters-reference)
-  * [CloudFront default whitelisted headers](#cloudfront-default-whitelisted-headers)
-* [`function property reference`](#function-property-reference)
+* [`lambda function signature`](./FUNCTION-SIGNATURE.md)
+* [`lambda function configuration`](./FUNCTION-CONFIGURATION.md)
 
 
----
 
-## `package.json` fields reference
-
-You must set the **`name`** field in your `package.json`; this `name` will be used as a prefix for all the `CloudFormation` stacks and must be unique in a given AWS account.
-
-Optionally, you can define a `dawson` property, as follows:
-
-* **pre-deploy** (string): a command to execute before starting the deployment. If command exits with status <> 0, the deployment is aborted.
-* **post-deploy** (string): a command to run after the deployment has been succesfully completed.
-* **zipIgnore** (list of strings): a list of partial paths to ignore when zipping lambdas. **Do not** ignore `node_modules`.
-* **cloudfront** (object: string -> string|boolean, defaults to `{}`): an object which maps app stages to domain names, e.g.:
-  ```json
-{ "default": "myapp123.com", "test": true, "dev": false }
-  ```
-  * If `false`, no CloudFront Distribution will be created for that stage.  
-  * If `"string"`, a CloudFront Distribution will be created and `"string"` will be set as an [Alias (CNAME)](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html).  
-  * If `true` (**default** for stages not specified here), a CloudFront Distribution will ben created, without any Alias (CNAME).  
-*Please note that updating/creating/deleting CloudFront distributions will take approximately 20 minutes.*  
-*Please note that the CNAME must be globally unique in AWS. If the CNAME specified here is already in use, the deployment will fail.*
- 
-* **route53** (object: string -> string, defaults to `{}`): an object which maps app stages to Route53 Hosted Zone IDs, e.g.:
-  ```json
-{ "default": "Z187MLBSXQKXXX" }
-  ```
-  If an Hosted Zone ID is specified, the record corresponding to the CloudFront Alias (CNAME) is created (as an `A` `ALIAS` to the CloudFront distribution).  
-  *Please note that the Route53 Hosted Zone must be an Alias' ancestor.*.
-
-* **cloudfrontRootOrigin** (either `assets` or `api`, defaults to `api`):
-  * if "assets", use S3 assets (uploaded via `$ dawson upload-assets`) as [Default Cache Behaviour](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-web-values-specify.html#DownloadDistValuesCacheBehavior), i.e.: serve the root directory from S3, useful for Single Page Apps. Requests starting with `/prod` are forwarded to API Gateway.
-  * if "api", use your API as Default Cache Behaviour. Requests starting with `/assets` are forwarded to S3 assets bucket.
-
-##### Example
-```js
-"dawson": {
-  "zipIgnore": [
-    "frontend"
-  ],
-  "route53": {
-    "default": "Z187MLBSXQKXXX"
-  },
-  "cloudfront": {
-    "default": true
-  },
-  "cloudfrontRootOrigin": "api"
-},
-```
-
----
-
-## `api.js` file specification
+## `api.js` file contents
 
 You must have an `api.js` file in the folder where you will run `dawson`. This file may use ES2017 and must, at least, export a function.
 
@@ -255,98 +206,3 @@ export function processCFTemplate(template) {
 ```
 
 Please, do not forget to return the **whole** template object, and not just the new Resources.
-
----
-
-
-## Lambda parameters reference
-
-Your function should have this signature: `function (event, context) {}`
-
-
-* `event` will follow this spec:
-
-```js
-{
-  "params": {
-    "querystring": {}, // parameters from the querystring
-    "path": {}, // path parmeters, captured by `{}` in function `path`s
-    "header": {} // some HTTP headers from the client, see below
-  },
-   // body: the request body (useful only for POST and PUT requests)
-   //  currently, only application/json bodies will be parsed
-  "body": $input.json('$'),
-  "meta": {
-    // expectedResponseContentType: the content-type that is expected to be returned
-    //  by the function. This is used internally to wrap the returned value
-    //  for the API Gateway Method Response.
-    "expectedResponseContentType": "the value from fn.responseContentType property"
-  },
-  "stageVariables" : {
-    // this will include all CloudFormation Template Outputs, as listed
-    //  by `$ dawson describe`
-  }
-}
-```
-
-* `context` is Lambda's context, untouched
-* If `api.noWrap` is `true`, there will be a third param: `callback` as you would expect in a vanilla *lambda* function.
-
-
-#### CloudFront default whitelisted headers
-
-By default we set CloudFront to only [forward](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/forward-custom-headers.html) these HTTP Headers:
-* `Authorization`
-* `Accept`
-* `Content-Type`
-* `Origin`
-* `Referer`
-* `Access-Control-Request-Headers`
-* `Access-Control-Request-Method`
-
-This applies only if you are using the CloudFront distribution endpoint and does not apply if
-you are invoking API Gateway directly or via a custom proxy.
-You may add or modify whitelisted headers, see [Customizing a dawson template](#customizing-a-dawson-template).
-
-
-*Internally, `dawson` uses a [Passthrough Parameter-Mapping Template](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-mapping-template-reference.html).*
-
----
-
-## Function property reference
-
-Each function exported by the top-level `api.js` must have an `api` property.
-
-* **path** (*required*, string|false): HTTP path to this function. Must be unique in your whole app. You may use path parameters placeholder, as in API Gateway, by sorrounding a parameter name with `{}` (`/hello/{name}` is valid, `/hello/{name}.html` is [**invalid**](https://docs.aws.amazon.com/apigateway/latest/developerguide/getting-started-mappings.html)). Do **not** include leading/trailing slashes. You can specify `false` to skip deploying the API Gateway endpoint.
-* **method** (string, defaults to GET): HTTP method.
-* **redirects** (boolean, defaults to `false`): if `true`, dawson expect this function to always return an object with a `Location` key; the HTTP response will then contain the appropriate Location header. Due to limitations in API Gateway, you cannot return any payload and you cannot mix redirecting and non-redirecting responses.
-* **authorizer** (function): an optional function to use as [API Gateway Custom Authorizer](https://docs.aws.amazon.com/apigateway/latest/developerguide/use-custom-authorizer.html) for this endpoint. The authorizer function must be exported from `api.js` and its `isEventHandler` property must be set to `true`.
-* **responseContentType** (string, defaults to `text/html`): Content-Type to set in API Gateway's response. Valid values are: `application/json`, `text/html`, `text/plain`. When `application/json`, `JSON.stringify(function_returned_value)` is called to render the response body.
-* **policyStatements** (list of maps): Policy statements for this Lambda's Role, as you would define in a [CloudFormation template](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-iam-policy.html#cfn-iam-policies-policydocument).
-* **noWrap** (boolean, defaults to `false`): If true, this function call won't be wrapped in a Promise and it will be directly exported as the lambda's handler. It will receive these arguments (may vary based on the runtime): `event`, `context`, `callback`. For `application/json` content type, you *must* invoke the callback passing your stringified response in a `response` property (e.g.: `callback(null, { response: '"wow"' })`. For `text/html` content type: `callback(null, { html: '<html>....' })`.
-* **isEventHandler** (boolean, defaults to `false`): if `true`, your function will be called with untouched `event` and `context` parameteres. Set this to `true` if this function will be used as an event handler (S3 Notifications, DynamoDB Streams, SNS etc.) or as a Custom Authorizer. Setting this to `true` makes sense only if `path === false`.
-* **runtime** (string, defaults to `nodejs4.3`): Lambda runtime to use. Only NodeJS runtimes make sense. Valid values are `nodejs` and `nodejs4.3`. You should only use the default runtime.
-* **keepWarm** (boolean, defaults to `false`): Setting this to `true` will cause your function to be called periodically (~every 2 minutes) with a dummy event. The dummy event is handled internally and your function will be terminated without executing any code. This will improve startup time especially if your endpoints get a low traffic volume. Read [read this post](https://aws.amazon.com/blogs/compute/container-reuse-in-lambda) for more info. An `AWS::Event::Rule` will be created and you'll be [charged](https://aws.amazon.com/cloudwatch/pricing/) (~1$ each million invocations), plus Lambda standard pricing (dummy invocations should average ~1ms).
-
-
-##### Example
-```javascript
-export function myFunction() { ... });
-// or: export async function myFunction() { ... await ... });
-
-myFunction.api = {
-  path: 'message/{messageId}', // required
-  method: 'GET',
-  responseContentType: 'text/html',
-  policyStatements: [{
-    Effect: "Allow",
-    Action: ["dynamodb:Query", "dynamodb:GetItem"],
-    Resource: { "Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${UsersTable}*" }
-  }],
-  runtime: "nodejs4.3",
-  noWrap: false,
-  isEventHandler: false,
-  keepWarm: false
-};
-```
-
