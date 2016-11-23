@@ -66,6 +66,9 @@ const argv = yargs
       .alias('s')
       .describe('output-name', 'You can request a single value. Specify the corresponding OutputName. The output of this command is pipeable, for using in bash scripts etc.')
       .alias('o')
+      .describe('shell', 'Outputs bash-compatible variable declarations')
+      .alias('s')
+      .default('shell', false)
       .help()
   , describeRun)
 
