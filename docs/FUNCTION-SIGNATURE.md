@@ -20,7 +20,7 @@ Your function should have this signature: `function (event, context) {}`
     // expectedResponseContentType: the content-type that is expected to be returned
     //  by the function. This is used internally to wrap the returned value
     //  for the API Gateway Method Response.
-    "expectedResponseContentType": "the value from fn.responseContentType property"
+    "expectedResponseContentType": "the value from myfunction.api.responseContentType property"
   },
   "stageVariables" : {
     // this will include all CloudFormation Template Outputs, as listed
