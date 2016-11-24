@@ -96,7 +96,6 @@ function prepareIndexFile (apis, stackName) {
   //
   process.env.BABEL_CACHE_PATH = '/tmp/babel-cache';
   require("babel-polyfill");
-  require('babel-register');
 
   const AWS = require('aws-sdk');
   const cloudformation = new AWS.CloudFormation({});

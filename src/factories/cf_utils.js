@@ -1,8 +1,7 @@
 
 import AWS from 'aws-sdk';
-import spinner from 'simple-spinner';
 
-import { debug, error, log } from '../logger';
+import { debug, error } from '../logger';
 
 import {
   stackUpload
@@ -11,11 +10,6 @@ import {
 export const AWS_REGION = AWS.config.region;
 const defaultCloudFormation = new AWS.CloudFormation({ apiVersion: '2010-05-15' });
 const getCfn = local => local || defaultCloudFormation;
-
-const SPINNER_DEFAULT_SEQUENCE = ['|'.bold, '/'.bold, '-'.bold, '\\'.bold];
-const SPINNER_ERROR_SEQUENCE = ['|'.bold.black.bgRed, '/'.bold.black.bgRed, '-'.bold.black.bgRed, '\\'.bold.black.bgRed];
-const SPINNER_SUCCESS_SEQUENCE = ['|'.bold.black.bgGreen, '/'.bold.black.bgGreen, '-'.bold.black.bgGreen, '\\'.bold.black.bgGreen];
-spinner.change_sequence(SPINNER_DEFAULT_SEQUENCE);
 
 const SAFE_STACK_POLICY = {
   // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/protect-stack-resources.html
@@ -142,7 +136,7 @@ async function doCreateChangeSet ({ stackName, cfParams, cloudformation }) {
         }
         return `${change.ResourceChange.LogicalResourceId[color]}`;
       }).join(', ');
-      log('  resources affected by this update:', debugStr);
+      debug('  resources affected by this update:', debugStr);
     } else {
       // wait and loop
       await new Promise(resolve => setTimeout(resolve, 3000));
@@ -169,7 +163,7 @@ export async function createOrUpdateStack ({ stackName, cfParams, dryrun, ignore
       if (changeSetId) {
         if (dryrun) {
           const changeSetLink = `https://console.aws.amazon.com/cloudformation/home?region=${process.env.AWS_REGION}#/changeset/detail?changeSetId=${changeSetId}`;
-          log('*'.yellow, `you have used the --dryrun option, a ChangeSet is ready but I'm not executing it: ${changeSetLink}`);
+          debug('*'.yellow, `you have used the --dryrun option, a ChangeSet is ready but I'm not executing it: ${changeSetLink}`);
         } else {
           // only if the ChangeSet has been created successfully
           await doExecuteChangeSet({ changeSetId });
@@ -180,7 +174,7 @@ export async function createOrUpdateStack ({ stackName, cfParams, dryrun, ignore
     }
   } catch (err) {
     if (ignoreNoUpdates && err.message.match(/No updates are to be performed/i)) {
-      log('This stack does not need any update'.gray);
+      debug('This stack does not need any update'.gray);
       return {};
     }
     error('Stack update not accepted:'.bold.red, err.message.red);
@@ -217,7 +211,6 @@ export function getStackResources ({ stackName, cloudformation }) {
 let LAST_STACK_REASON = '';
 export function waitForUpdateCompleted (args) {
   return new Promise(resolve => {
-    spinner.start();
     uiPollStackStatusHelper(args, outputs => {
       resolve(outputs);
     });
@@ -270,23 +263,19 @@ function uiPollStackStatusHelper ({ stackName, cloudformation }, done) {
       return;
     }
     if (action === 'wait_error') {
-      spinner.change_sequence(SPINNER_ERROR_SEQUENCE);
       setTimeout(() => uiPollStackStatusHelper(...arguments), 1000);
       return;
     }
     if (action === 'wait_ok') {
-      spinner.change_sequence(SPINNER_SUCCESS_SEQUENCE);
       setTimeout(() => uiPollStackStatusHelper(...arguments), 1000);
       return;
     }
     if (action === 'error') {
-      spinner.stop();
       error(`\nStack update failed:`, LAST_STACK_REASON);
       error(`You may inspect stack events:\n$ AWS_DEFAULT_REGION=${getCfn(cloudformation).config.region} aws cloudformation describe-stack-events --stack-name ${stackName} --query "StackEvents[?ResourceStatus == 'UPDATE_FAILED'].{ resource: LogicalResourceId, message: ResourceStatusReason, properties: ResourceProperties }"`);
       return;
     }
     if (action === 'succeed') {
-      spinner.stop();
       debug(`\nStack update completed!`);
       done(data.Stacks[0].Outputs);
       return;

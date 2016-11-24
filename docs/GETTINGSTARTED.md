@@ -7,6 +7,28 @@
 $ npm install -g dawson
 ```
 
+#### Required `dependencies`
+* `babel-polyfill`
+
+#### Required `devDependencies`
+* `babel-register`
+* `babel-cli`
+* `babel-plugin-transform-runtime`
+
+Additionally, you need a `.babelrc` file, with at least the `transform-runtime` plugin:
+
+```json
+{
+  "plugins": [
+    "transform-runtime"
+  ],
+  "presets": [
+    "es2017",
+    "es2015"
+  ]
+}
+```
+
 
 ### 1. Code
 
@@ -27,12 +49,6 @@ index.api = {
 };
 ```
 
-Install the **required** runtime dependencies:
-
-```
-$ npm install --save babel-register babel-polyfill babel-preset-es2017
-$ echo '{"presets":["es2017"]}' > .babelrc
-```
 
 ### 2. Deploy
 

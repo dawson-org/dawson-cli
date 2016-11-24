@@ -1,13 +1,26 @@
 #!/usr/bin/env node
 
+import 'hard-rejection/register';
+
 import yargs from 'yargs';
 import AWS from 'aws-sdk';
+
+import updateNotifier from 'update-notifier';
+import pkg from '../package.json';
+
+const notifier = updateNotifier({
+  pkg,
+  updateCheckInterval: 1000 * 60 * 60 * 24
+});
+notifier.notify();
 
 import { enableDebug, log } from './logger';
 import { run as deployRun } from './commands/deploy';
 import { run as logRun } from './commands/log';
 import { run as describeRun } from './commands/describe';
 import { run as proxyRun } from './commands/proxy';
+
+const later = fn => (...args) => process.nextTick(() => fn(...args));
 
 const REGION = AWS.config.region;
 const DAWSON_STAGE = process.env.DAWSON_STAGE || 'default';
@@ -33,10 +46,8 @@ const argv = yargs
       .describe('stage', 'Application stage to work on')
       .default('stage', DAWSON_STAGE)
       .alias('s')
-      .describe('dryrun', 'Do not execute the CloudFormation ChangeSet (no change to your infrastructure will be made)')
-      .alias('dry-run', 'dryrun')
       .help()
-  , deployRun)
+  , later(deployRun))
 
   .command('log', 'Get last log lines for a Lambda', () =>
     yargs
@@ -57,7 +68,7 @@ const argv = yargs
       .default('stage', DAWSON_STAGE)
       .alias('s')
       .help()
-  , logRun)
+  , later(logRun))
 
   .command('describe', 'List stack outputs', () =>
     yargs
@@ -70,7 +81,7 @@ const argv = yargs
       .alias('s')
       .default('shell', false)
       .help()
-  , describeRun)
+  , later(describeRun))
 
   .command('dev', 'Runs a development server proxying assets (from /) and API Gateway (from /prod)', () =>
     yargs
@@ -83,13 +94,15 @@ const argv = yargs
       .default('stage', DAWSON_STAGE)
       .alias('s')
       .help()
-  , proxyRun)
+  , later(proxyRun))
 
   .demand(1)
   .help()
   .argv;
 
-log('*'.blue, 'working on stage', argv.stage.bold, 'in region', REGION);
+log('');
+log('   dawson'.bold.blue, 'v' + pkg.version, 'on stage', argv.stage.bold, 'in region', REGION.bold);
+log('');
 
 if (argv.verbose === true) {
   enableDebug();
