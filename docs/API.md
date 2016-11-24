@@ -2,15 +2,15 @@
 API Documentation
 =================
 
-* [`package.json` fields](./PACKAGEJSON-FIELDS.md)
-* [`api.js` file contents](#apijs-file-contents)
+* app configuration in [`package.json`](./PACKAGEJSON-FIELDS.md)
+* definition of lambda functions in [`api.js`](#definition-of-lambda-functions-in-api.js)
   * [Customizing a dawson template](#customizing-a-dawson-template)
 * [`lambda function signature`](./FUNCTION-SIGNATURE.md)
 * [`lambda function configuration`](./FUNCTION-CONFIGURATION.md)
 
 
 
-## `api.js` file contents
+## Definition of Lambda functions in `api.js`
 
 You must have an `api.js` file in the folder where you will run `dawson`. This file may use ES2017 and must, at least, export a function.
 
