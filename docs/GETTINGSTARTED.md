@@ -4,56 +4,65 @@
 ### 0. Install
 
 ```
-$ git clone https://github.com/lusentis/dawson
-$ cd dawson
-$ npm install
-$ npm link
+$ npm install -g dawson
 ```
 
-I'll publish an updated npm package as soon as I complete a code review and the whole documentation.
+#### Required `dependencies`
+* `babel-polyfill`
 
+#### Required `devDependencies`
+* `babel-register`
+* `babel-cli`
+* `babel-plugin-transform-runtime`
 
-### 1. Code
+Additionally, you need a `.babelrc` file, with at least the `transform-runtime` plugin:
 
-Set your App's name and domain in the `package.json` (change to something *unique*):
 ```json
-"dawson": {
-  "appName": "myExample123",
-  "domains": ["my-domain-name-for-cloudfront-xxx.com"]
+{
+  "plugins": [
+    "transform-runtime"
+  ],
+  "presets": [
+    "es2017",
+    "es2015"
+  ]
 }
 ```
 
 
-By default, **dawson** expects an ```api.js``` file which exports the functions to deploy. Each function *must* have an ```api``` property with at least a ```path```. That's it!
+### 1. Code
+
+Create a `package.json` and set, at least, the `name` field.
+
+Create an ```api.js``` file and export the functions to deploy.  
+Each function *must* have an ```api``` property with at least a ```path```.  
+*That's it!*
 
 ```javascript
 // the path "/hello" will display the string "You are awesome"
 export function index(params) {
   // you can return promises or strings.
-  return '<html><body>You are awesome!</html></body>';
+  return '<html><body>You are awesome!</body></html>';
 }
 index.api = {
   path: 'hello', // no leading slash
 };
 ```
 
-Install the **required** runtime dependencies:
-
-```
-$ npm install --save babel-register babel-polyfill babel-preset-es2017
-$ echo '{"presets":["es2017"]}' > .babelrc
-```
 
 ### 2. Deploy
 
-Export ```AWS_ACCESS_KEY_ID```, ```AWS_SECRET_ACCESS_KEY``` (or `AWS_PROFILE`) and ```AWS_DEFAULT_REGION``` (see [CLI docs](/docs/CLI.md)), then, from your project root:
+Export ```AWS_ACCESS_KEY_ID```, ```AWS_SECRET_ACCESS_KEY``` (or `AWS_PROFILE`) and ```AWS_REGION``` (see [CLI docs](/docs/CLI.md)), then, from your project root:
 
 ```bash
 $ dawson deploy
 ```
+*Since dawson, by default, deploys a CloudFront Distribution, the first deployment will take approximately 20 minutes.*
 
-Later, after making some changes, you can deploy only this function: `$ dawson deploy --function index`.
-You can now inspect execution logs using `$ dawson log -f index` or learn more from `$ dawson --help` and the [Documentation](./README.md).
+After invoking your functions, you can inspect the execution logs using `$ dawson log -f index`.
+You must allow a couple of minutes after the first execution, to allow the Log Group to be created.
 
 ### 3. Enjoy!
 ![indexFunction](http://i.imgur.com/fJd3rHC.png)
+
+Now, learn more from `$ dawson --help` and the [Documentation](./README.md).
