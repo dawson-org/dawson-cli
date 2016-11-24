@@ -1,18 +1,14 @@
 
 import { stripIndent } from 'common-tags';
-import { execSync } from 'child_process';
 import AWS from 'aws-sdk';
+import execa from 'execa';
+import Listr from 'listr';
 
 import { SETTINGS, API_DEFINITIONS, APP_NAME, getCloudFrontSettings, getHostedZoneId } from '../config';
 const { cloudfront: cloudfrontStagesSettings } = SETTINGS;
 
-import { debug, error, log, danger, success } from '../logger';
-import compiler from '../libs/compiler';
-
-import {
-  zipAndUpload,
-  listZipVersions
-} from '../libs/zipUpload';
+import { debug, error, danger, success } from '../logger';
+import taskCreateBundle from '../libs/createBundle';
 
 import {
   templateStackName,
@@ -66,28 +62,6 @@ import {
 
 const RESERVED_FUCTION_NAMES = ['processCFTemplate'];
 
-function runCommand (description, cmd) {
-  if (!cmd) {
-    debug(`Hook: ${description} was not specified.`);
-    return;
-  }
-  try {
-    debug(`Hook: ${description} > $ ${cmd}`);
-    execSync(cmd, {
-      cwd: process.env.PWD,
-      stdio: 'inherit',
-      env: process.env,
-      maxBuffer: 1024 * 1024 * 50
-    });
-    debug(`Hook: ${description} exited with statusCode 0`);
-  } catch (e) {
-    error(`An error occurred while running ${description}:`);
-    error(e.message);
-    debug('Error details:', e.message, e.stack);
-    process.exit(2);
-  }
-}
-
 async function taskUpdateSupportStack ({ appStage, supportStackName }) {
   await createSupportResources({ stackName: supportStackName, cloudfrontStagesSettings });
   const supportOutputs = await getStackOutputs({ stackName: supportStackName });
@@ -101,22 +75,13 @@ async function taskUpdateSupportStack ({ appStage, supportStackName }) {
   return { acmCertificateArn, supportBucketName };
 }
 
-async function taskCreateIndexFile ({ stackName }) {
-  const indexFileContents = await compiler(API_DEFINITIONS, stackName);
-  return { indexFileContents };
-}
-
-async function taskUploadZip ({ supportBucketName, appStage, indexFileContents, skip }) {
-  const zipVersionsList = await listZipVersions({ bucketName: supportBucketName });
-  const zipS3Location = await zipAndUpload({
+function taskUploadZip ({ supportBucketName, appStage, stackName }, ctx) {
+  return taskCreateBundle({
     bucketName: supportBucketName,
     appStageName: appStage,
-    indexFileContents,
-    skip,
     excludeList: SETTINGS.zipIgnore,
-    zipVersionsList
-  });
-  return { zipS3Location };
+    stackName
+  }, ctx);
 }
 
 function taskCreateFunctionTemplatePartial ({ index, def, stackName, zipS3Location }) {
@@ -341,92 +306,150 @@ export async function deploy ({
   noUploads = false,
   dangerDeleteResources = false
 }) {
-  const stackName = templateStackName({ appName: APP_NAME, stage: appStage });
-  try {
-    runCommand('pre-deploy hook', SETTINGS['pre-deploy']);
-    const cloudfrontSettings = getCloudFrontSettings({ appStage });
-    const hostedZoneId = getHostedZoneId({ appStage });
-    const supportStackName = templateStackName({ appName: `${APP_NAME}Support` });
-
-    const defs = Object.entries(API_DEFINITIONS);
-    const stageName = 'prod';
-    const skip = noUploads;
-    const methodsInTemplate = []; // used by DependsOn to prevent APIG to abort deployment because "API contains no methods"
-    let functionTemplatePartials = {};
-
-    // create support stack (e.g.: temp s3 buckets)
-    log('*'.blue, 'updating support resources...');
-    const { acmCertificateArn, supportBucketName } = await taskUpdateSupportStack({ appStage, supportStackName });
-
-    log('*'.blue, 'creating index file...');
-    const { indexFileContents } = await taskCreateIndexFile({ stackName });
-
-    log('*'.blue, `now bundling and uploading ${defs.length - 1} functions, please be patient`);
-    const { zipS3Location } = await taskUploadZip({ supportBucketName, appStage, indexFileContents, skip });
-
-    log('*'.blue, `building CloudFormation template...`);
-    for (const [index, def] of defs) {
-      if (RESERVED_FUCTION_NAMES.includes(def.name)) {
-        continue;
+  const tasks = new Listr([
+    {
+      title: 'setting up',
+      task: ctx => Object.assign(ctx, {
+        cloudfrontSettings: getCloudFrontSettings({ appStage }),
+        dangerDeleteResources,
+        defs: Object.entries(API_DEFINITIONS),
+        hostedZoneId: getHostedZoneId({ appStage }),
+        skip: noUploads,
+        stackName: templateStackName({ appName: APP_NAME, stage: appStage }),
+        stageName: 'prod',
+        appStage,
+        supportStackName: templateStackName({ appName: `${APP_NAME}Support` })
+      })
+    },
+    {
+      title: 'running pre-deploy hook',
+      skip: () => !SETTINGS['pre-deploy'],
+      task: () => execa.shell(SETTINGS['pre-deploy'])
+    },
+    {
+      title: 'updating support stack',
+      task: async (ctx) => {
+        const { acmCertificateArn, supportBucketName } = await taskUpdateSupportStack(ctx);
+        Object.assign(ctx, { acmCertificateArn, supportBucketName });
       }
-      const { template, methodDefinition } = taskCreateFunctionTemplatePartial({ index, def, stackName, zipS3Location });
-      functionTemplatePartials = {
-        ...functionTemplatePartials,
-        ...template
-      };
-      methodsInTemplate.push(methodDefinition);
+    },
+    {
+      title: 'creating bundle',
+      task: ctx => {
+        return taskUploadZip({
+          ...ctx
+        }, ctx);
+      }
+    },
+    {
+      title: 'generating template',
+      task: async (ctx) => {
+        const {
+          acmCertificateArn,
+          cloudfrontSettings,
+          defs,
+          hostedZoneId,
+          stackName,
+          stageName,
+          supportBucketName,
+          zipS3Location
+        } = ctx;
+        const methodsInTemplate = []; // used by DependsOn to prevent APIG to abort deployment because "API contains no methods"
+        let functionTemplatePartials = {};
+
+        for (const [index, def] of defs) {
+          if (RESERVED_FUCTION_NAMES.includes(def.name)) {
+            continue;
+          }
+          const { template, methodDefinition } = taskCreateFunctionTemplatePartial({ index, def, stackName, zipS3Location });
+          functionTemplatePartials = {
+            ...functionTemplatePartials,
+            ...template
+          };
+          methodsInTemplate.push(methodDefinition);
+        }
+
+        const { cloudfrontCustomDomain, cloudfrontPartial } = taskCreateCloudFrontTemplate({ stageName, cloudfrontSettings, acmCertificateArn });
+
+        const { route53Enabled, route53Partial } = taskCreateRoute53Template({ cloudfrontCustomDomain, hostedZoneId });
+        await taskCheckRoute53Prerequisites({ route53Enabled, hostedZoneId, cloudfrontCustomDomain });
+
+        const { cfTemplateJSON } = taskProcessTemplate({
+          appStage,
+          stageName,
+          cloudfrontPartial,
+          route53Partial,
+          cloudfrontSettings,
+          functionTemplatePartials,
+          methodsInTemplate
+        });
+
+        const { cfParams } = await taskCreateUploadStackTemplate({ supportBucketName, stackName, cfTemplateJSON });
+
+        Object.assign(ctx, { cfParams });
+      }
+    },
+    {
+      title: 'removing stack policy',
+      skip: ctx => !ctx.dangerDeleteResources,
+      task: async (ctx) => {
+        const { dangerDeleteResources, stackName } = ctx;
+        await taskRemoveStackPolicy({ dangerDeleteResources, stackName });
+      }
+    },
+    {
+      title: 'requesting changeset',
+      task: async (ctx) => {
+        const { stackName, cfParams } = ctx;
+        await taskRequestStackUpdate({ stackName, cfParams });
+      }
+    },
+    {
+      title: 'waiting for stack update to complete',
+      task: async (ctx) => {
+        const { stackName } = ctx;
+        await taskWaitForUpdateComplete({ stackName });
+      }
+    },
+    {
+      title: 'setting stack policy',
+      skip: ctx => !ctx.dangerDeleteResources,
+      task: async (ctx) => {
+        const { dangerDeleteResources, stackName } = ctx;
+        await taskRestoreStackPolicy({ dangerDeleteResources, stackName });
+      }
+    },
+    {
+      title: 'running post-deploy hook',
+      skip: () => !SETTINGS['post-deploy'],
+      task: () => execa.shell(SETTINGS['post-deploy'])
     }
+  ]);
 
-    log('creating cloudfront template');
-    const { cloudfrontCustomDomain, cloudfrontPartial } = taskCreateCloudFrontTemplate({ stageName, cloudfrontSettings, acmCertificateArn });
+  tasks.run()
+  .catch(err => {
+    error('An error occurred while deploying');
+    console.dir(err);
+  })
+  .then(async (ctx) => {
+    const { stackName, cloudfrontSettings, cloudfrontCustomDomain } = ctx;
 
-    log('creating route53 template');
-    const { route53Enabled, route53Partial } = taskCreateRoute53Template({ cloudfrontCustomDomain, hostedZoneId });
-    await taskCheckRoute53Prerequisites({ route53Enabled, hostedZoneId, cloudfrontCustomDomain });
-
-    const { cfTemplateJSON } = taskProcessTemplate({
-      appStage,
-      stageName,
-      cloudfrontPartial,
-      route53Partial,
-      cloudfrontSettings,
-      functionTemplatePartials,
-      methodsInTemplate
-    });
-
-    const { cfParams } = await taskCreateUploadStackTemplate({ supportBucketName, stackName, cfTemplateJSON });
-
-    await taskRemoveStackPolicy({ dangerDeleteResources, stackName });
-
-    await taskRequestStackUpdate({ stackName, cfParams });
-
-    log('*'.blue, 'waiting for stack update to complete...');
-    await taskWaitForUpdateComplete({ stackName });
-
-    success('*'.blue, 'deploy completed!\n');
-
-    log('');
-    runCommand('post-deploy hook', SETTINGS['post-deploy']);
+    success('');
 
     if (cloudfrontSettings) {
       const outputs = await getStackOutputs({ stackName });
       const cloudfrontDNS = outputs.find(o => o.OutputKey === 'CloudFrontDNS').OutputValue;
 
       if (cloudfrontCustomDomain) {
-        success('*'.blue, `Now configure your DNS: ${cloudfrontCustomDomain} CNAME ${cloudfrontDNS}`);
-        success('*'.blue, `and navigate to http://${cloudfrontCustomDomain} or https://${cloudfrontDNS}`);
+        success(`   Now you should configure your DNS ${cloudfrontCustomDomain} as a CNAME to ${cloudfrontDNS}`);
+        success(`   and navigate to https://${cloudfrontCustomDomain} or https://${cloudfrontDNS}`);
       } else {
-        success('*'.blue, `Open your browser and enjoy: https://${cloudfrontDNS}`);
+        success(`   Open your browser and enjoy: https://${cloudfrontDNS}`);
       }
+    } else {
+      success(`   Deploy completed!`);
     }
-  } catch (e) {
-    error('An error occurred while deploying your application:');
-    error('> ', e.message);
-    error('Re-run this command with --verbose to debug.');
-    debug('Stack trace:', e.stack);
-  } finally {
-    await taskRestoreStackPolicy({ dangerDeleteResources, stackName });
-  }
+  });
 }
 
 export function run (argv) {

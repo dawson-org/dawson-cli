@@ -5,6 +5,7 @@ import 'hard-rejection/register';
 import yargs from 'yargs';
 import AWS from 'aws-sdk';
 
+import pkg from '../package.json';
 import { enableDebug, log } from './logger';
 import { run as deployRun } from './commands/deploy';
 import { run as logRun } from './commands/log';
@@ -37,8 +38,6 @@ const argv = yargs
       .describe('stage', 'Application stage to work on')
       .default('stage', DAWSON_STAGE)
       .alias('s')
-      .describe('dryrun', 'Do not execute the CloudFormation ChangeSet (no change to your infrastructure will be made)')
-      .alias('dry-run', 'dryrun')
       .help()
   , later(deployRun))
 
@@ -93,7 +92,9 @@ const argv = yargs
   .help()
   .argv;
 
-log('*'.blue, 'working on stage', argv.stage.bold, 'in region', REGION);
+log('');
+log('   dawson'.bold.blue, 'v' + pkg.version, 'on stage', argv.stage.bold, 'in region', REGION.bold);
+log('');
 
 if (argv.verbose === true) {
   enableDebug();

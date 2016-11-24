@@ -18,7 +18,7 @@ import util from 'util';
 
 import { debug, error, success } from '../logger';
 import { SETTINGS, API_DEFINITIONS, APP_NAME } from '../config';
-import { RUNNER_FUNCTION_BODY } from '../libs/compiler';
+import { RUNNER_FUNCTION_BODY } from '../libs/createIndex';
 import { compare } from '../libs/pathmatch';
 
 import {
