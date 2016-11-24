@@ -31,6 +31,7 @@
     "es6-promisify": "^5.0.0",
     "execa": "^0.5.0",
     "expect.js": "^0.3.1",
+    "hard-rejection": "^0.1.0",
     "http-proxy": "^1.14.0",
     "indent-string": "^3.0.0",
     "lodash": "^4.17.2",

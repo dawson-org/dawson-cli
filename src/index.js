@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import 'hard-rejection/register';
+
 import yargs from 'yargs';
 import AWS from 'aws-sdk';
 
