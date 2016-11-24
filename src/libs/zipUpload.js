@@ -3,7 +3,8 @@ import promisify from 'es6-promisify';
 import AWS from 'aws-sdk';
 import fs from 'fs';
 import temp from 'temp';
-import childProcess from 'child_process';
+import execa from 'execa';
+import del from 'del';
 
 import { debug, error } from '../logger';
 import { PROJECT_ROOT } from '../config';
@@ -13,7 +14,6 @@ const putObject = promisify(s3.putObject.bind(s3));
 const listObjectVersions = promisify(s3.listObjectVersions.bind(s3));
 const writeFile = promisify(fs.writeFile.bind(fs));
 const stat = promisify(fs.stat.bind(fs));
-const exec = promisify(childProcess.exec.bind(childProcess));
 
 const EXEC_MAX_OUTERR_BUFFER_SIZE = 1 * 1024 * 1024 * 1024;
 const S3_ZIP_PREFIX = 'lambda-sources';
@@ -38,7 +38,7 @@ function createTempFiles (args) {
   if (skip) { return Promise.resolve(args); }
   const tempZipFile = tempPath('danilo-zip');
   return Promise.resolve()
-  .then(() => exec('rm -rf ' + process.cwd() + '/.dawson-dist'))
+  .then(() => del('.dawson-dist'))
   .then(() => console.log('[internal] cleanup .dawson-dist OK'))
   .then(() => ({
     ...args,
@@ -48,10 +48,10 @@ function createTempFiles (args) {
 
 function compile (args) {
   return Promise.resolve()
-  .then(() => exec(process.cwd() + '/node_modules/.bin/babel . --out-dir .dawson-dist/ --ignore node_modules --copy-files'))
+  .then(() => execa('babel', ['.', '--out-dir', '.dawson-dist/', '--ignore', 'node_modules', '--copy-files']))
   .then(() => console.log('[internal] compile to .dawson-dist OK'))
-  .then(() => exec('cd ' + process.cwd() + '/.dawson-dist && yarn'))
-  .then(() => console.log('[internal] install dependencies'))
+  .then(() => execa.shell('cd .dawson-dist && yarn'))
+  .then(() => console.log('[internal] install dependencies OK'))
   .then(() => args);
 }
 
@@ -78,7 +78,7 @@ function zipRoot (args) {
   debug('   zip cmd:'.gray, `zip -r ${excludeArg} ${tempZipFile} .`);
   return Promise.resolve()
   .then(() =>
-    exec(`cd .dawson-dist && zip -r ${tempZipFile} . ${excludeArg}`, {
+    execa.shell(`cd .dawson-dist && zip -r ${tempZipFile} . ${excludeArg}`, {
       cwd: PROJECT_ROOT,
       maxBuffer: EXEC_MAX_OUTERR_BUFFER_SIZE
     })
