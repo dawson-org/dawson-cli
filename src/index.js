@@ -11,6 +11,8 @@ import { run as logRun } from './commands/log';
 import { run as describeRun } from './commands/describe';
 import { run as proxyRun } from './commands/proxy';
 
+const later = fn => (...args) => process.nextTick(() => fn(...args));
+
 const REGION = AWS.config.region;
 const DAWSON_STAGE = process.env.DAWSON_STAGE || 'default';
 
@@ -38,7 +40,7 @@ const argv = yargs
       .describe('dryrun', 'Do not execute the CloudFormation ChangeSet (no change to your infrastructure will be made)')
       .alias('dry-run', 'dryrun')
       .help()
-  , deployRun)
+  , later(deployRun))
 
   .command('log', 'Get last log lines for a Lambda', () =>
     yargs
@@ -59,7 +61,7 @@ const argv = yargs
       .default('stage', DAWSON_STAGE)
       .alias('s')
       .help()
-  , logRun)
+  , later(logRun))
 
   .command('describe', 'List stack outputs', () =>
     yargs
@@ -72,7 +74,7 @@ const argv = yargs
       .alias('s')
       .default('shell', false)
       .help()
-  , describeRun)
+  , later(describeRun))
 
   .command('dev', 'Runs a development server proxying assets (from /) and API Gateway (from /prod)', () =>
     yargs
@@ -85,7 +87,7 @@ const argv = yargs
       .default('stage', DAWSON_STAGE)
       .alias('s')
       .help()
-  , proxyRun)
+  , later(proxyRun))
 
   .demand(1)
   .help()
