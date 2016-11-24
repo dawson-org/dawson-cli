@@ -4,9 +4,10 @@ A serverless web framework for nodejs on AWS (CloudFormation, API Gateway, Lambd
 
 [![npm version](https://img.shields.io/npm/v/dawson.svg?maxAge=3600)]() 
 [![Build Status](https://travis-ci.org/dawson-org/dawson-cli.svg?branch=master)](https://travis-ci.org/dawson-org/dawson-cli) 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/b8a879928f4b4ad09a2d4aa7ea30a680)](https://www.codacy.com/app/simone_3096/dawson?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=lusentis/dawson&amp;utm_campaign=Badge_Grade) 
 [![npm dependencies](https://david-dm.org/dawson-org/dawson-cli.svg?maxAge=3600)]() 
+[![npm license](https://img.shields.io/npm/l/dawson.svg?maxAge=2592000?style=plastic)]() 
 [![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=plastic)](https://github.com/Flet/semistandard) 
-[![npm license](https://img.shields.io/npm/l/dawson.svg?maxAge=2592000?style=plastic)]()
 
 [![](https://nodei.co/npm/dawson.png?compact=true)]()
 
