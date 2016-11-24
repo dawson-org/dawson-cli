@@ -3,6 +3,15 @@
 import yargs from 'yargs';
 import AWS from 'aws-sdk';
 
+import updateNotifier from 'update-notifier';
+import pkg from '../package.json';
+
+const notifier = updateNotifier({
+  pkg,
+  updateCheckInterval: 1000 * 60 * 60 * 24
+});
+notifier.notify();
+
 import { enableDebug, log } from './logger';
 import { run as deployRun } from './commands/deploy';
 import { run as logRun } from './commands/log';
