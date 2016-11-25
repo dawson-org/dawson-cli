@@ -7,6 +7,7 @@ import AWS from 'aws-sdk';
 
 import updateNotifier from 'update-notifier';
 import pkg from '../package.json';
+import { PKG_JSON } from './config';
 
 const notifier = updateNotifier({
   pkg,
@@ -14,7 +15,7 @@ const notifier = updateNotifier({
 });
 notifier.notify();
 
-import { enableDebug, log } from './logger';
+import { enableDebug, log, error } from './logger';
 import { run as deployRun } from './commands/deploy';
 import { run as logRun } from './commands/log';
 import { run as describeRun } from './commands/describe';
@@ -22,7 +23,6 @@ import { run as proxyRun } from './commands/proxy';
 
 const later = fn => (...args) => process.nextTick(() => fn(...args));
 
-const REGION = AWS.config.region;
 const DAWSON_STAGE = process.env.DAWSON_STAGE || 'default';
 
 const argv = yargs
@@ -100,10 +100,36 @@ const argv = yargs
   .help()
   .argv;
 
-log('');
-log('   dawson'.bold.blue, 'v' + pkg.version, 'on stage', argv.stage.bold, 'in region', REGION.bold);
-log('');
+if (!PKG_JSON.name) {
+  error('Missing Configuration: You need to specify a `name` field in package.json');
+  process.exit(1);
+}
+
+if (argv.stage && process.env.DAWSON_STAGE && argv.stage !== process.env.DAWSON_STAGE) {
+  error('Configuration Error: you have specified both --stage and DAWSON_STAGE but they have different values.');
+  process.exit(1);
+}
+
+if (!argv.stage) {
+  error('Missing Configuration: we could determine which stage to deploy to, please use the --stage argument or set DAWSON_STAGE.');
+  process.exit(1);
+}
+
+if (!AWS.config.region) {
+  error('Missing Configuration: you must set an AWS Region using the AWS_REGION environment variable.');
+  process.exit(1);
+}
+
+if (!AWS.config.credentials) {
+  error('Missing Configuration: no AWS Credentials could be loaded, please set AWS_PROFILE or AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY (and AWS_SESSION_TOKEN if applicable).');
+  process.exit(1);
+}
 
 if (argv.verbose === true) {
   enableDebug();
 }
+
+log('');
+log('   dawson'.bold.blue, 'v' + pkg.version);
+log('  ', PKG_JSON.name.yellow.dim.bold, '↣', AWS.config.region.yellow.dim.bold, '↣', argv.stage.yellow.bold);
+log('');
