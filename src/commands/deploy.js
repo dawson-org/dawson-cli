@@ -114,7 +114,7 @@ function taskCreateFunctionTemplatePartial ({ index, def, stackName, zipS3Locati
   }
 
   let template = {};
-  let methodDefinition = {};
+  let methodDefinition = null;
 
   const lambdaName = def.name[0].toUpperCase() + def.name.substring(1);
   const lambdaPartial = templateLambda({
@@ -366,7 +366,9 @@ export async function deploy ({
             ...functionTemplatePartials,
             ...template
           };
-          methodsInTemplate.push(methodDefinition);
+          if (methodDefinition) {
+            methodsInTemplate.push(methodDefinition);
+          }
         }
 
         const { cloudfrontCustomDomain, cloudfrontPartial } = taskCreateCloudFrontTemplate({ stageName, cloudfrontSettings, acmCertificateArn });
