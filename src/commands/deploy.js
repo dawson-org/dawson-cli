@@ -427,10 +427,6 @@ export async function deploy ({
   ]);
 
   tasks.run()
-  .catch(err => {
-    error('An error occurred while deploying');
-    console.dir(err);
-  })
   .then(async (ctx) => {
     const { stackName, cloudfrontSettings, cloudfrontCustomDomain } = ctx;
 
@@ -449,6 +445,10 @@ export async function deploy ({
     } else {
       success(`   Deploy completed!`);
     }
+  })
+  .catch(err => {
+    error('An error occurred while deploying');
+    console.dir(err);
   });
 }
 
