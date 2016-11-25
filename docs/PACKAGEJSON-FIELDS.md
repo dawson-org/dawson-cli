@@ -8,7 +8,7 @@ Optionally, you can define a `dawson` property, as follows:
 
 * **pre-deploy** (string): a command to execute before starting the deployment. If command exits with status <> 0, the deployment is aborted.
 * **post-deploy** (string): a command to run after the deployment has been succesfully completed.
-* **zipIgnore** (list of strings): a list of partial paths to ignore when zipping lambdas. **Do not** ignore `node_modules`.
+* **zipIgnore** (list of strings): a list of partial paths to ignore when compiling (`babel --ignore`) and when zipping the bundle. **Do not** specify `node_modules` here. 
 * **cloudfront** (object: string -> string|boolean, defaults to `{}`): an object which maps app stages to domain names, e.g.:
   ```json
 { "default": "myapp123.com", "test": true, "dev": false }

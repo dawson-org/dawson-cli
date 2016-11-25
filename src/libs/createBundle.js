@@ -7,7 +7,7 @@ import execa from 'execa';
 import del from 'del';
 import Listr from 'listr';
 
-import { PROJECT_ROOT, API_DEFINITIONS } from '../config';
+import { PROJECT_ROOT, API_DEFINITIONS, SETTINGS } from '../config';
 import createIndex from './createIndex';
 
 const s3 = new AWS.S3({});
@@ -41,7 +41,8 @@ async function createTempFiles () {
 }
 
 function compile () {
-  return execa('babel', ['.', '--out-dir', '.dawson-dist/', '--ignore', 'node_modules', '--copy-files']);
+  const zipIgnore = SETTINGS.zipIgnore || [];
+  return execa('babel', ['.', '--out-dir', '.dawson-dist/', '--ignore', `node_modules,${zipIgnore.join(',')}`, '--copy-files']);
 }
 
 function install () {
