@@ -1,7 +1,5 @@
 
 # dawson
-A [serverless](https://auth0.com/blog/what-is-serverless/) web framework for Node.js on AWS ([CloudFormation](https://aws.amazon.com/cloudformation/), [API Gateway](https://aws.amazon.com/apigateway/), [Lambda](https://aws.amazon.com/lambda/)).  
-You can use `dawson` to build and deploy *Single Page Apps + API*, *pure APIs* or *server-rendered pages*.
 
 [![npm version](https://img.shields.io/npm/v/dawson.svg?maxAge=3600)]() 
 [![Build Status](https://travis-ci.org/dawson-org/dawson-cli.svg?branch=master)](https://travis-ci.org/dawson-org/dawson-cli) 
@@ -10,8 +8,22 @@ You can use `dawson` to build and deploy *Single Page Apps + API*, *pure APIs* o
 [![npm license](https://img.shields.io/npm/l/dawson.svg?maxAge=2592000?style=plastic)]() 
 [![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=plastic)](https://github.com/Flet/semistandard) 
 
-[![](https://nodei.co/npm/dawson.png?compact=true)]()
+A [serverless](https://auth0.com/blog/what-is-serverless/) web framework for Node.js on AWS ([CloudFormation](https://aws.amazon.com/cloudformation/), [API Gateway](https://aws.amazon.com/apigateway/), [Lambda](https://aws.amazon.com/lambda/)).  
+You can use `dawson` to build and deploy *Single Page Apps + API*, *pure APIs* or *server-rendered pages*.
 
+```js
+// api.js
+module.exports.greet = function greet (event) {
+    const name = event.params.path.name
+    return 'Hello ' + naem + ', you look awesome!'
+}
+greet.api = {
+    path: 'greet/{name}'
+}
+```
+```bash
+$ dawson deploy
+```
 
 ## Documentation
 Guide, API & CLI Documentation is [here](docs/README.md).
@@ -46,6 +58,8 @@ Additionally, `dawson` uses a *support stack* with an S3 Bucket used to store La
 ## Demo
 TODO
 
+## Changelog
+A changelog is maintained in the [Releases page](https://github.com/dawson-org/dawson-cli/releases).
 
 ## Related
 * https://serverless.com/
