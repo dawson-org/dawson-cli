@@ -1,6 +1,7 @@
 
 # dawson
-A serverless web framework for nodejs on AWS (CloudFormation, API Gateway, Lambda).  
+A [serverless](https://auth0.com/blog/what-is-serverless/) web framework for nodejs on AWS ([CloudFormation](https://aws.amazon.com/cloudformation/), [API Gateway](https://aws.amazon.com/apigateway/), [Lambda](https://aws.amazon.com/lambda/)).  
+You can use `dawson` to build and deploy *Single Page Apps + API*, *pure APIs* or *server-rendered apps*.
 
 [![npm version](https://img.shields.io/npm/v/dawson.svg?maxAge=3600)]() 
 [![Build Status](https://travis-ci.org/dawson-org/dawson-cli.svg?branch=master)](https://travis-ci.org/dawson-org/dawson-cli) 
@@ -19,16 +20,16 @@ Guide, API & CLI Documentation is [here](docs/README.md).
 ## About
 `dawson` lets you to deploy your Node.js apps on Amazon Web Services. It requires **no boilerplate**: no `init` command, no configuration files. Just write your functions and `deploy`!
 
-You can write your function in ES2016, ES2017, using async-await or using experimental features, like you whish. Just include a `.babelrc` and `dawson` will **compile** your code before deploying it. Your Lambda functions can be **`async`** and return **Promises**. There's also **built-in authentication support** via [API Gateway Custom Authorizers](https://docs.aws.amazon.com/apigateway/latest/developerguide/use-custom-authorizer.html).
+You can write your function in ES2016, ES2017, using async-await or using experimental features, like you whish. Just include a `.babelrc` and `dawson` will **compile** your code with [babel](https://babeljs.io) before deploying it. Your Lambda functions can be **`async`** and return **Promises**. There's also **built-in authentication support** via [API Gateway Custom Authorizers](https://docs.aws.amazon.com/apigateway/latest/developerguide/use-custom-authorizer.html).
 
-Each function has its own **IAM Role**, so you can define [fine-graned IAM Policies]((https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#grant-least-privilege).  
-`dawson` offers first-class support for **Single Page Applications**: a **CloudFront** Distribution will be deployed in front of your app, correctly mapping assets and the API origin, so you don't have to worry about CORS. An AWS WAF WebACL can also be attached to CloudFront.
+Each function has its **own IAM Role**, so you can define [fine-graned IAM Policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#grant-least-privilege).  
+`dawson` offers first-class support for **Single Page Applications**: a **CloudFront** Distribution will be deployed in front of your app, correctly mapping assets and the API origin, so you don't have to worry about CORS. An [AWS WAF](https://aws.amazon.com/waf/) WebACL can also be attached to CloudFront.
 
-`dawson` **does not bundle** your app with webpack, browserify or rollup, so you'll never have to deal [with](https://github.com/aws/aws-sdk-js/issues/603) [weird](https://github.com/substack/brfs) [things](https://stackoverflow.com/questions/32253362/how-do-i-build-a-single-js-file-for-aws-lambda-nodejs-runtime). Your app's `devDependencies` are stripped out while deploying too keep a small bundle ZIP.
+`dawson` **does not bundle** your app with webpack, browserify or rollup, so you'll never have to deal [with](https://github.com/aws/aws-sdk-js/issues/603) [weird](https://github.com/substack/brfs) [things](https://stackoverflow.com/questions/32253362/how-do-i-build-a-single-js-file-for-aws-lambda-nodejs-runtime). Your app's `devDependencies` are stripped out while deploying, keeping the bundle ZIP small.
 
-`dawson` uses **pure CloudFormation templates**, following the [infrastructure-as-code](https://en.wikipedia.org/wiki/Infrastructure_as_Code) principle; it requires **no local or remote state files** (like `terraform` does) which may go out-of-sync or which might get mistakenly deleted. You can **customize your template** in every part, e.g.: you can add CF Resources, modifify Properties of Resources created by `dawson` etc. As a consequence, you get out-of-the-box support for **multiple stages and regions**.
+`dawson` uses **pure CloudFormation templates**, following the [infrastructure-as-code](https://en.wikipedia.org/wiki/Infrastructure_as_Code) principle; it requires **no local or remote state files** which may go out-of-sync or mistakenly be deleted. You can **customize your CF template** in every part, e.g.: you can add CF Resources, modifify Properties of Resources created by `dawson` etc. As a free benefit, you get out-of-the-box support for **multiple stages and regions**.
 
-Finally, `dawson` will automatically **support HTTPS** for custom domains thanks to AWS ACM. Also, if you use **Route53** your Zone can be automatically updated.
+Finally, `dawson` will automatically **support HTTPS** for custom domains thanks to [AWS ACM](https://aws.amazon.com/acm/). Also, if you use [**Route53**](https://aws.amazon.com/route53/) your DNS Zone can be automatically updated.
 
 #### CLI
 Using the `dawson` command you can **deploy** the infrastructure, **inspect logs** (in real time, like `tail -f`) and spin up a **development server** which will simulate CloudFront and API Gateway, so your development environment will be almost identical to the production one.
