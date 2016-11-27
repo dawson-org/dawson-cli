@@ -61,6 +61,14 @@ TODO
 A changelog is maintained in the [Releases page](https://github.com/dawson-org/dawson-cli/releases).
 
 
+## Support
+In case you have an issue, make sure you have updated to the latest version (e.g.: `npm i dawson@latest`), then:
+
+* search / post on StackOverflow using the *dawson* tag
+* search / open an issue in this repo
+* contact me on Twitter [@Lanzone31](https://twitter.com/Lanzone31)
+
+
 ## Related
 * https://serverless.com/
 * https://github.com/apex/apex
