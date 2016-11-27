@@ -11,32 +11,41 @@ A serverless web framework for nodejs on AWS (CloudFormation, API Gateway, Lambd
 
 [![](https://nodei.co/npm/dawson.png?compact=true)]()
 
-## Features
-
-* [X] zero boilerplate
-* [X] 100% infrastructure-as-code via CloudFormation
-* [X] stateless: no local/remote state files
-* [X] full compatibility with single-page apps
-* [X] babel supported out-of-the-box
-* [X] optionally support promises as function handlers
-* [X] node_modules bundled as-is
-* [X] customizable functions' IAM Policies
-* [X] optionally, CloudFront to avoid CORS
-* [X] fully extensible and customizable with user-defined CloudFormation templates
-* [X] support multiple stages/regions per app
-* [ ] built-in authentication support via API Gateway Authorizers & Cognito Identity Provider
-
-### CLI
-* [X] tail logs
-* [X] upload static assets
-* [X] locally run lambda functions
 
 ## Documentation
 Guide, API & CLI Documentation is [here](docs/README.md).
 
+
+## About
+`dawson` let's you to deploy your Node.js apps on Amazon Web Services. It requires no boilerplate: no `init` command, no configuration files. Just write your function and `deploy`!
+
+`dawson` does not bundle your app with webpack / browserify or rollup, so you'll never have to deal [with](https://github.com/aws/aws-sdk-js/issues/603) [weird](https://github.com/substack/brfs) [things](https://stackoverflow.com/questions/32253362/how-do-i-build-a-single-js-file-for-aws-lambda-nodejs-runtime). Your app's `devDependencies` are stripped out while deploying.
+
+You can write your function in ES2016, ES2017, using async-await or experimental features, like you whish. Just include a `.babelrc` and dawson will compile your funcion before deploying it. Your Lambda functions can be `async` and return Promises. There's also built-in authentication support via API Gateway Custom Authorizers.
+
+Each function has its own IAM Role, so you can define fine-graned IAM Policies, following the best practie [Grant least privilege](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#grant-least-privilege).
+
+By default, `dawson` will deploy a CloudFront Distribution in front of your app, correctly mapping assets and API origins, so if you are deploying a Single Page App you don't have to worry about CORS.
+
+Internally, dawson uses pure CloudFormation templates, following the [infrastructure-as-code](https://en.wikipedia.org/wiki/Infrastructure_as_Code) principle and it does not use local or remote state files (like `terraform` does) which may go out-of-sync or which might get mistakenly deleted. You can customize every part of your template, e.g.: you can add CF Resources, modifify Properties of Resources created by `dawson` etc.
+
+You get, for free, support for multiple Stages and Regions. If you use Route53 to manage your domain, `dawson` will automatically update your zone.
+
+
+#### CLI
+Using the `dawson` command you can deploy your functions, inspect logs (in real time, like `tail -f`) and spin up a development server which will simulate CloudFront and API Gateway, so your development environment will be almost identical to the production one.
+
+
 ## Demo
-[![asciicast](https://asciinema.org/a/cq1t6rhfo0g19ovafabcsawlz.png?v=2)](https://asciinema.org/a/cq1t6rhfo0g19ovafabcsawlz)
-*Please note that this example uses the `cloudfront: false` setting, which tells `dawson` to skip deploying the CloudFront distribution (which would be useful in a production environment). If a CloudFront distribution needs to be created, the deploy will take approximately 12-18 minutes to complete. More info [here](docs/API.md#packagejson-fields-reference).*
+TODO
+
+
+## Related
+* https://serverless.com/
+* https://github.com/apex/apex
+* https://www.terraform.io/
+* https://github.com/awslabs/chalice
+* https://github.com/Miserlou/Zappa
 
 
 ## License
