@@ -1,6 +1,6 @@
 
 # dawson
-A [serverless](https://auth0.com/blog/what-is-serverless/) web framework for nodejs on AWS ([CloudFormation](https://aws.amazon.com/cloudformation/), [API Gateway](https://aws.amazon.com/apigateway/), [Lambda](https://aws.amazon.com/lambda/)).  
+A [serverless](https://auth0.com/blog/what-is-serverless/) web framework for Node.js on AWS ([CloudFormation](https://aws.amazon.com/cloudformation/), [API Gateway](https://aws.amazon.com/apigateway/), [Lambda](https://aws.amazon.com/lambda/)).  
 You can use `dawson` to build and deploy *Single Page Apps + API*, *pure APIs* or *server-rendered apps*.
 
 [![npm version](https://img.shields.io/npm/v/dawson.svg?maxAge=3600)]() 
