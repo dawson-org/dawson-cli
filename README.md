@@ -15,7 +15,7 @@ You can use `dawson` to build and deploy *Single Page Apps + API*, *pure APIs* o
 // api.js
 module.exports.greet = function greet (event) {
     const name = event.params.path.name
-    return 'Hello ' + naem + ', you look awesome!'
+    return 'Hello ' + name + ', you look awesome!'
 }
 greet.api = {
     path: 'greet/{name}'
