@@ -8,8 +8,8 @@
 [![npm license](https://img.shields.io/npm/l/dawson.svg?maxAge=2592000?style=plastic)]() 
 [![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=plastic)](https://github.com/Flet/semistandard) 
 
-A [serverless](https://auth0.com/blog/what-is-serverless/) web framework for Node.js on AWS ([CloudFormation](https://aws.amazon.com/cloudformation/), [API Gateway](https://aws.amazon.com/apigateway/), [Lambda](https://aws.amazon.com/lambda/)).  
-You can use `dawson` to build and deploy *Single Page Apps + API*, *pure APIs* or *server-rendered pages*.
+A [serverless](https://auth0.com/blog/what-is-serverless/) web framework for Node.js on AWS ([CloudFormation](https://aws.amazon.com/cloudformation/), [CloudFront](https://aws.amazon.com/cloudfront/), [API Gateway](https://aws.amazon.com/apigateway/), [Lambda](https://aws.amazon.com/lambda/)).  
+You can use `dawson` to build and deploy backend code and infrastructure for *Single Page Apps + API*, *pure APIs* or *server-rendered pages*.
 
 ```js
 // api.js
@@ -22,6 +22,7 @@ greet.api = {
 }
 ```
 ```bash
+$ npm install -g dawson
 $ dawson deploy
 ```
 
