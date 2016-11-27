@@ -1,7 +1,4 @@
-
 # dawson
-A serverless web framework for nodejs on AWS (CloudFormation, API Gateway, Lambda).  
-
 [![npm version](https://img.shields.io/npm/v/dawson.svg?maxAge=3600)]() 
 [![Build Status](https://travis-ci.org/dawson-org/dawson-cli.svg?branch=master)](https://travis-ci.org/dawson-org/dawson-cli) 
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/b8a879928f4b4ad09a2d4aa7ea30a680)](https://www.codacy.com/app/simone_3096/dawson?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=lusentis/dawson&amp;utm_campaign=Badge_Grade) 
@@ -9,34 +6,75 @@ A serverless web framework for nodejs on AWS (CloudFormation, API Gateway, Lambd
 [![npm license](https://img.shields.io/npm/l/dawson.svg?maxAge=2592000?style=plastic)]() 
 [![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=plastic)](https://github.com/Flet/semistandard) 
 
-[![](https://nodei.co/npm/dawson.png?compact=true)]()
+A [serverless](https://auth0.com/blog/what-is-serverless/) web framework for Node.js on AWS ([CloudFormation](https://aws.amazon.com/cloudformation/), [CloudFront](https://aws.amazon.com/cloudfront/), [API Gateway](https://aws.amazon.com/apigateway/), [Lambda](https://aws.amazon.com/lambda/)).  
+You can use `dawson` to build and deploy backend code and infrastructure for *single-page apps + API*, *pure APIs* or *server-rendered pages*.
 
-## Features
-
-* [X] zero boilerplate
-* [X] 100% infrastructure-as-code via CloudFormation
-* [X] stateless: no local/remote state files
-* [X] full compatibility with single-page apps
-* [X] babel supported out-of-the-box
-* [X] optionally support promises as function handlers
-* [X] node_modules bundled as-is
-* [X] customizable functions' IAM Policies
-* [X] optionally, CloudFront to avoid CORS
-* [X] fully extensible and customizable with user-defined CloudFormation templates
-* [X] support multiple stages/regions per app
-* [ ] built-in authentication support via API Gateway Authorizers & Cognito Identity Provider
-
-### CLI
-* [X] tail logs
-* [X] upload static assets
-* [X] locally run lambda functions
+```js
+// api.js
+module.exports.greet = function greet (event) {
+    const name = event.params.path.name
+    return 'Hello ' + name + ', you look awesome!'
+}
+greet.api = {
+    path: 'greet/{name}'
+}
+```
+```bash
+$ npm install -g dawson
+$ dawson deploy
+```
 
 ## Documentation
-Guide, API & CLI Documentation is [here](docs/README.md).
+Getting Started Guide, API & CLI Documentation is [here](docs/README.md).
+
+
+## About
+`dawson` lets you to deploy your Node.js apps on Amazon Web Services. It requires **no boilerplate**: no `init` command, no configuration files. Just write your functions and `deploy`!
+
+You can write your functions in ES2016, ES2017, using async-await or using experimental features, like you whish. Just include a `.babelrc` and `dawson` will **compile** your code with [babel](https://babeljs.io) before deploying it. Your Lambda functions can be **`async`** and return **Promises**. There's also **built-in authorization support** via [API Gateway Custom Authorizers](https://docs.aws.amazon.com/apigateway/latest/developerguide/use-custom-authorizer.html).
+
+Each function has its **own IAM Role**, so you can define [fine-graned IAM Policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#grant-least-privilege).  
+`dawson` offers first-class support for **Single Page Applications**: a **CloudFront** Distribution will be deployed in front of your app, correctly mapping assets and the API origin, so you don't have to worry about CORS. An [AWS WAF](https://aws.amazon.com/waf/) WebACL can also be attached to CloudFront.
+
+`dawson` **does not bundle** your app with webpack, browserify or rollup, so you'll never have to deal [with](https://github.com/aws/aws-sdk-js/issues/603) [weird](https://github.com/substack/brfs) [things](https://stackoverflow.com/questions/32253362/how-do-i-build-a-single-js-file-for-aws-lambda-nodejs-runtime). Your app's `devDependencies` are stripped out while deploying, keeping the bundle ZIP small.
+
+`dawson` uses **pure CloudFormation templates**, following the [infrastructure-as-code](https://en.wikipedia.org/wiki/Infrastructure_as_Code) principle; it requires **no local or remote state files** which may go out-of-sync or mistakenly be deleted. You can **customize your app's template** in every part, e.g.: you can add CloudFormation Resources, modify Properties of Resources created by `dawson` etc. As a free benefit, you get out-of-the-box support for **multiple stages and regions**.
+
+Finally, `dawson` will automatically **support HTTPS** for custom domains thanks to [AWS ACM](https://aws.amazon.com/acm/). Also, if you use [Route53](https://aws.amazon.com/route53/) your **DNS Zone** can be automatically updated.
+
+#### CLI
+Using the `dawson` command you can **deploy** the infrastructure, **inspect logs** (in real time, like `tail -f`) and spin up a **development server** which will simulate CloudFront and API Gateway, so your development environment will be almost identical to the production one.
+
+
+## Architecture
+
+![https://raw.githubusercontent.com/dawson-org/dawson-cli/new-readme/docs/architecture.png](docs/architecture.png)
+
+*(additionally, `dawson` uses a support stack with an S3 Bucket to store Lambda ZIP bundles and CloudFormation templates)*
+
 
 ## Demo
-[![asciicast](https://asciinema.org/a/cq1t6rhfo0g19ovafabcsawlz.png?v=2)](https://asciinema.org/a/cq1t6rhfo0g19ovafabcsawlz)
-*Please note that this example uses the `cloudfront: false` setting, which tells `dawson` to skip deploying the CloudFront distribution (which would be useful in a production environment). If a CloudFront distribution needs to be created, the deploy will take approximately 12-18 minutes to complete. More info [here](docs/API.md#packagejson-fields-reference).*
+TODO
+
+
+## Changelog
+A changelog is maintained in the [Releases page](https://github.com/dawson-org/dawson-cli/releases).
+
+
+## Support
+In case you have an issue, make sure you have updated to the latest version (e.g.: `npm i dawson@latest`), then:
+
+* search / post on StackOverflow using the *dawson* tag
+* search / open an issue in this repo
+* contact me on Twitter [@Lanzone31](https://twitter.com/Lanzone31)
+
+
+## Related
+* https://serverless.com/
+* https://github.com/apex/apex
+* https://www.terraform.io/
+* https://github.com/awslabs/chalice
+* https://github.com/Miserlou/Zappa
 
 
 ## License
