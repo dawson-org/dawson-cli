@@ -1,6 +1,4 @@
-
 # dawson
-
 [![npm version](https://img.shields.io/npm/v/dawson.svg?maxAge=3600)]() 
 [![Build Status](https://travis-ci.org/dawson-org/dawson-cli.svg?branch=master)](https://travis-ci.org/dawson-org/dawson-cli) 
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/b8a879928f4b4ad09a2d4aa7ea30a680)](https://www.codacy.com/app/simone_3096/dawson?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=lusentis/dawson&amp;utm_campaign=Badge_Grade) 
@@ -9,7 +7,7 @@
 [![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=plastic)](https://github.com/Flet/semistandard) 
 
 A [serverless](https://auth0.com/blog/what-is-serverless/) web framework for Node.js on AWS ([CloudFormation](https://aws.amazon.com/cloudformation/), [CloudFront](https://aws.amazon.com/cloudfront/), [API Gateway](https://aws.amazon.com/apigateway/), [Lambda](https://aws.amazon.com/lambda/)).  
-You can use `dawson` to build and deploy backend code and infrastructure for *Single Page Apps + API*, *pure APIs* or *server-rendered pages*.
+You can use `dawson` to build and deploy backend code and infrastructure for *single-page apps + API*, *pure APIs* or *server-rendered pages*.
 
 ```js
 // api.js
@@ -27,13 +25,13 @@ $ dawson deploy
 ```
 
 ## Documentation
-Guide, API & CLI Documentation is [here](docs/README.md).
+Getting Started Guide, API & CLI Documentation is [here](docs/README.md).
 
 
 ## About
 `dawson` lets you to deploy your Node.js apps on Amazon Web Services. It requires **no boilerplate**: no `init` command, no configuration files. Just write your functions and `deploy`!
 
-You can write your functions in ES2016, ES2017, using async-await or using experimental features, like you whish. Just include a `.babelrc` and `dawson` will **compile** your code with [babel](https://babeljs.io) before deploying it. Your Lambda functions can be **`async`** and return **Promises**. There's also **built-in authentication support** via [API Gateway Custom Authorizers](https://docs.aws.amazon.com/apigateway/latest/developerguide/use-custom-authorizer.html).
+You can write your functions in ES2016, ES2017, using async-await or using experimental features, like you whish. Just include a `.babelrc` and `dawson` will **compile** your code with [babel](https://babeljs.io) before deploying it. Your Lambda functions can be **`async`** and return **Promises**. There's also **built-in authorization support** via [API Gateway Custom Authorizers](https://docs.aws.amazon.com/apigateway/latest/developerguide/use-custom-authorizer.html).
 
 Each function has its **own IAM Role**, so you can define [fine-graned IAM Policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#grant-least-privilege).  
 `dawson` offers first-class support for **Single Page Applications**: a **CloudFront** Distribution will be deployed in front of your app, correctly mapping assets and the API origin, so you don't have to worry about CORS. An [AWS WAF](https://aws.amazon.com/waf/) WebACL can also be attached to CloudFront.
@@ -50,17 +48,18 @@ Using the `dawson` command you can **deploy** the infrastructure, **inspect logs
 
 ## Architecture
 
-Reference architecture diagram:
-
 ![https://raw.githubusercontent.com/dawson-org/dawson-cli/new-readme/docs/architecture.png](docs/architecture.png)
 
-Additionally, `dawson` uses a *support stack* with an S3 Bucket used to store Lambda ZIP bundles.
+*(additionally, `dawson` uses a support stack with an S3 Bucket to store Lambda ZIP bundles and CloudFormation templates)*
+
 
 ## Demo
 TODO
 
+
 ## Changelog
 A changelog is maintained in the [Releases page](https://github.com/dawson-org/dawson-cli/releases).
+
 
 ## Related
 * https://serverless.com/
