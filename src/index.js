@@ -129,7 +129,12 @@ if (argv.verbose === true) {
   enableDebug();
 }
 
+if (!argv.shell) {
+  process.stdout.write('\x1B[2J\x1B[0f');
+}
+
 log('');
 log('   dawson'.bold.blue, 'v' + pkg.version);
 log('  ', PKG_JSON.name.yellow.dim.bold, '↣', AWS.config.region.yellow.dim.bold, '↣', argv.stage.yellow.bold);
+log('  ', new Date().toLocaleString().gray);
 log('');

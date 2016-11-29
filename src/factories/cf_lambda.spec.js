@@ -32,7 +32,8 @@ test('templateLambdaExecutionRole', t => {
           'Statement': [{
             'Effect': 'Allow',
             'Principal': {
-              'Service': ['lambda.amazonaws.com']
+              'Service': ['lambda.amazonaws.com'],
+              'AWS': [{ 'Fn::Sub': 'arn:aws:iam::${AWS::AccountId}:root' }] // eslint-disable-line
             },
             'Action': ['sts:AssumeRole']
           }]
@@ -100,7 +101,8 @@ test('templateLambda', t => {
           'Statement': [{
             'Effect': 'Allow',
             'Principal': {
-              'Service': ['lambda.amazonaws.com']
+              'Service': ['lambda.amazonaws.com'],
+              'AWS': [{ 'Fn::Sub': 'arn:aws:iam::${AWS::AccountId}:root' }] // eslint-disable-line
             },
             'Action': ['sts:AssumeRole']
           }]

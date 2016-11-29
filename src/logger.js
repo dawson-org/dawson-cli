@@ -50,7 +50,7 @@ export function success (...args) {
 
 export function error (...args) {
   args.map(stringify).forEach(str => {
-    process.stderr.write(str.red.bold + ' ');
+    process.stderr.write(str.red + ' ');
   });
   process.stderr.write('\n');
 }
