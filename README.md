@@ -6,14 +6,14 @@
 [![npm license](https://img.shields.io/npm/l/dawson.svg?maxAge=2592000?style=plastic)]() 
 [![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=plastic)](https://github.com/Flet/semistandard) 
 
-A [serverless](https://auth0.com/blog/what-is-serverless/) web framework for Node.js on AWS ([CloudFormation](https://aws.amazon.com/cloudformation/), [CloudFront](https://aws.amazon.com/cloudfront/), [API Gateway](https://aws.amazon.com/apigateway/), [Lambda](https://aws.amazon.com/lambda/)).  
-You can use `dawson` to build and deploy backend code and infrastructure for *single-page apps + API*, *pure APIs* or *server-rendered pages*.
+dawson is a [serverless](https://auth0.com/blog/what-is-serverless/) web framework for Node.js on AWS ([CloudFormation](https://aws.amazon.com/cloudformation/), [CloudFront](https://aws.amazon.com/cloudfront/), [API Gateway](https://aws.amazon.com/apigateway/), [Lambda](https://aws.amazon.com/lambda/)).  
+You can use `dawson` to build and deploy backend code and infrastructure for **single-page apps + API**, **pure APIs** or **server-rendered pages**.
 
 ```js
 // api.js
-module.exports.greet = function greet (event) {
+export function greet (event) {
     const name = event.params.path.name
-    return 'Hello ' + name + ', you look awesome!'
+    return `Hello ${name}, you look awesome!`
 }
 greet.api = {
     path: 'greet/{name}'
@@ -25,7 +25,7 @@ $ dawson deploy
 ```
 
 ## Documentation
-Getting Started Guide, API & CLI Documentation is [here](docs/README.md).
+[Getting Started Guide, API & CLI Documentation](docs/README.md)
 
 
 ## About
