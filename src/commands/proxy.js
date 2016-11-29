@@ -4,7 +4,7 @@
 //
 // This command will simulate the CloudFront distribution
 //
-// This feature is preview-quality, we need error checking, etc...
+// This feature is preview-quality
 //
 
 import assert from 'assert';
@@ -15,10 +15,13 @@ import { createServer } from 'http';
 import { parse } from 'url';
 import pathModule from 'path';
 import util from 'util';
+import { oneLine } from 'common-tags';
 
-import { debug, error, success } from '../logger';
+import dockerLambda from 'docker-lambda';
+import taskCreateBundle from '../libs/createBundle';
+
+import { debug, warning, error, success } from '../logger';
 import { SETTINGS, API_DEFINITIONS, APP_NAME } from '../config';
-import { RUNNER_FUNCTION_BODY } from '../libs/createIndex';
 import { compare } from '../libs/pathmatch';
 
 import {
@@ -97,15 +100,18 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
       stageVariables
     };
     debug('Event parameter:'.gray.bold, JSON.stringify(event, null, 2).gray);
-    // eslint-disable-next-line
-    const context = {};
-    // eslint-disable-next-line
+
     const callback = function apiCallback (err, data) {
       const contentType = getContentType(runner);
       if (err) {
-        error(`Request Error: ${err.message}`);
-        error(err);
-        const errorResponse = JSON.parse(err.message);
+        const errorResponse = JSON.parse(err.errorMessage);
+        if (errorResponse.unhandled === true) {
+          warning('Unhandled Error:'.bold, oneLine`
+            Your lambda function returned an invalid error. Error messages must be valid JSON.stringfy-ed strings and
+            should contain an httpStatus (int) property. This error will be swallowed and a generic HTTP 500 response will be returned to the client.
+            Please refer to the documentation for instruction on how to deliver proper error responses.
+          `);
+        }
         res.writeHead(errorResponse.httpStatus, {
           'Content-Type': contentType
         });
@@ -148,16 +154,27 @@ function processAPIRequest (req, res, { body, outputs, pathname, querystring }) 
       console.log(` <- END '${runner.name}' (${new Intl.NumberFormat().format(data.length / 1024)} KB)\n`.red.dim);
       res.end();
     };
-    /*
-      eval uses these vars:
-      - runner
-      - event
-      - context (unused internally)
-      - callback
-    */
+
     console.log(`\n -> START '${runner.name}'`.green.dim);
 
-    const doCall = () => eval(RUNNER_FUNCTION_BODY); // eslint-disable-line
+    const doCall = () => {
+      try {
+        const invokeResult = dockerLambda({
+          event,
+          taskDir: `${process.cwd()}/.dawson-dist`,
+          handler: `daniloindex.${runner.name}`,
+          dockerArgs: ['-m', '512M'],
+          spawnOptions: {
+            stdio: ['pipe', 'pipe', process.stdout]
+          }
+        });
+        callback(null, invokeResult);
+      } catch (invokeError) {
+        const parsedError = JSON.parse(invokeError.stdout.toString('utf8'), null, 2);
+        error('Lambda terminated with error:\n', util.inspect(parsedError, { depth: 10, color: true }));
+        callback(parsedError, null);
+      }
+    };
     const authorizer = runner.api.authorizer;
 
     if (!authorizer) {
@@ -341,7 +358,20 @@ export function run (argv) {
     error('Server error', err);
   });
 
-  server.listen(port);
   process.stdout.write('\x1B[2J\x1B[0f');
-  success(`\nDevelopment proxy listening on http://0.0.0.0:${port}`.bold.green);
+  taskCreateBundle({
+    appStageName: stage,
+    noUpload: true,
+    stackName
+  })
+  .run()
+  .catch(err => {
+    error(`An error occurred while creating your app bundle`);
+    error(err);
+    process.exit(1);
+  })
+  .then(() => {
+    server.listen(port);
+    success(`\nDevelopment proxy listening on http://0.0.0.0:${port}`.bold.green);
+  });
 }

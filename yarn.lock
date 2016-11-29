@@ -1065,6 +1065,10 @@ disparity@^2.0.0:
     ansi-styles "^2.0.1"
     diff "^1.3.2"
 
+docker-lambda@^0.9.1:
+  version "0.9.1"
+  resolved "https://registry.yarnpkg.com/docker-lambda/-/docker-lambda-0.9.1.tgz#0e0102449df43dfcc1101fee3fd3e480e19c6b97"
+
 doctrine@^0.6.2:
   version "0.6.4"
   resolved "https://registry.yarnpkg.com/doctrine/-/doctrine-0.6.4.tgz#81428491a942ef18b0492056eda3800eee57d61d"
