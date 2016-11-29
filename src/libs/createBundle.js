@@ -100,7 +100,6 @@ async function uploadS3 ({
 export default function taskCreateBundle ({
   bucketName,
   appStageName,
-  indexFileContents,
   excludeList = [],
   stackName
 }, result) {
@@ -112,7 +111,6 @@ export default function taskCreateBundle ({
         Object.assign(ctx, {
           bucketName,
           excludeList,
-          indexFileContents,
           tempZipFile,
           uuid: `${appStageName}-bundle`,
           stackName
