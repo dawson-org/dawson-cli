@@ -20,14 +20,23 @@ import { oneLine } from 'common-tags';
 import dockerLambda from 'docker-lambda';
 import taskCreateBundle from '../libs/createBundle';
 
+import AWS from 'aws-sdk';
+const sts = new AWS.STS({});
+const iam = new AWS.IAM({});
+
 import { debug, warning, error, success } from '../logger';
 import { SETTINGS, API_DEFINITIONS, APP_NAME } from '../config';
 import { compare } from '../libs/pathmatch';
 
 import {
   getStackOutputs,
+  getStackResources,
   templateStackName
 } from '../factories/cf_utils';
+
+import {
+  templateLambdaRoleName
+} from '../factories/cf_lambda';
 
 function findApi ({ method, pathname }) {
   let found = null;
@@ -61,130 +70,168 @@ function getContentType (fn) {
   return fn.api.responseContentType || 'text/html';
 }
 
-function processAPIRequest (req, res, { body, outputs, pathname, querystring }) {
+async function processAPIRequest (req, res, { body, outputs, resources, pathname, querystring }) {
+  const stageVariables = {};
+  outputs.forEach(output => {
+    stageVariables[output.OutputKey] = output.OutputValue;
+  });
   try {
-    const stageVariables = {};
-    outputs.forEach(output => {
-      stageVariables[output.OutputKey] = output.OutputValue;
-    });
-    try {
-      var runner = findApi({ method: req.method, pathname });
-    } catch (e) {
-      if (e.message.match(/API not found at path/)) {
-        const message = `API not found at path '${req.url}'`;
-        console.log(message.bold.red);
-        res.writeHead(404);
-        res.write(message);
-        res.end();
-        return;
-      } else {
-        throw e;
-      }
-    }
-    let expectedResponseContentType = runner.api.responseContentType || 'text/html';
-    if (runner.api.redirects) {
-      expectedResponseContentType = 'text/plain';
-    }
-    const event = {
-      params: {
-        path: {
-          ...(runner.pathParams || {})
-        },
-        querystring,
-        header: req.headers
-      },
-      body,
-      meta: {
-        expectedResponseContentType
-      },
-      stageVariables
-    };
-    debug('Event parameter:'.gray.bold, JSON.stringify(event, null, 2).gray);
-
-    const callback = function apiCallback (err, data) {
-      const contentType = getContentType(runner);
-      if (err) {
-        const errorResponse = JSON.parse(err.errorMessage);
-        if (errorResponse.unhandled === true) {
-          warning('Unhandled Error:'.bold, oneLine`
-            Your lambda function returned an invalid error. Error messages must be valid JSON.stringfy-ed strings and
-            should contain an httpStatus (int) property. This error will be swallowed and a generic HTTP 500 response will be returned to the client.
-            Please refer to the documentation for instruction on how to deliver proper error responses.
-          `);
-        }
-        res.writeHead(errorResponse.httpStatus, {
-          'Content-Type': contentType
-        });
-        if (contentType === 'application/json') {
-          res.write(JSON.stringify(errorResponse));
-        } else if (contentType === 'text/plain') {
-          res.write(errorResponse.response);
-        } else if (contentType === 'text/html') {
-          res.write(errorResponse.response);
-        } else {
-          res.write(errorResponse.response);
-        }
-        res.end();
-        return;
-      }
-      if (runner.api.redirects) {
-        const location = data.response.Location;
-        res.writeHead(307, {
-          'Content-Type': 'text/plain',
-          'Location': location
-        });
-        res.write(`You are being redirected to ${location}`);
-        res.end();
-        return;
-      }
-      res.writeHead(200, { 'Content-Type': contentType });
-      if (!data) {
-        error(`Handler returned an empty body`);
-      } else {
-        if (contentType === 'application/json') {
-          res.write(data.response);
-        } else if (contentType === 'text/plain') {
-          res.write(data.response);
-        } else if (contentType === 'text/html') {
-          res.write(data.html);
-        } else {
-          res.write(data.response);
-        }
-      }
-      console.log(` <- END '${runner.name}' (${new Intl.NumberFormat().format(data.length / 1024)} KB)\n`.red.dim);
+    var runner = findApi({ method: req.method, pathname });
+  } catch (e) {
+    if (e.message.match(/API not found at path/)) {
+      const message = `API not found at path '${req.url}'`;
+      console.log(message.bold.red);
+      res.writeHead(404);
+      res.write(message);
       res.end();
-    };
-
-    console.log(`\n -> START '${runner.name}'`.green.dim);
-
-    const doCall = () => {
-      try {
-        const invokeResult = dockerLambda({
-          event,
-          taskDir: `${process.cwd()}/.dawson-dist`,
-          handler: `daniloindex.${runner.name}`,
-          dockerArgs: ['-m', '512M'],
-          spawnOptions: {
-            stdio: ['pipe', 'pipe', process.stdout]
-          }
-        });
-        callback(null, invokeResult);
-      } catch (invokeError) {
-        const parsedError = JSON.parse(invokeError.stdout.toString('utf8'), null, 2);
-        error('Lambda terminated with error:\n', util.inspect(parsedError, { depth: 10, color: true }));
-        callback(parsedError, null);
-      }
-    };
-    const authorizer = runner.api.authorizer;
-
-    if (!authorizer) {
-      doCall();
+      return;
     } else {
-      runAuthorizer({ authorizer, event, stageVariables, req, res, successCallback: doCall });
+      throw e;
     }
-  } catch (err) {
-    error('processAPIRequest error', err);
   }
+  let expectedResponseContentType = runner.api.responseContentType || 'text/html';
+  if (runner.api.redirects) {
+    expectedResponseContentType = 'text/plain';
+  }
+  const event = {
+    params: {
+      path: {
+        ...(runner.pathParams || {})
+      },
+      querystring,
+      header: req.headers
+    },
+    body,
+    meta: {
+      expectedResponseContentType
+    },
+    stageVariables
+  };
+  debug('Event parameter:'.gray.bold, JSON.stringify(event, null, 2).gray);
+
+  const callback = function apiCallback (err, data) {
+    const contentType = getContentType(runner);
+    if (err) {
+      const errorResponse = JSON.parse(err.errorMessage);
+      if (errorResponse.unhandled === true) {
+        warning('Unhandled Error:'.bold, oneLine`
+          Your lambda function returned an invalid error. Error messages must be valid JSON.stringfy-ed strings and
+          should contain an httpStatus (int) property. This error will be swallowed and a generic HTTP 500 response will be returned to the client.
+          Please refer to the documentation for instruction on how to deliver proper error responses.
+        `);
+      }
+      res.writeHead(errorResponse.httpStatus, {
+        'Content-Type': contentType
+      });
+      if (contentType === 'application/json') {
+        res.write(JSON.stringify(errorResponse));
+      } else if (contentType === 'text/plain') {
+        res.write(errorResponse.response);
+      } else if (contentType === 'text/html') {
+        res.write(errorResponse.response);
+      } else {
+        res.write(errorResponse.response);
+      }
+      res.end();
+      return;
+    }
+    if (runner.api.redirects) {
+      const location = data.response.Location;
+      res.writeHead(307, {
+        'Content-Type': 'text/plain',
+        'Location': location
+      });
+      res.write(`You are being redirected to ${location}`);
+      res.end();
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': contentType });
+    if (!data) {
+      error(`Handler returned an empty body`);
+    } else {
+      if (contentType === 'application/json') {
+        res.write(data.response);
+      } else if (contentType === 'text/plain') {
+        res.write(data.response);
+      } else if (contentType === 'text/html') {
+        res.write(data.html);
+      } else {
+        res.write(data.response);
+      }
+    }
+    console.log(` <- END '${runner.name}' (${new Intl.NumberFormat().format(data.length / 1024)} KB)\n`.red.dim);
+    res.end();
+  };
+
+  console.log(`\n -> START '${runner.name}'`.green.dim);
+  const credentials = await assumeRole(resources, runner);
+
+  const doCall = () => {
+    try {
+      const invokeResult = dockerLambda({
+        event,
+        taskDir: `${process.cwd()}/.dawson-dist`,
+        handler: `daniloindex.${runner.name}`,
+        dockerArgs: []
+          .concat(['-m', '512M'])
+          .concat(['--env', `NODE_ENV=${process.env.NODE_ENV || 'development'}`])
+          .concat(['--env', `AWS_ACCESS_KEY_ID=${credentials.AccessKeyId}`])
+          .concat(['--env', `AWS_SECRET_ACCESS_KEY=${credentials.SecretAccessKey}`])
+          .concat(['--env', `AWS_SESSION_TOKEN=${credentials.SessionToken}`]),
+        spawnOptions: {
+          stdio: ['pipe', 'pipe', process.stdout]
+        }
+      });
+      callback(null, invokeResult);
+    } catch (invokeError) {
+      if (!invokeError.stdout) {
+        error(`dawson Internal Error`.bold);
+        console.dir(invokeError);
+        return;
+      }
+      const parsedError = JSON.parse(invokeError.stdout.toString('utf8'), null, 2);
+      error('Lambda terminated with error:\n', util.inspect(parsedError, { depth: 10, color: true }));
+      callback(parsedError, null);
+    }
+  };
+
+  const authorizer = runner.api.authorizer;
+
+  if (!authorizer) {
+    doCall();
+  } else {
+    runAuthorizer({ authorizer, event, stageVariables, req, res, successCallback: doCall });
+  }
+}
+
+function findRoleName (stackResources, cfLogicalName) {
+  let found = null;
+  stackResources.forEach(resource => {
+    if (resource.LogicalResourceId === cfLogicalName) {
+      found = resource.PhysicalResourceId;
+    }
+  });
+  if (!found) {
+    throw new Error(`Cannot find an IAM Role for '${cfLogicalName}'`);
+  }
+  return found;
+}
+
+async function assumeRole (stackResources, runner) {
+  const functionName = runner.name;
+  const lambdaName = functionName[0].toUpperCase() + functionName.substring(1);
+  const cfLogicalRoleName = templateLambdaRoleName({ lambdaName });
+  const roleName = findRoleName(stackResources, cfLogicalRoleName);
+  const getRoleResult = await iam.getRole({
+    RoleName: roleName
+  }).promise();
+  const roleArn = getRoleResult.Role.Arn;
+  const assumeRoleParams = {
+    RoleArn: roleArn,
+    RoleSessionName: 'dawson-dev-proxy'
+  };
+  const assumedRole = await sts.assumeRole(assumeRoleParams).promise();
+  return assumedRole.Credentials;
 }
 
 function runAuthorizer ({ authorizer, event, stageVariables, req, res, successCallback }) {
@@ -299,17 +346,24 @@ export function run (argv) {
       let rawBody = new Buffer('');
       let jsonBody = {};
       const next = () => {
-        getStackOutputs({ stackName })
-        .then(outputs => {
+        Promise.all([
+          getStackOutputs({ stackName }),
+          getStackResources({ stackName })
+        ])
+        .catch(err => {
+          error('Error describing stack', err);
+        })
+        .then(([ outputs, resources ]) => {
           processAPIRequest(req, res, {
             pathname,
             querystring,
             body: jsonBody,
-            outputs
+            outputs,
+            resources
           });
         })
         .catch(err => {
-          error('getStackOutputs Error', err);
+          error('processAPIRequest error', err);
         });
       };
       if (req.method === 'GET' || req.method === 'OPTIONS' || req.method === 'HEAD') {
