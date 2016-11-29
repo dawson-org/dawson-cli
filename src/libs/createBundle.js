@@ -101,7 +101,8 @@ export default function taskCreateBundle ({
   bucketName,
   appStageName,
   excludeList = [],
-  stackName
+  stackName,
+  noUpload = false
 }, result) {
   return new Listr([
     {
@@ -113,7 +114,8 @@ export default function taskCreateBundle ({
           excludeList,
           tempZipFile,
           uuid: `${appStageName}-bundle`,
-          stackName
+          stackName,
+          noUpload
         });
       }
     },
@@ -135,6 +137,7 @@ export default function taskCreateBundle ({
     },
     {
       title: 'creating zip archive',
+      skip: ctx => ctx.noUpload,
       task: async (ctx) => {
         const { tempZipFile, excludeList } = ctx;
         const { tempZipFileSize } = await zipRoot({ tempZipFile, excludeList });
@@ -143,6 +146,7 @@ export default function taskCreateBundle ({
     },
     {
       title: 'uploading to s3',
+      skip: ctx => ctx.noUpload,
       task: async (ctx) => {
         const { bucketName, uuid, tempZipFile, tempZipFileSize } = ctx;
         const { zipS3Location } = await uploadS3({ bucketName, uuid, tempZipFile, tempZipFileSize });
