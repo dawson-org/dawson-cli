@@ -15,7 +15,10 @@ import { createServer } from 'http';
 import { parse } from 'url';
 import pathModule from 'path';
 import util from 'util';
+import fs from 'fs';
 import { oneLine } from 'common-tags';
+import minimatch from 'minimatch';
+import { throttle } from 'lodash';
 
 import dockerLambda from 'docker-lambda';
 import taskCreateBundle from '../libs/createBundle';
@@ -338,6 +341,19 @@ async function getOutputsAndResources ({ stackName }) {
   return outputsAndResourcesCache;
 }
 
+function createBundle ({ stage, stackName }) {
+  return taskCreateBundle({
+    appStageName: stage,
+    noUpload: true,
+    stackName
+  })
+  .run()
+  .catch(err => {
+    error(`An error occurred while creating your app bundle`);
+    error(err);
+  });
+}
+
 export function run (argv) {
   const {
     stage,
@@ -436,19 +452,47 @@ export function run (argv) {
     error('Server error', err);
   });
 
-  taskCreateBundle({
-    appStageName: stage,
-    noUpload: true,
-    stackName
-  })
-  .run()
-  .catch(err => {
-    error(`An error occurred while creating your app bundle`);
-    error(err);
-    process.exit(1);
-  })
+  createBundle({ stage, stackName })
   .then(() => {
     server.listen(port);
     success(`\nDevelopment proxy listening on http://0.0.0.0:${port}`.bold.green);
+    setupWatcher({ stage, stackName });
   });
+}
+
+function setupWatcher ({ stage, stackName }) {
+  log(`Reload: watching ${process.cwd()} for changes`.dim);
+  log(`        proxy will auto reload on file changes`.dim);
+  let bundleInProgress = false;
+  const onWatch = (eventType, fileName) => {
+    const ignoreList = [
+      ...SETTINGS.zipIgnore,
+      'node_modules',
+      '.dawson-dist/**',
+      '~*',
+      '.*'
+    ];
+
+    if (bundleInProgress) {
+      return;
+    }
+
+    if (eventType === 'rename' ||
+        !ignoreList.every(pattern => !minimatch(fileName, pattern))) {
+      log(`Reload: [ignored event] ${eventType.toUpperCase()} ${fileName}`.dim);
+      return;
+    }
+
+    log(`Reload: ${eventType.toUpperCase()} ${fileName}`.dim);
+    bundleInProgress = true;
+    createBundle({ stage, stackName })
+    .then(() => {
+      bundleInProgress = false;
+      log(`Reload:`.dim, `reloaded at ${new Date().toLocaleTimeString()}`.yellow);
+    })
+    .catch(() => { bundleInProgress = false; });
+  };
+  fs.watch(process.cwd(), {
+    recursive: true
+  }, throttle(onWatch, 500, { 'options.trailing': true }));
 }
