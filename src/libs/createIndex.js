@@ -41,8 +41,24 @@ Promise.resolve()
   }
 })
 .catch(function (err) {
-  console.error('Lambda will terminate with error', err);
-  return callback(err);
+  try {
+    // Promise rejections should be Errors containing a JSON-stringified 'message property'
+    // which contains the error information to be displayed.
+    // If the property is not valid JSON, the error is not exposed to the client
+    // and a generic HTTP 500 error will be exposed
+    JSON.parse(err.message);
+    console.error('Lambda will terminate with error', err.message);
+    return callback(err.message);
+  } catch (_jsonError) {
+    console.error('Unhandled error will be swallowed and reported as HTTP 500:');
+    console.error(err);
+    const opaqueError = {
+      unhandled: true,
+      message: 'Unhandled internal error',
+      httpStatus: 500
+    };
+    return callback(JSON.stringify(opaqueError));
+  }
 });
 `;
 const RUNNER_FUNCTION_BODY_UNWRAPPED = `
