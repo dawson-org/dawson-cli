@@ -24,6 +24,8 @@ import AWS from 'aws-sdk';
 const sts = new AWS.STS({});
 const iam = new AWS.IAM({});
 
+const credentialsCache = new WeakMap();
+
 import { log, debug, warning, error, success } from '../logger';
 import { SETTINGS, API_DEFINITIONS, APP_NAME } from '../config';
 import { compare } from '../libs/pathmatch';
@@ -169,7 +171,11 @@ async function processAPIRequest (req, res, { body, outputs, resources, pathname
     return;
   };
 
-  const credentials = await assumeRole(resources, runner);
+  if (!credentialsCache.has(runner)) {
+    log('Credentials Cache miss: executing AssumeRole, this will take a while.');
+    credentialsCache.set(runner, await assumeRole(resources, runner));
+  }
+  const credentials = credentialsCache.get(runner);
 
   const doCall = () => {
     try {
@@ -232,11 +238,13 @@ async function assumeRole (stackResources, runner) {
     RoleName: roleName
   }).promise();
   const roleArn = getRoleResult.Role.Arn;
+  log('Assuming Role ARN', roleArn);
   const assumeRoleParams = {
     RoleArn: roleArn,
     RoleSessionName: 'dawson-dev-proxy'
   };
   const assumedRole = await sts.assumeRole(assumeRoleParams).promise();
+  log('Assumed Credentials', assumedRole.Credentials.AccessKeyId);
   return assumedRole.Credentials;
 }
 
@@ -318,6 +326,18 @@ function parseAssetsUrlString (req) {
   return urlString;
 }
 
+let outputsAndResourcesCache = null;
+async function getOutputsAndResources ({ stackName }) {
+  if (!outputsAndResourcesCache) {
+    log('Getting describing stack Outputs and Resources');
+    outputsAndResourcesCache = await Promise.all([
+      getStackOutputs({ stackName }),
+      getStackResources({ stackName })
+    ]);
+  }
+  return outputsAndResourcesCache;
+}
+
 export function run (argv) {
   const {
     stage,
@@ -352,12 +372,10 @@ export function run (argv) {
       let rawBody = new Buffer('');
       let jsonBody = {};
       const next = () => {
-        Promise.all([
-          getStackOutputs({ stackName }),
-          getStackResources({ stackName })
-        ])
+        Promise.resolve({ stackName })
+        .then(getOutputsAndResources)
         .catch(err => {
-          error('Error describing stack', err);
+          error('Error getting stack outputs and resources', err);
         })
         .then(([ outputs, resources ]) => {
           processAPIRequest(req, res, {
