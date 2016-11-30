@@ -25,7 +25,7 @@ $ dawson deploy
 ```
 
 ## Documentation
-[Getting Started Guide, API & CLI Documentation](docs/README.md)
+[Getting Started Guide, API & CLI Documentation](https://github.com/dawson-org/dawson-cli/wiki)
 
 
 ## About
@@ -48,7 +48,7 @@ Using the `dawson` command you can **deploy** the infrastructure, **inspect logs
 
 ## Architecture
 
-![https://raw.githubusercontent.com/dawson-org/dawson-cli/new-readme/docs/architecture.png](docs/architecture.png)
+![https://raw.githubusercontent.com/dawson-org/dawson-cli/new-readme/docs/architecture.png](https://github.com/dawson-org/dawson-cli/wiki)
 
 *(additionally, `dawson` uses a support stack with an S3 Bucket to store Lambda ZIP bundles and CloudFormation templates)*
 
