@@ -17,7 +17,7 @@ import {
   restoreStackPolicy,
   removeStackPolicy,
   createOrUpdateStack,
-  waitForUpdateCompleted,
+  observerForUpdateCompleted,
   getStackOutputs,
   AWS_REGION
 } from '../factories/cf_utils';
@@ -341,10 +341,6 @@ async function taskRequestStackUpdate ({ stackName, cfParams }) {
   await createOrUpdateStack({ stackName, cfParams, dryrun: false });
 }
 
-async function taskWaitForUpdateComplete ({ stackName }) {
-  await waitForUpdateCompleted({ stackName });
-}
-
 async function taskRestoreStackPolicy ({ dangerDeleteResources, stackName }) {
   if (dangerDeleteResources === true) {
     await restoreStackPolicy({ stackName });
@@ -468,9 +464,9 @@ export async function deploy ({
     },
     {
       title: 'waiting for stack update to complete',
-      task: async (ctx) => {
+      task: ctx => {
         const { stackName } = ctx;
-        await taskWaitForUpdateComplete({ stackName });
+        return observerForUpdateCompleted({ stackName });
       }
     },
     {

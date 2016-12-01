@@ -3847,3 +3847,7 @@ yargs@^6.0.0:
     window-size "^0.2.0"
     y18n "^3.2.1"
     yargs-parser "^4.1.0"
+
+zen-observable@^0.3.0:
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/zen-observable/-/zen-observable-0.3.0.tgz#137bb5e31be7b83ed5eda9c14f9305cb3cdaa725"

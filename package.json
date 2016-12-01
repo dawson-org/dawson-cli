@@ -50,7 +50,8 @@
     "simple-spinner": "0.0.5",
     "temp": "^0.8.3",
     "update-notifier": "^1.0.2",
-    "yargs": "^6.0.0"
+    "yargs": "^6.0.0",
+    "zen-observable": "^0.3.0"
   },
   "bin": "lib/index.js",
   "devDependencies": {

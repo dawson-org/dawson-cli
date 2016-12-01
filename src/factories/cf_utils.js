@@ -1,4 +1,5 @@
 
+import Observable from 'zen-observable';
 import AWS from 'aws-sdk';
 
 import { debug, error } from '../logger';
@@ -208,12 +209,25 @@ export function getStackResources ({ stackName }) {
 let LAST_STACK_REASON = '';
 export function waitForUpdateCompleted (args) {
   return new Promise(resolve => {
-    uiPollStackStatusHelper(args, outputs => {
-      resolve(outputs);
+    uiPollStackStatusHelper(args, (err) => {
+      if (err) {
+        throw err;
+      }
+      resolve();
     });
   });
 }
-function uiPollStackStatusHelper ({ stackName }, done) {
+export function observerForUpdateCompleted (args) {
+  return new Observable(observer =>
+    uiPollStackStatusHelper(args, (err) => {
+      if (err) {
+        throw err;
+      }
+      observer.complete();
+    }, (status, reason) => observer.next(`status: ${status} ${reason ? `(${reason})` : ''}`))
+  );
+}
+function uiPollStackStatusHelper ({ stackName }, done, onProgress = () => {}) {
   cloudformation.describeStacks({
     StackName: stackName
   }, (err, data) => {
@@ -223,6 +237,7 @@ function uiPollStackStatusHelper ({ stackName }, done) {
     }
     const status = data.Stacks[0].StackStatus;
     const reason = data.Stacks[0].StackStatusReason;
+    onProgress(status, reason);
     if (reason) { LAST_STACK_REASON = reason; }
     let action = '';
     switch (status) {
@@ -271,10 +286,11 @@ function uiPollStackStatusHelper ({ stackName }, done) {
       error(`\nStack update failed:`, LAST_STACK_REASON);
       error(`You may inspect stack events:\n$ AWS_REGION=${cloudformation.config.region} aws cloudformation describe-stack-events --stack-name ${stackName} --query "StackEvents[?ResourceStatus == 'UPDATE_FAILED'].{ resource: LogicalResourceId, message: ResourceStatusReason, properties: ResourceProperties }"`);
       return;
+        done(new Error('Stack update failed:' + LAST_STACK_REASON), null);
     }
     if (action === 'succeed') {
       debug(`\nStack update completed!`);
-      done(data.Stacks[0].Outputs);
+      done(null, data.Stacks[0].Outputs);
       return;
     }
   });
