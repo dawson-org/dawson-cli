@@ -1,5 +1,5 @@
 
-import { stripIndent } from 'common-tags';
+import { stripIndent, oneLine } from 'common-tags';
 import AWS from 'aws-sdk';
 import execa from 'execa';
 import Listr from 'listr';
@@ -8,7 +8,7 @@ import verboseRenderer from 'listr-verbose-renderer';
 import { SETTINGS, API_DEFINITIONS, APP_NAME, getCloudFrontSettings, getHostedZoneId } from '../config';
 const { cloudfront: cloudfrontStagesSettings } = SETTINGS;
 
-import { debug, error, danger, success } from '../logger';
+import { debug, error, danger, warning, success } from '../logger';
 import taskCreateBundle from '../libs/createBundle';
 
 import {
@@ -67,6 +67,63 @@ async function taskUpdateSupportStack ({ appStage, supportStackName }) {
   const supportOutputs = await getStackOutputs({ stackName: supportStackName });
   const supportBucketName = supportOutputs.find(o => o.OutputKey === 'SupportBucket').OutputValue;
   return { supportBucketName };
+}
+
+async function createACMCert ({ cloudfrontSettings }) {
+  const domainName = cloudfrontSettings;
+  const acm = new AWS.ACM({ region: 'us-east-1' });
+  const requestResult = await acm.requestCertificate({
+    DomainName: domainName,
+    IdempotencyToken: `dawson-${domainName}`.replace(/\W+/g, '')
+  }).promise();
+  const certificateArn = requestResult.CertificateArn;
+  warning(oneLine`
+    An SSL/TLS certificate has been requested for the domain ${domainName.bold} (${certificateArn}).
+    Dawson will now exit; please run this command again when you've validated such certificate.
+    Domain contacts and administrative emails will receive an email asking for confirmation.
+    Refer to AWS ACM documentation for further info:
+    https://docs.aws.amazon.com/acm/latest/userguide/setup-email.html
+  `);
+  process.exit(1);
+}
+
+async function taskRequestACMCert ({ cloudfrontSettings }) {
+  if (typeof cloudfrontSettings !== 'string') {
+    return {};
+  }
+  const acm = new AWS.ACM({ region: 'us-east-1' });
+  const certListResult = await acm.listCertificates({
+    CertificateStatuses: ['ISSUED']
+  }).promise();
+
+  const arns = certListResult.CertificateSummaryList.map(c => c.CertificateArn);
+  debug('current ACM Certificates', arns);
+
+  let usableCertArn = null;
+  for (const arn of arns) {
+    const describeResult = await acm.describeCertificate({
+      CertificateArn: arn
+    }).promise();
+    const domains = [
+      describeResult.Certificate.DomainName,
+      ...describeResult.Certificate.SubjectAlternativeNames
+    ];
+    if (domains.includes(cloudfrontSettings)) {
+      usableCertArn = arn;
+    }
+  }
+
+  if (usableCertArn) {
+    debug(`using certificate: ${usableCertArn}`);
+    return {
+      acmCertificateArn: usableCertArn
+    };
+  } else {
+    const newCertArn = await createACMCert({ cloudfrontSettings });
+    return {
+      acmCertificateArn: newCertArn
+    };
+  }
 }
 
 function taskUploadZip ({ supportBucketName, appStage, stackName }, ctx) {
@@ -322,11 +379,17 @@ export async function deploy ({
       task: () => execa.shell(SETTINGS['pre-deploy'])
     },
     {
+      title: 'requesting ACM SSL/TLS Certificate',
+      task: async (ctx) => {
+        const { acmCertificateArn } = await taskRequestACMCert(ctx);
+        Object.assign(ctx, { acmCertificateArn });
+      }
+    },
+    {
       title: 'updating support stack',
       task: async (ctx) => {
         const { supportBucketName } = await taskUpdateSupportStack(ctx);
-        const acmCertificateArn = 'xxx';
-        Object.assign(ctx, { acmCertificateArn, supportBucketName });
+        Object.assign(ctx, { supportBucketName });
       }
     },
     {
