@@ -380,6 +380,7 @@ export async function deploy ({
     },
     {
       title: 'requesting ACM SSL/TLS Certificate',
+      skip: ({ cloudfrontSettings }) => typeof cloudfrontSettings !== 'string',
       task: async (ctx) => {
         const { acmCertificateArn } = await taskRequestACMCert(ctx);
         Object.assign(ctx, { acmCertificateArn });
