@@ -507,10 +507,11 @@ export async function deploy ({
       const cloudfrontDNS = outputs.find(o => o.OutputKey === 'CloudFrontDNS').OutputValue;
 
       if (cloudfrontCustomDomain) {
-        success(`   Now you should configure your DNS ${cloudfrontCustomDomain} as a CNAME to ${cloudfrontDNS}`);
-        success(`   and navigate to https://${cloudfrontCustomDomain} or https://${cloudfrontDNS}`);
+        success(`   DNS: ${cloudfrontCustomDomain} CNAME ${cloudfrontDNS}`);
+        success(`   URL: https://${cloudfrontCustomDomain}`);
+        success(`   URL: https://${cloudfrontDNS}`);
       } else {
-        success(`   Open your browser and enjoy: https://${cloudfrontDNS}`);
+        success(`   URL: https://${cloudfrontDNS}`);
       }
     } else {
       success(`   Deploy completed!`);
