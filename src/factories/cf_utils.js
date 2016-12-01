@@ -1,11 +1,13 @@
 
-import { oneLineTrim } from 'common-tags';
+import { oneLineTrim, stripIndent } from 'common-tags';
 import Observable from 'zen-observable';
 import AWS from 'aws-sdk';
 import Table from 'cli-table';
 import moment from 'moment';
+import chalk from 'chalk';
 
 import { debug, error } from '../logger';
+import createError from '../libs/error';
 
 import {
   stackUpload
@@ -212,10 +214,10 @@ export function getStackResources ({ stackName }) {
 let LAST_STACK_REASON = '';
 export function waitForUpdateCompleted (args) {
   const startTimestamp = Date.now();
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     uiPollStackStatusHelper(args, startTimestamp, (err) => {
       if (err) {
-        throw err;
+        return reject(err);
       }
       resolve();
     });
@@ -226,7 +228,7 @@ export function observerForUpdateCompleted (args) {
   return new Observable(observer =>
     uiPollStackStatusHelper(args, startTimestamp, (err) => {
       if (err) {
-        throw err;
+        return observer.error(err);
       }
       observer.complete();
     }, (status, reason) => observer.next(`status: ${status} ${reason ? `(${reason})` : ''}`))
@@ -307,16 +309,31 @@ function uiPollStackStatusHelper ({ stackName }, startTimestamp, done, onProgres
           head: ['Timestamp', 'Status', 'Reason', 'Logical Id']
         });
         table.push(...failedEvents);
-        error('\nThe stack update has failed.');
         if (describeResult.StackEvents[0]) {
-          error('You may further inspect stack events from the console at this link:',
-            oneLineTrim`https://${AWS_REGION}.console.aws.amazon.com/cloudformation/home
-            ?region=${AWS_REGION}#/stacks?tab=events
-              &stackId=${encodeURIComponent(describeResult.StackEvents[0].StackId)}
-            `);
+          error();
         }
-        error(table.toString());
-        done(new Error('Stack update failed:' + LAST_STACK_REASON), null);
+        done(createError({
+          kind: 'Stack update failed',
+          reason: 'The stack update has failed because of an error',
+          detailedReason:
+            table.toString() +
+            '\n' +
+            chalk.gray(
+              oneLineTrim`
+                You may further inspect stack events from the console at this link:
+                https://${AWS_REGION}.console.aws.amazon.com/cloudformation/home
+                ?region=${AWS_REGION}#/stacks?tab=events
+                  &stackId=${encodeURIComponent(describeResult.StackEvents[0].StackId)}
+              `
+            ),
+          solution: stripIndent`
+            This usually happens because:
+            * you have introduced an error when extending your template using 'processCFTemplate'
+            * the 'domain' you specified as cloudfront CNAME is already being used
+            * you have reached a limit on your AWS Account (https://docs.aws.amazon.com/general/latest/gr/aws_service_limits.html)
+            * you are trying to deploy to an unsupported region (https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/)
+          `
+        }));
         return;
       });
     }

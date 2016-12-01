@@ -4,11 +4,12 @@ import AWS from 'aws-sdk';
 import execa from 'execa';
 import Listr from 'listr';
 import verboseRenderer from 'listr-verbose-renderer';
+import chalk from 'chalk';
 
 import { SETTINGS, API_DEFINITIONS, APP_NAME, getCloudFrontSettings, getHostedZoneId } from '../config';
 const { cloudfront: cloudfrontStagesSettings } = SETTINGS;
 
-import { debug, error, danger, warning, success } from '../logger';
+import { debug, danger, warning, success } from '../logger';
 import taskCreateBundle from '../libs/createBundle';
 
 import {
@@ -356,37 +357,46 @@ export async function deploy ({
 }) {
   const tasks = new Listr([
     {
-      title: 'setting up',
-      task: ctx => Object.assign(ctx, {
-        cloudfrontSettings: getCloudFrontSettings({ appStage }),
-        dangerDeleteResources,
-        defs: Object.entries(API_DEFINITIONS),
-        hostedZoneId: getHostedZoneId({ appStage }),
-        skip: noUploads,
-        stackName: templateStackName({ appName: APP_NAME, stage: appStage }),
-        stageName: 'prod',
-        appStage,
-        supportStackName: templateStackName({ appName: `${APP_NAME}Support` })
-      })
-    },
-    {
       title: 'running pre-deploy hook',
       skip: () => !SETTINGS['pre-deploy'],
       task: () => execa.shell(SETTINGS['pre-deploy'])
     },
     {
-      title: 'validating ACM SSL/TLS Certificate',
-      skip: ({ cloudfrontSettings }) => typeof cloudfrontSettings !== 'string',
-      task: async (ctx) => {
-        const { acmCertificateArn } = await taskRequestACMCert(ctx);
-        Object.assign(ctx, { acmCertificateArn });
+      title: 'validating configuration',
+      task: ctx => {
+        Object.assign(ctx, {
+          cloudfrontSettings: getCloudFrontSettings({ appStage }),
+          dangerDeleteResources,
+          defs: Object.entries(API_DEFINITIONS),
+          hostedZoneId: getHostedZoneId({ appStage }),
+          skip: noUploads,
+          stackName: templateStackName({ appName: APP_NAME, stage: appStage }),
+          stageName: 'prod',
+          appStage,
+          supportStackName: templateStackName({ appName: `${APP_NAME}Support` })
+        });
       }
     },
     {
-      title: 'updating support stack',
-      task: async (ctx) => {
-        const { supportBucketName } = await taskUpdateSupportStack(ctx);
-        Object.assign(ctx, { supportBucketName });
+      title: 'checking prerequisites',
+      task: (ctx) => {
+        return new Listr([
+          {
+            title: 'validating ACM SSL/TLS Certificate',
+            skip: ({ cloudfrontSettings }) => typeof cloudfrontSettings !== 'string',
+            task: async (ctx) => {
+              const { acmCertificateArn } = await taskRequestACMCert(ctx);
+              Object.assign(ctx, { acmCertificateArn });
+            }
+          },
+          {
+            title: 'updating support stack',
+            task: async (ctx) => {
+              const { supportBucketName } = await taskUpdateSupportStack(ctx);
+              Object.assign(ctx, { supportBucketName });
+            }
+          }
+        ], { concurrent: true });
       }
     },
     {
@@ -486,7 +496,7 @@ export async function deploy ({
     renderer: verbose ? verboseRenderer : undefined
   });
 
-  tasks.run()
+  return tasks.run()
   .then(async (ctx) => {
     const { stackName, cloudfrontSettings, cloudfrontCustomDomain } = ctx;
 
@@ -506,10 +516,7 @@ export async function deploy ({
       success(`   Deploy completed!`);
     }
   })
-  .catch(err => {
-    error('An error occurred while deploying');
-    console.dir(err);
-  });
+  .catch(e => { throw e; });
 }
 
 export function run (argv) {
@@ -519,6 +526,20 @@ export function run (argv) {
     appStage: argv.stage,
     verbose: argv.verbose
   })
-  .catch(err => error('Uncaught error', err.message, err.stack))
-  .then(() => {});
+  .catch(err => {
+    if (err.isDawsonError) {
+      console.error(err.toFormattedString());
+      process.exit(1);
+    }
+    console.error(
+      chalk.red.bold('dawson internal error:'),
+      err.message
+    );
+    console.error(err.stack);
+    console.error(chalk.red(`Please report this bug: https://github.com/dawson-org/dawson-cli/issues`));
+    process.exit(1);
+  })
+  .then(() => {
+    process.exit(0);
+  });
 }
