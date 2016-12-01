@@ -339,7 +339,7 @@ async function taskRemoveStackPolicy ({ dangerDeleteResources, stackName }) {
 }
 
 async function taskRequestStackUpdate ({ stackName, cfParams }) {
-  await createOrUpdateStack({ stackName, cfParams, dryrun: false });
+  return await createOrUpdateStack({ stackName, cfParams, dryrun: false });
 }
 
 async function taskRestoreStackPolicy ({ dangerDeleteResources, stackName }) {
@@ -469,11 +469,13 @@ export async function deploy ({
       title: 'requesting changeset',
       task: async (ctx) => {
         const { stackName, cfParams } = ctx;
-        await taskRequestStackUpdate({ stackName, cfParams });
+        const updateRequest = await taskRequestStackUpdate({ stackName, cfParams });
+        Object.assign(ctx, { stackChangesetEmpty: updateRequest ? (updateRequest.response === false) : false });
       }
     },
     {
       title: 'waiting for stack update to complete',
+      skip: ctx => ctx.stackChangesetEmpty === true,
       task: ctx => {
         const { stackName } = ctx;
         return observerForUpdateCompleted({ stackName });

@@ -171,6 +171,8 @@ export async function createOrUpdateStack ({ stackName, cfParams, dryrun, ignore
       if (changeSetId) {
         // only if the ChangeSet has been created successfully
         await doExecuteChangeSet({ changeSetId });
+      } else {
+        return false;
       }
     } else {
       updateStackResponse = await cloudformation.createStack(cfParams).promise();
@@ -178,7 +180,7 @@ export async function createOrUpdateStack ({ stackName, cfParams, dryrun, ignore
   } catch (err) {
     if (ignoreNoUpdates && err.message.match(/No updates are to be performed/i)) {
       debug('This stack does not need any update'.gray);
-      return {};
+      return false;
     }
     error('Stack update not accepted:'.bold.red, err.message.red);
     throw err;
@@ -215,24 +217,28 @@ let LAST_STACK_REASON = '';
 export function waitForUpdateCompleted (args) {
   const startTimestamp = Date.now();
   return new Promise((resolve, reject) => {
-    uiPollStackStatusHelper(args, startTimestamp, (err) => {
-      if (err) {
-        return reject(err);
-      }
-      resolve();
-    });
+    setTimeout(() => {
+      uiPollStackStatusHelper(args, startTimestamp, (err) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve();
+      });
+    }, 5000);
   });
 }
 export function observerForUpdateCompleted (args) {
   const startTimestamp = Date.now();
-  return new Observable(observer =>
-    uiPollStackStatusHelper(args, startTimestamp, (err) => {
-      if (err) {
-        return observer.error(err);
-      }
-      observer.complete();
-    }, (status, reason) => observer.next(`status: ${status} ${reason ? `(${reason})` : ''}`))
-  );
+  return new Observable(observer => {
+    setTimeout(() => {
+      uiPollStackStatusHelper(args, startTimestamp, (err) => {
+        if (err) {
+          return observer.error(err);
+        }
+        observer.complete();
+      }, (status, reason) => observer.next(`status: ${status} ${reason ? `(${reason})` : ''}`));
+    }, 5000);
+  });
 }
 function uiPollStackStatusHelper ({ stackName }, startTimestamp, done, onProgress = () => {}) {
   cloudformation.describeStacks({
@@ -290,7 +296,7 @@ function uiPollStackStatusHelper ({ stackName }, startTimestamp, done, onProgres
       return;
     }
     if (action === 'error') {
-      error(`\nStack update failed:`, LAST_STACK_REASON);
+      error(`\nStack update failed:`, LAST_STACK_REASON, status, reason);
       cloudformation.describeStackEvents({
         StackName: stackName
       })

@@ -44,7 +44,11 @@ export async function createSupportResources ({ stackName, cloudfrontStagesSetti
     inline: true // support bucket does not exist ad this time
   });
   debug('Now updating support resources');
-  await createOrUpdateStack({ stackName, cfParams, ignoreNoUpdates: true });
+  const response = await createOrUpdateStack({ stackName, cfParams, ignoreNoUpdates: true });
+  if (response === false) {
+    debug(`Support Stack doesn't need any update`);
+    return;
+  }
   await waitForUpdateCompleted({ stackName });
   debug(`Support Stack update completed`);
 }
