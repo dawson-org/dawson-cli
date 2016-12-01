@@ -63,8 +63,8 @@ import {
 const RESERVED_FUCTION_NAMES = ['processCFTemplate'];
 
 async function taskUpdateSupportStack ({ appStage, supportStackName }) {
-  await createSupportResources({ stackName: supportStackName, cloudfrontStagesSettings });
-  const supportOutputs = await getStackOutputs({ stackName: supportStackName });
+  const { cloudformation } = await createSupportResources({ stackName: supportStackName, cloudfrontStagesSettings });
+  const supportOutputs = await getStackOutputs({ stackName: supportStackName, cloudformation });
   const supportBucketName = supportOutputs.find(o => o.OutputKey === 'SupportBucket').OutputValue;
   const acmCertLogicalName = templateACMCertName({ stageName: appStage });
   const acmCertificateOutput = supportOutputs.find(o => o.OutputKey === acmCertLogicalName);
