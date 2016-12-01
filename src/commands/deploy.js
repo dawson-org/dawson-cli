@@ -448,7 +448,7 @@ export async function deploy ({
 
         const { cfParams } = await taskCreateUploadStackTemplate({ supportBucketName, stackName, cfTemplateJSON });
 
-        Object.assign(ctx, { cfParams });
+        Object.assign(ctx, { cfParams, cloudfrontCustomDomain });
       }
     },
     {
