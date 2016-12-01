@@ -3,19 +3,20 @@
 // by `require(PROJECT_ROOT + '/api');`
 require('babel-register');
 
+import { inspect } from 'util';
 import { stripIndent } from 'common-tags';
 
-import { error } from './logger';
+import createError from './libs/error';
 export const PROJECT_ROOT = process.env.PWD;
 
 let requiredPkgJson;
 let requiredApi;
 
 function validateCloudFrontConfig (cloudfront) {
-  const message = stripIndent`
-    The value of the 'cloudfront' property in your package.json is invalid.
-    Please check the documentation: https://github.com/lusentis/dawson/blob/master/docs/API.md#packagejson-fields-reference
-  `;
+  const message = [
+    `The value of the 'cloudfront' property in your package.json is invalid.`,
+    `Please check the documentation: https://github.com/dawson-org/dawson-cli/wiki/`
+  ];
   if (typeof cloudfront === 'undefined') { return true; }
   if (typeof cloudfront !== 'object') {
     return message;
@@ -30,10 +31,10 @@ function validateCloudFrontConfig (cloudfront) {
 }
 
 function validateRoute53Config (route53) {
-  const message = stripIndent`
-    The value of the 'route53' property in your package.json is invalid.
-    Please check the documentation: https://github.com/lusentis/dawson/blob/master/docs/API.md#packagejson-fields-reference
-  `;
+  const message = [
+    `The value of the 'route53' property in your package.json is invalid.`,
+    `Please check the documentation: https://github.com/dawson-org/dawson-cli/wiki/`
+  ];
   if (typeof route53 === 'undefined') { return true; }
   if (typeof route53 !== 'object') {
     return message;
@@ -57,32 +58,104 @@ function validateDawsonConfig (dawson) {
 
 function validatePackageJSON (source) {
   if (!source.name) {
-    error('You must specify a `name` field in your package.json.');
-    process.exit(1);
+    return [
+      'You have not specified a `name` field in your package.json.',
+      `Please check the documentation: https://github.com/dawson-org/dawson-cli/wiki/`
+    ];
   }
-  const dawsonConfigIsOK = validateDawsonConfig(source.dawson);
-  if (dawsonConfigIsOK !== true) {
-    error(dawsonConfigIsOK);
-    process.exit(1);
-  }
+  return validateDawsonConfig(source.dawson);
 }
 
 if (process.env.NODE_ENV !== 'testing') {
   try {
     requiredPkgJson = require(PROJECT_ROOT + '/package.json');
   } catch (e) {
-    error('Error: cannot find a valid package.json in current directory');
+    console.error(createError({
+      kind: 'Cannot find package.json',
+      reason: 'There is no package.json file in the current directory',
+      detailedReason: stripIndent`
+          You are running this command from '${process.cwd()}' which does not
+          contain a package.json file as required by dawson.
+        `,
+      solution: stripIndent`
+        * check if the file exists by running 'stat ${process.cwd()}/package.json'
+        * run dawson from the correct folder
+        * check file permissions on package.json
+        `
+    }).toFormattedString());
     process.exit(1);
   }
 
   try {
     requiredApi = require(PROJECT_ROOT + '/api');
   } catch (e) {
-    error('Error: cannot find a valid api.js in current directory');
-    throw e;
+    if (e._babel) {
+      console.error(createError({
+        kind: 'Babel parse error',
+        reason: 'Your code contains an error and could not be parsed by babel',
+        detailedReason: e.message + '\n' + e.codeFrame,
+        solution: stripIndent`
+        * check your babel configuration, you may need a syntax plugin if you are
+          using an experimental syntax
+        * check the syntax of the api.js file by running it with 'babel-node'
+        `
+      }).toFormattedString());
+      process.exit(1);
+    }
+    if (e.message.match(/cannot find module/i)) {
+      console.error(createError({
+        kind: 'Cannot find api.js',
+        reason: 'There is no api.js file in the current directory',
+        detailedReason: stripIndent`
+          You are running this command from '${process.cwd()}' which does not
+          contain an api.js file as required by dawson.
+        `,
+        solution: stripIndent`
+        * check if the file exists by running 'stat ${process.cwd()}/api.js'
+        * run dawson from the correct folder
+        * check file permissions on api.js
+        `
+      }).toFormattedString());
+      process.exit(1);
+    }
+    if (e instanceof SyntaxError) {
+      console.error(createError({
+        kind: 'Node.js error: SyntaxError',
+        reason: 'Your code contains a SyntaxError and could not be executed by node',
+        detailedReason: 'Your file has been transpiled with babel but node is not able to execute it\n\n' + inspect(e),
+        solution: stripIndent`
+        * check your babel configuration, if you are using export, import, async, await
+          you may need to include the es2015 and es2017 presets or the appropriate
+          transform plugin
+        * check the syntax of the api.js file by running it with 'node'
+        `
+      }).toFormattedString());
+      process.exit(1);
+    }
+    // RangeError, ReferenceError, TypeError
+    console.error(createError({
+      kind: `Node.js error: ${e.name}`,
+      reason: `Your code thrown a ${e.name} and could not be executed by node`,
+      detailedReason: '' + inspect(e),
+      solution: stripIndent`
+        * you are accessing an undeclared variable, try to lint your code
+        * you are running code at top-level in your api.js or in any file that it requires
+          and such code thrown a ${e.name}. Move that code into a function
+        `
+    }).toFormattedString());
+    process.exit(1);
   }
 
-  validatePackageJSON(requiredPkgJson);
+  const validationResult = validatePackageJSON(requiredPkgJson);
+
+  if (validationResult !== true) {
+    console.error(createError({
+      kind: `dawson configuration error`,
+      reason: '' + validationResult[0],
+      solution: '' + validationResult[1]
+    }).toFormattedString());
+    process.exit(1);
+  }
 } else {
   requiredPkgJson = { dawson: {} };
   requiredApi = {};
