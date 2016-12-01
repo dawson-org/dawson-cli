@@ -379,7 +379,7 @@ export async function deploy ({
       task: () => execa.shell(SETTINGS['pre-deploy'])
     },
     {
-      title: 'requesting ACM SSL/TLS Certificate',
+      title: 'validating ACM SSL/TLS Certificate',
       skip: ({ cloudfrontSettings }) => typeof cloudfrontSettings !== 'string',
       task: async (ctx) => {
         const { acmCertificateArn } = await taskRequestACMCert(ctx);
