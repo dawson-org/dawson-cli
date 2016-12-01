@@ -5,6 +5,7 @@ require('babel-register');
 
 import { inspect } from 'util';
 import { stripIndent } from 'common-tags';
+import execa from 'execa';
 
 import createError from './libs/error';
 export const PROJECT_ROOT = process.env.PWD;
@@ -56,11 +57,71 @@ function validateDawsonConfig (dawson) {
   return true;
 }
 
+function validateSystem () {
+  const zipResult = execa.sync('zip', ['--help']);
+  if (zipResult.status !== 0) {
+    return [
+      `zip is a required dependency but the zip binary was not found: ${zipResult.error.message}`,
+      `install the 'zip' command using operating system's package manager`
+    ];
+  }
+
+  const babelResult = execa.sync('babel', ['--version']);
+  const babelVersion = babelResult.stdout;
+  if (babelResult.status !== 0) {
+    return [
+      `babel-cli is a required dependency but the babel binary v6.x.x was not found: ${babelResult.error.message}`,
+      `Please check the documentation: https://github.com/dawson-org/dawson-cli/wiki/`
+    ];
+  }
+  if (!babelVersion || !babelVersion.toString().match(/^6\./)) {
+    return [
+      `babel-cli is a required dependency but the babel binary v6.x was not found: ${babelResult.error.message}`,
+      `Please check the documentation: https://github.com/dawson-org/dawson-cli/wiki/`
+    ];
+  }
+  const yarnResult = execa.sync('yarn', ['help']);
+  if (yarnResult.status !== 0) {
+    return [
+      `yarn is a required dependency but the yarn binary was not found: ${yarnResult.error.message}`,
+      `install the yarn package manager using '$ npm install -g yarn'`
+    ];
+  }
+  return true;
+}
+
 function validatePackageJSON (source) {
   if (!source.name) {
     return [
       'You have not specified a `name` field in your package.json.',
       `Please check the documentation: https://github.com/dawson-org/dawson-cli/wiki/`
+    ];
+  }
+  if (!source.dependencies || !Object.keys(source.dependencies).includes('babel-polyfill')) {
+    return [
+      `You are missing a required dependency: 'babel-polyfill'.`,
+      stripIndent`
+        Please add 'babel-polyfill' to the 'dependencies' field in package.json.
+        Check the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/
+      `
+    ];
+  }
+  if (!source.devDependencies || !Object.keys(source.devDependencies).includes('babel-register')) {
+    return [
+      `You are missing a required devDependency: 'babel-register'.`,
+      stripIndent`
+        Please add 'babel-register' to the 'devDependencies' field in package.json.
+        Check the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/
+      `
+    ];
+  }
+  if (!source.devDependencies || !Object.keys(source.devDependencies).includes('babel-cli')) {
+    return [
+      `You are missing a required devDependency: 'babel-cli'.`,
+      stripIndent`
+        Please add 'babel-cli' to the 'devDependencies' field in package.json.
+        Check the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/
+      `
     ];
   }
   return validateDawsonConfig(source.dawson);
@@ -146,13 +207,22 @@ if (process.env.NODE_ENV !== 'testing') {
     process.exit(1);
   }
 
-  const validationResult = validatePackageJSON(requiredPkgJson);
-
-  if (validationResult !== true) {
+  const pkgJsonValidationResult = validatePackageJSON(requiredPkgJson);
+  if (pkgJsonValidationResult !== true) {
     console.error(createError({
       kind: `dawson configuration error`,
-      reason: '' + validationResult[0],
-      solution: '' + validationResult[1]
+      reason: '' + pkgJsonValidationResult[0],
+      solution: '' + pkgJsonValidationResult[1]
+    }).toFormattedString());
+    process.exit(1);
+  }
+
+  const systemValidationResult = validateSystem();
+  if (systemValidationResult !== true) {
+    console.error(createError({
+      kind: `system prerequisite failed`,
+      reason: '' + systemValidationResult[0],
+      solution: '' + systemValidationResult[1]
     }).toFormattedString());
     process.exit(1);
   }
