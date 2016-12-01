@@ -8,8 +8,7 @@ import {
 } from '../libs/stackUpload';
 
 export const AWS_REGION = AWS.config.region;
-const defaultCloudFormation = new AWS.CloudFormation({ apiVersion: '2010-05-15' });
-const getCfn = local => local || defaultCloudFormation;
+const cloudformation = new AWS.CloudFormation({ apiVersion: '2010-05-15' });
 
 const SAFE_STACK_POLICY = {
   // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/protect-stack-resources.html
@@ -53,9 +52,9 @@ export function templateStackName ({ appName, stage }) {
   return `${appName}${stageUCFirst}`;
 }
 
-function checkStackExists ({ stackName, cloudformation }) {
+function checkStackExists ({ stackName }) {
   return new Promise((resolve, reject) => {
-    getCfn(cloudformation).describeStacks({
+    cloudformation.describeStacks({
       StackName: stackName
     }, (err, data) => {
       if (err || !data.Stacks.find(s => s.StackName === stackName)) {
@@ -68,13 +67,16 @@ function checkStackExists ({ stackName, cloudformation }) {
   });
 }
 
-export async function buildStack ({ supportBucketName = null, stackName, cfTemplateJSON, inline = false, cloudformation }) {
+export async function buildStack ({ supportBucketName = null, stackName, cfTemplateJSON, inline = false }) {
   const templateSource = inline
     ? ({
       TemplateBody: cfTemplateJSON
     })
     : ({
-      TemplateURL: await stackUpload({ bucketName: supportBucketName, stackBody: cfTemplateJSON, region: getCfn(cloudformation).config.region })
+      TemplateURL: await stackUpload({
+        bucketName: supportBucketName,
+        stackBody: cfTemplateJSON
+      })
     });
   var params = {
     StackName: stackName,
@@ -91,7 +93,7 @@ export async function buildStack ({ supportBucketName = null, stackName, cfTempl
   return params;
 }
 
-async function doCreateChangeSet ({ stackName, cfParams, cloudformation }) {
+async function doCreateChangeSet ({ stackName, cfParams }) {
   var params = {
     ChangeSetName: 'DawsonUserChangeSet' + Date.now(),
     StackName: stackName,
@@ -101,11 +103,11 @@ async function doCreateChangeSet ({ stackName, cfParams, cloudformation }) {
     TemplateBody: cfParams.TemplateBody,
     TemplateURL: cfParams.TemplateURL
   };
-  const result = await getCfn(cloudformation).createChangeSet(params).promise();
+  const result = await cloudformation.createChangeSet(params).promise();
   const changeSetId = result.Id;
   let status = null;
   while (status !== 'CREATE_COMPLETE') {
-    const description = await getCfn(cloudformation).describeChangeSet({
+    const description = await cloudformation.describeChangeSet({
       ChangeSetName: changeSetId
     }).promise();
     if (description.Status === 'FAILED') {
@@ -146,26 +148,26 @@ async function doCreateChangeSet ({ stackName, cfParams, cloudformation }) {
   return changeSetId;
 }
 
-async function doExecuteChangeSet ({ changeSetId, cloudformation }) {
-  return await getCfn(cloudformation).executeChangeSet({
+async function doExecuteChangeSet ({ changeSetId }) {
+  return await cloudformation.executeChangeSet({
     ChangeSetName: changeSetId
   }).promise();
 }
 
-export async function createOrUpdateStack ({ stackName, cfParams, dryrun, ignoreNoUpdates = false, cloudformation }) {
-  const stackExists = await checkStackExists({ stackName, cloudformation });
+export async function createOrUpdateStack ({ stackName, cfParams, dryrun, ignoreNoUpdates = false }) {
+  const stackExists = await checkStackExists({ stackName });
   let updateStackResponse;
 
   try {
     if (stackExists) {
       delete cfParams.OnFailure;
-      const changeSetId = await doCreateChangeSet({ stackName, cfParams, cloudformation });
+      const changeSetId = await doCreateChangeSet({ stackName, cfParams });
       if (changeSetId) {
         // only if the ChangeSet has been created successfully
-        await doExecuteChangeSet({ changeSetId, cloudformation });
+        await doExecuteChangeSet({ changeSetId });
       }
     } else {
-      updateStackResponse = await getCfn(cloudformation).createStack(cfParams).promise();
+      updateStackResponse = await cloudformation.createStack(cfParams).promise();
     }
   } catch (err) {
     if (ignoreNoUpdates && err.message.match(/No updates are to be performed/i)) {
@@ -179,27 +181,27 @@ export async function createOrUpdateStack ({ stackName, cfParams, dryrun, ignore
   return updateStackResponse;
 }
 
-export async function removeStackPolicy ({ stackName, cloudformation }) {
-  return await getCfn(cloudformation).setStackPolicy({
+export async function removeStackPolicy ({ stackName }) {
+  return await cloudformation.setStackPolicy({
     StackName: stackName,
     StackPolicyBody: JSON.stringify(UNSAFE_STACK_POLICY)
   }).promise();
 }
 
-export async function restoreStackPolicy ({ stackName, cloudformation }) {
-  return await getCfn(cloudformation).setStackPolicy({
+export async function restoreStackPolicy ({ stackName }) {
+  return await cloudformation.setStackPolicy({
     StackName: stackName,
     StackPolicyBody: JSON.stringify(SAFE_STACK_POLICY)
   }).promise();
 }
 
-export function getStackOutputs ({ stackName, cloudformation }) {
-  return getCfn(cloudformation).describeStacks({ StackName: stackName }).promise()
+export function getStackOutputs ({ stackName }) {
+  return cloudformation.describeStacks({ StackName: stackName }).promise()
   .then(data => data.Stacks[0].Outputs);
 }
 
-export function getStackResources ({ stackName, cloudformation }) {
-  return getCfn(cloudformation).describeStackResources({ StackName: stackName }).promise()
+export function getStackResources ({ stackName }) {
+  return cloudformation.describeStackResources({ StackName: stackName }).promise()
   .then(data => data.StackResources);
 }
 
@@ -211,8 +213,8 @@ export function waitForUpdateCompleted (args) {
     });
   });
 }
-function uiPollStackStatusHelper ({ stackName, cloudformation }, done) {
-  getCfn(cloudformation).describeStacks({
+function uiPollStackStatusHelper ({ stackName }, done) {
+  cloudformation.describeStacks({
     StackName: stackName
   }, (err, data) => {
     if (err) {
@@ -267,7 +269,7 @@ function uiPollStackStatusHelper ({ stackName, cloudformation }, done) {
     }
     if (action === 'error') {
       error(`\nStack update failed:`, LAST_STACK_REASON);
-      error(`You may inspect stack events:\n$ AWS_DEFAULT_REGION=${getCfn(cloudformation).config.region} aws cloudformation describe-stack-events --stack-name ${stackName} --query "StackEvents[?ResourceStatus == 'UPDATE_FAILED'].{ resource: LogicalResourceId, message: ResourceStatusReason, properties: ResourceProperties }"`);
+      error(`You may inspect stack events:\n$ AWS_REGION=${cloudformation.config.region} aws cloudformation describe-stack-events --stack-name ${stackName} --query "StackEvents[?ResourceStatus == 'UPDATE_FAILED'].{ resource: LogicalResourceId, message: ResourceStatusReason, properties: ResourceProperties }"`);
       return;
     }
     if (action === 'succeed') {

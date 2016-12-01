@@ -23,8 +23,7 @@ import {
 } from '../factories/cf_utils';
 
 import {
-  createSupportResources,
-  templateACMCertName
+  createSupportResources
 } from '../factories/cf_support';
 
 import {
@@ -64,16 +63,10 @@ import {
 const RESERVED_FUCTION_NAMES = ['processCFTemplate'];
 
 async function taskUpdateSupportStack ({ appStage, supportStackName }) {
-  const { cloudformation } = await createSupportResources({ stackName: supportStackName, cloudfrontStagesSettings });
-  const supportOutputs = await getStackOutputs({ stackName: supportStackName, cloudformation });
+  await createSupportResources({ stackName: supportStackName, cloudfrontStagesSettings });
+  const supportOutputs = await getStackOutputs({ stackName: supportStackName });
   const supportBucketName = supportOutputs.find(o => o.OutputKey === 'SupportBucket').OutputValue;
-  const acmCertLogicalName = templateACMCertName({ stageName: appStage });
-  const acmCertificateOutput = supportOutputs.find(o => o.OutputKey === acmCertLogicalName);
-  let acmCertificateArn;
-  if (acmCertificateOutput) {
-    acmCertificateArn = acmCertificateOutput.OutputValue;
-  }
-  return { acmCertificateArn, supportBucketName };
+  return { supportBucketName };
 }
 
 function taskUploadZip ({ supportBucketName, appStage, stackName }, ctx) {
@@ -331,7 +324,8 @@ export async function deploy ({
     {
       title: 'updating support stack',
       task: async (ctx) => {
-        const { acmCertificateArn, supportBucketName } = await taskUpdateSupportStack(ctx);
+        const { supportBucketName } = await taskUpdateSupportStack(ctx);
+        const acmCertificateArn = 'xxx';
         Object.assign(ctx, { acmCertificateArn, supportBucketName });
       }
     },
