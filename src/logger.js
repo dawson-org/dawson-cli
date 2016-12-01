@@ -43,7 +43,7 @@ export function debug (...args) {
 
 export function success (...args) {
   args.map(stringify).forEach(str => {
-    process.stderr.write(str.green.bold + ' ');
+    process.stderr.write(str.green + ' ');
   });
   process.stderr.write('\n');
 }
