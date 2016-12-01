@@ -108,4 +108,5 @@ export async function createSupportResources ({ stackName, cloudfrontStagesSetti
   await createOrUpdateStack({ stackName, cfParams, ignoreNoUpdates: true, cloudformation });
   await waitForUpdateCompleted({ stackName, cloudformation });
   debug(`Support Stack update completed`);
+  return { cloudformation };
 }
