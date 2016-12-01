@@ -3,6 +3,7 @@ import { stripIndent } from 'common-tags';
 import AWS from 'aws-sdk';
 import execa from 'execa';
 import Listr from 'listr';
+import verboseRenderer from 'listr-verbose-renderer';
 
 import { SETTINGS, API_DEFINITIONS, APP_NAME, getCloudFrontSettings, getHostedZoneId } from '../config';
 const { cloudfront: cloudfrontStagesSettings } = SETTINGS;
@@ -304,7 +305,8 @@ async function taskRestoreStackPolicy ({ dangerDeleteResources, stackName }) {
 export async function deploy ({
   appStage,
   noUploads = false,
-  dangerDeleteResources = false
+  dangerDeleteResources = false,
+  verbose = false
 }) {
   const tasks = new Listr([
     {
@@ -426,7 +428,9 @@ export async function deploy ({
       skip: () => !SETTINGS['post-deploy'],
       task: () => execa.shell(SETTINGS['post-deploy'])
     }
-  ]);
+  ], {
+    renderer: verbose ? verboseRenderer : undefined
+  });
 
   tasks.run()
   .then(async (ctx) => {
@@ -458,7 +462,8 @@ export function run (argv) {
   deploy({
     noUploads: argv['no-uploads'],
     dangerDeleteResources: argv['danger-delete-resources'],
-    appStage: argv.stage
+    appStage: argv.stage,
+    verbose: argv.verbose
   })
   .catch(error => error('Uncaught error', error.message, error.stack))
   .then(() => {});

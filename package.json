@@ -37,6 +37,7 @@
     "http-proxy": "^1.14.0",
     "indent-string": "^3.0.0",
     "listr": "^0.8.0",
+    "listr-verbose-renderer": "^0.2.0",
     "lodash": "^4.17.2",
     "mime": "^1.3.4",
     "minimatch": "^3.0.3",
