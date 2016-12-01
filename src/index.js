@@ -129,7 +129,7 @@ if (argv.verbose === true) {
   enableDebug();
 }
 
-if (!argv.shell) {
+if (!argv.shell && !argv['output-name']) {
   process.stdout.write('\x1B[2J\x1B[0f');
 }
 

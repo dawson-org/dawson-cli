@@ -50,7 +50,7 @@ Using the `dawson` command you can **deploy** the infrastructure, **inspect logs
 
 ![https://raw.githubusercontent.com/dawson-org/dawson-cli/images/architecture.png](https://raw.githubusercontent.com/dawson-org/dawson-cli/images/architecture.png)
 
-*(additionally, `dawson` uses a support stack with an S3 Bucket to store Lambda ZIP bundles and CloudFormation templates)*
+*(additionally for each region you'll deploy to, `dawson` uses a support stack with an S3 Bucket to store Lambda ZIP bundles and CloudFormation templates)*
 
 
 ## Demo

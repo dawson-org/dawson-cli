@@ -1,15 +1,20 @@
 
+import { oneLineTrim, stripIndent } from 'common-tags';
+import Observable from 'zen-observable';
 import AWS from 'aws-sdk';
+import Table from 'cli-table';
+import moment from 'moment';
+import chalk from 'chalk';
 
 import { debug, error } from '../logger';
+import createError from '../libs/error';
 
 import {
   stackUpload
 } from '../libs/stackUpload';
 
 export const AWS_REGION = AWS.config.region;
-const defaultCloudFormation = new AWS.CloudFormation({ apiVersion: '2010-05-15' });
-const getCfn = local => local || defaultCloudFormation;
+const cloudformation = new AWS.CloudFormation({ apiVersion: '2010-05-15' });
 
 const SAFE_STACK_POLICY = {
   // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/protect-stack-resources.html
@@ -53,9 +58,9 @@ export function templateStackName ({ appName, stage }) {
   return `${appName}${stageUCFirst}`;
 }
 
-function checkStackExists ({ stackName, cloudformation }) {
+function checkStackExists ({ stackName }) {
   return new Promise((resolve, reject) => {
-    getCfn(cloudformation).describeStacks({
+    cloudformation.describeStacks({
       StackName: stackName
     }, (err, data) => {
       if (err || !data.Stacks.find(s => s.StackName === stackName)) {
@@ -68,13 +73,16 @@ function checkStackExists ({ stackName, cloudformation }) {
   });
 }
 
-export async function buildStack ({ supportBucketName = null, stackName, cfTemplateJSON, inline = false, cloudformation }) {
+export async function buildStack ({ supportBucketName = null, stackName, cfTemplateJSON, inline = false }) {
   const templateSource = inline
     ? ({
       TemplateBody: cfTemplateJSON
     })
     : ({
-      TemplateURL: await stackUpload({ bucketName: supportBucketName, stackBody: cfTemplateJSON, region: getCfn(cloudformation).config.region })
+      TemplateURL: await stackUpload({
+        bucketName: supportBucketName,
+        stackBody: cfTemplateJSON
+      })
     });
   var params = {
     StackName: stackName,
@@ -91,7 +99,7 @@ export async function buildStack ({ supportBucketName = null, stackName, cfTempl
   return params;
 }
 
-async function doCreateChangeSet ({ stackName, cfParams, cloudformation }) {
+async function doCreateChangeSet ({ stackName, cfParams }) {
   var params = {
     ChangeSetName: 'DawsonUserChangeSet' + Date.now(),
     StackName: stackName,
@@ -101,11 +109,11 @@ async function doCreateChangeSet ({ stackName, cfParams, cloudformation }) {
     TemplateBody: cfParams.TemplateBody,
     TemplateURL: cfParams.TemplateURL
   };
-  const result = await getCfn(cloudformation).createChangeSet(params).promise();
+  const result = await cloudformation.createChangeSet(params).promise();
   const changeSetId = result.Id;
   let status = null;
   while (status !== 'CREATE_COMPLETE') {
-    const description = await getCfn(cloudformation).describeChangeSet({
+    const description = await cloudformation.describeChangeSet({
       ChangeSetName: changeSetId
     }).promise();
     if (description.Status === 'FAILED') {
@@ -146,31 +154,33 @@ async function doCreateChangeSet ({ stackName, cfParams, cloudformation }) {
   return changeSetId;
 }
 
-async function doExecuteChangeSet ({ changeSetId, cloudformation }) {
-  return await getCfn(cloudformation).executeChangeSet({
+async function doExecuteChangeSet ({ changeSetId }) {
+  return await cloudformation.executeChangeSet({
     ChangeSetName: changeSetId
   }).promise();
 }
 
-export async function createOrUpdateStack ({ stackName, cfParams, dryrun, ignoreNoUpdates = false, cloudformation }) {
-  const stackExists = await checkStackExists({ stackName, cloudformation });
+export async function createOrUpdateStack ({ stackName, cfParams, dryrun, ignoreNoUpdates = false }) {
+  const stackExists = await checkStackExists({ stackName });
   let updateStackResponse;
 
   try {
     if (stackExists) {
       delete cfParams.OnFailure;
-      const changeSetId = await doCreateChangeSet({ stackName, cfParams, cloudformation });
+      const changeSetId = await doCreateChangeSet({ stackName, cfParams });
       if (changeSetId) {
         // only if the ChangeSet has been created successfully
-        await doExecuteChangeSet({ changeSetId, cloudformation });
+        await doExecuteChangeSet({ changeSetId });
+      } else {
+        return false;
       }
     } else {
-      updateStackResponse = await getCfn(cloudformation).createStack(cfParams).promise();
+      updateStackResponse = await cloudformation.createStack(cfParams).promise();
     }
   } catch (err) {
     if (ignoreNoUpdates && err.message.match(/No updates are to be performed/i)) {
       debug('This stack does not need any update'.gray);
-      return {};
+      return false;
     }
     error('Stack update not accepted:'.bold.red, err.message.red);
     throw err;
@@ -179,40 +189,59 @@ export async function createOrUpdateStack ({ stackName, cfParams, dryrun, ignore
   return updateStackResponse;
 }
 
-export async function removeStackPolicy ({ stackName, cloudformation }) {
-  return await getCfn(cloudformation).setStackPolicy({
+export async function removeStackPolicy ({ stackName }) {
+  return await cloudformation.setStackPolicy({
     StackName: stackName,
     StackPolicyBody: JSON.stringify(UNSAFE_STACK_POLICY)
   }).promise();
 }
 
-export async function restoreStackPolicy ({ stackName, cloudformation }) {
-  return await getCfn(cloudformation).setStackPolicy({
+export async function restoreStackPolicy ({ stackName }) {
+  return await cloudformation.setStackPolicy({
     StackName: stackName,
     StackPolicyBody: JSON.stringify(SAFE_STACK_POLICY)
   }).promise();
 }
 
-export function getStackOutputs ({ stackName, cloudformation }) {
-  return getCfn(cloudformation).describeStacks({ StackName: stackName }).promise()
+export function getStackOutputs ({ stackName }) {
+  return cloudformation.describeStacks({ StackName: stackName }).promise()
   .then(data => data.Stacks[0].Outputs);
 }
 
-export function getStackResources ({ stackName, cloudformation }) {
-  return getCfn(cloudformation).describeStackResources({ StackName: stackName }).promise()
+export function getStackResources ({ stackName }) {
+  return cloudformation.describeStackResources({ StackName: stackName }).promise()
   .then(data => data.StackResources);
 }
 
 let LAST_STACK_REASON = '';
 export function waitForUpdateCompleted (args) {
-  return new Promise(resolve => {
-    uiPollStackStatusHelper(args, outputs => {
-      resolve(outputs);
-    });
+  const startTimestamp = Date.now();
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      uiPollStackStatusHelper(args, startTimestamp, (err) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve();
+      });
+    }, 5000);
   });
 }
-function uiPollStackStatusHelper ({ stackName, cloudformation }, done) {
-  getCfn(cloudformation).describeStacks({
+export function observerForUpdateCompleted (args) {
+  const startTimestamp = Date.now();
+  return new Observable(observer => {
+    setTimeout(() => {
+      uiPollStackStatusHelper(args, startTimestamp, (err) => {
+        if (err) {
+          return observer.error(err);
+        }
+        observer.complete();
+      }, (status, reason) => observer.next(`status: ${status} ${reason ? `(${reason})` : ''}`));
+    }, 5000);
+  });
+}
+function uiPollStackStatusHelper ({ stackName }, startTimestamp, done, onProgress = () => {}) {
+  cloudformation.describeStacks({
     StackName: stackName
   }, (err, data) => {
     if (err) {
@@ -221,6 +250,7 @@ function uiPollStackStatusHelper ({ stackName, cloudformation }, done) {
     }
     const status = data.Stacks[0].StackStatus;
     const reason = data.Stacks[0].StackStatusReason;
+    onProgress(status, reason);
     if (reason) { LAST_STACK_REASON = reason; }
     let action = '';
     switch (status) {
@@ -266,13 +296,56 @@ function uiPollStackStatusHelper ({ stackName, cloudformation }, done) {
       return;
     }
     if (action === 'error') {
-      error(`\nStack update failed:`, LAST_STACK_REASON);
-      error(`You may inspect stack events:\n$ AWS_DEFAULT_REGION=${getCfn(cloudformation).config.region} aws cloudformation describe-stack-events --stack-name ${stackName} --query "StackEvents[?ResourceStatus == 'UPDATE_FAILED'].{ resource: LogicalResourceId, message: ResourceStatusReason, properties: ResourceProperties }"`);
-      return;
+      error(`\nStack update failed:`, LAST_STACK_REASON, status, reason);
+      cloudformation.describeStackEvents({
+        StackName: stackName
+      })
+      .promise()
+      .then(describeResult => {
+        const failedEvents = describeResult.StackEvents
+          .filter(e => e.Timestamp >= startTimestamp)
+          .filter(e => e.ResourceStatus.includes('FAILED'))
+          .map(e => ([
+            moment(e.Timestamp).fromNow(),
+            e.ResourceStatus || '',
+            e.ResourceStatusReason || '',
+            e.LogicalResourceId || ''
+          ]));
+        const table = new Table({
+          head: ['Timestamp', 'Status', 'Reason', 'Logical Id']
+        });
+        table.push(...failedEvents);
+        if (describeResult.StackEvents[0]) {
+          error();
+        }
+        done(createError({
+          kind: 'Stack update failed',
+          reason: 'The stack update has failed because of an error',
+          detailedReason:
+            table.toString() +
+            '\n' +
+            chalk.gray(
+              oneLineTrim`
+                You may further inspect stack events from the console at this link:
+                https://${AWS_REGION}.console.aws.amazon.com/cloudformation/home
+                ?region=${AWS_REGION}#/stacks?tab=events
+                  &stackId=${encodeURIComponent(describeResult.StackEvents[0].StackId)}
+              `
+            ),
+          solution: stripIndent`
+            This usually happens because:
+            * you have introduced an error when extending your template using 'processCFTemplate'
+            * the 'domain' you specified as cloudfront CNAME is already being used
+            * you have reached a limit on your AWS Account (https://docs.aws.amazon.com/general/latest/gr/aws_service_limits.html)
+            * you are trying to deploy to an unsupported region (https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/)
+          `
+        }));
+        return;
+      });
     }
     if (action === 'succeed') {
       debug(`\nStack update completed!`);
-      done(data.Stacks[0].Outputs);
+      done(null, data.Stacks[0].Outputs);
       return;
     }
   });

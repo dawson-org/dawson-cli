@@ -1,13 +1,15 @@
 
-import { stripIndent } from 'common-tags';
+import { stripIndent, oneLine } from 'common-tags';
 import AWS from 'aws-sdk';
 import execa from 'execa';
 import Listr from 'listr';
+import verboseRenderer from 'listr-verbose-renderer';
+import chalk from 'chalk';
 
 import { SETTINGS, API_DEFINITIONS, APP_NAME, getCloudFrontSettings, getHostedZoneId } from '../config';
 const { cloudfront: cloudfrontStagesSettings } = SETTINGS;
 
-import { debug, error, danger, success } from '../logger';
+import { debug, danger, warning, success } from '../logger';
 import taskCreateBundle from '../libs/createBundle';
 
 import {
@@ -16,14 +18,13 @@ import {
   restoreStackPolicy,
   removeStackPolicy,
   createOrUpdateStack,
-  waitForUpdateCompleted,
+  observerForUpdateCompleted,
   getStackOutputs,
   AWS_REGION
 } from '../factories/cf_utils';
 
 import {
-  createSupportResources,
-  templateACMCertName
+  createSupportResources
 } from '../factories/cf_support';
 
 import {
@@ -63,16 +64,67 @@ import {
 const RESERVED_FUCTION_NAMES = ['processCFTemplate'];
 
 async function taskUpdateSupportStack ({ appStage, supportStackName }) {
-  const { cloudformation } = await createSupportResources({ stackName: supportStackName, cloudfrontStagesSettings });
-  const supportOutputs = await getStackOutputs({ stackName: supportStackName, cloudformation });
+  await createSupportResources({ stackName: supportStackName, cloudfrontStagesSettings });
+  const supportOutputs = await getStackOutputs({ stackName: supportStackName });
   const supportBucketName = supportOutputs.find(o => o.OutputKey === 'SupportBucket').OutputValue;
-  const acmCertLogicalName = templateACMCertName({ stageName: appStage });
-  const acmCertificateOutput = supportOutputs.find(o => o.OutputKey === acmCertLogicalName);
-  let acmCertificateArn;
-  if (acmCertificateOutput) {
-    acmCertificateArn = acmCertificateOutput.OutputValue;
+  return { supportBucketName };
+}
+
+async function createACMCert ({ cloudfrontSettings }) {
+  const domainName = cloudfrontSettings;
+  const acm = new AWS.ACM({ region: 'us-east-1' });
+  const requestResult = await acm.requestCertificate({
+    DomainName: domainName,
+    IdempotencyToken: `dawson-${domainName}`.replace(/\W+/g, '')
+  }).promise();
+  const certificateArn = requestResult.CertificateArn;
+  warning(oneLine`
+    An SSL/TLS certificate has been requested for the domain ${domainName.bold} (${certificateArn}).
+    Dawson will now exit; please run this command again when you've validated such certificate.
+    Domain contacts and administrative emails will receive an email asking for confirmation.
+    Refer to AWS ACM documentation for further info:
+    https://docs.aws.amazon.com/acm/latest/userguide/setup-email.html
+  `);
+  process.exit(1);
+}
+
+async function taskRequestACMCert ({ cloudfrontSettings }) {
+  if (typeof cloudfrontSettings !== 'string') {
+    return {};
   }
-  return { acmCertificateArn, supportBucketName };
+  const acm = new AWS.ACM({ region: 'us-east-1' });
+  const certListResult = await acm.listCertificates({
+    CertificateStatuses: ['ISSUED']
+  }).promise();
+
+  const arns = certListResult.CertificateSummaryList.map(c => c.CertificateArn);
+  debug('current ACM Certificates', arns);
+
+  let usableCertArn = null;
+  for (const arn of arns) {
+    const describeResult = await acm.describeCertificate({
+      CertificateArn: arn
+    }).promise();
+    const domains = [
+      describeResult.Certificate.DomainName,
+      ...describeResult.Certificate.SubjectAlternativeNames
+    ];
+    if (domains.includes(cloudfrontSettings)) {
+      usableCertArn = arn;
+    }
+  }
+
+  if (usableCertArn) {
+    debug(`using certificate: ${usableCertArn}`);
+    return {
+      acmCertificateArn: usableCertArn
+    };
+  } else {
+    const newCertArn = await createACMCert({ cloudfrontSettings });
+    return {
+      acmCertificateArn: newCertArn
+    };
+  }
 }
 
 function taskUploadZip ({ supportBucketName, appStage, stackName }, ctx) {
@@ -287,11 +339,7 @@ async function taskRemoveStackPolicy ({ dangerDeleteResources, stackName }) {
 }
 
 async function taskRequestStackUpdate ({ stackName, cfParams }) {
-  await createOrUpdateStack({ stackName, cfParams, dryrun: false });
-}
-
-async function taskWaitForUpdateComplete ({ stackName }) {
-  await waitForUpdateCompleted({ stackName });
+  return await createOrUpdateStack({ stackName, cfParams, dryrun: false });
 }
 
 async function taskRestoreStackPolicy ({ dangerDeleteResources, stackName }) {
@@ -304,33 +352,51 @@ async function taskRestoreStackPolicy ({ dangerDeleteResources, stackName }) {
 export async function deploy ({
   appStage,
   noUploads = false,
-  dangerDeleteResources = false
+  dangerDeleteResources = false,
+  verbose = false
 }) {
   const tasks = new Listr([
-    {
-      title: 'setting up',
-      task: ctx => Object.assign(ctx, {
-        cloudfrontSettings: getCloudFrontSettings({ appStage }),
-        dangerDeleteResources,
-        defs: Object.entries(API_DEFINITIONS),
-        hostedZoneId: getHostedZoneId({ appStage }),
-        skip: noUploads,
-        stackName: templateStackName({ appName: APP_NAME, stage: appStage }),
-        stageName: 'prod',
-        appStage,
-        supportStackName: templateStackName({ appName: `${APP_NAME}Support` })
-      })
-    },
     {
       title: 'running pre-deploy hook',
       skip: () => !SETTINGS['pre-deploy'],
       task: () => execa.shell(SETTINGS['pre-deploy'])
     },
     {
-      title: 'updating support stack',
-      task: async (ctx) => {
-        const { acmCertificateArn, supportBucketName } = await taskUpdateSupportStack(ctx);
-        Object.assign(ctx, { acmCertificateArn, supportBucketName });
+      title: 'validating configuration',
+      task: ctx => {
+        Object.assign(ctx, {
+          cloudfrontSettings: getCloudFrontSettings({ appStage }),
+          dangerDeleteResources,
+          defs: Object.entries(API_DEFINITIONS),
+          hostedZoneId: getHostedZoneId({ appStage }),
+          skip: noUploads,
+          stackName: templateStackName({ appName: APP_NAME, stage: appStage }),
+          stageName: 'prod',
+          appStage,
+          supportStackName: templateStackName({ appName: `${APP_NAME}Support` })
+        });
+      }
+    },
+    {
+      title: 'checking prerequisites',
+      task: (ctx) => {
+        return new Listr([
+          {
+            title: 'validating ACM SSL/TLS Certificate',
+            skip: ({ cloudfrontSettings }) => typeof cloudfrontSettings !== 'string',
+            task: async (ctx) => {
+              const { acmCertificateArn } = await taskRequestACMCert(ctx);
+              Object.assign(ctx, { acmCertificateArn });
+            }
+          },
+          {
+            title: 'updating support stack',
+            task: async (ctx) => {
+              const { supportBucketName } = await taskUpdateSupportStack(ctx);
+              Object.assign(ctx, { supportBucketName });
+            }
+          }
+        ], { concurrent: true });
       }
     },
     {
@@ -388,7 +454,7 @@ export async function deploy ({
 
         const { cfParams } = await taskCreateUploadStackTemplate({ supportBucketName, stackName, cfTemplateJSON });
 
-        Object.assign(ctx, { cfParams });
+        Object.assign(ctx, { cfParams, cloudfrontCustomDomain });
       }
     },
     {
@@ -403,14 +469,16 @@ export async function deploy ({
       title: 'requesting changeset',
       task: async (ctx) => {
         const { stackName, cfParams } = ctx;
-        await taskRequestStackUpdate({ stackName, cfParams });
+        const updateRequest = await taskRequestStackUpdate({ stackName, cfParams });
+        Object.assign(ctx, { stackChangesetEmpty: updateRequest ? (updateRequest.response === false) : false });
       }
     },
     {
       title: 'waiting for stack update to complete',
-      task: async (ctx) => {
+      skip: ctx => ctx.stackChangesetEmpty === true,
+      task: ctx => {
         const { stackName } = ctx;
-        await taskWaitForUpdateComplete({ stackName });
+        return observerForUpdateCompleted({ stackName });
       }
     },
     {
@@ -426,9 +494,11 @@ export async function deploy ({
       skip: () => !SETTINGS['post-deploy'],
       task: () => execa.shell(SETTINGS['post-deploy'])
     }
-  ]);
+  ], {
+    renderer: verbose ? verboseRenderer : undefined
+  });
 
-  tasks.run()
+  return tasks.run()
   .then(async (ctx) => {
     const { stackName, cloudfrontSettings, cloudfrontCustomDomain } = ctx;
 
@@ -439,27 +509,40 @@ export async function deploy ({
       const cloudfrontDNS = outputs.find(o => o.OutputKey === 'CloudFrontDNS').OutputValue;
 
       if (cloudfrontCustomDomain) {
-        success(`   Now you should configure your DNS ${cloudfrontCustomDomain} as a CNAME to ${cloudfrontDNS}`);
-        success(`   and navigate to https://${cloudfrontCustomDomain} or https://${cloudfrontDNS}`);
+        success(`   DNS: ${cloudfrontCustomDomain} CNAME ${cloudfrontDNS}`);
+        success(`   URL: https://${cloudfrontCustomDomain}`);
+        success(`   URL: https://${cloudfrontDNS}`);
       } else {
-        success(`   Open your browser and enjoy: https://${cloudfrontDNS}`);
+        success(`   URL: https://${cloudfrontDNS}`);
       }
     } else {
       success(`   Deploy completed!`);
     }
   })
-  .catch(err => {
-    error('An error occurred while deploying');
-    console.dir(err);
-  });
+  .catch(e => { throw e; });
 }
 
 export function run (argv) {
   deploy({
     noUploads: argv['no-uploads'],
     dangerDeleteResources: argv['danger-delete-resources'],
-    appStage: argv.stage
+    appStage: argv.stage,
+    verbose: argv.verbose
   })
-  .catch(error => error('Uncaught error', error.message, error.stack))
-  .then(() => {});
+  .catch(err => {
+    if (err.isDawsonError) {
+      console.error(err.toFormattedString());
+      process.exit(1);
+    }
+    console.error(
+      chalk.red.bold('dawson internal error:'),
+      err.message
+    );
+    console.error(err.stack);
+    console.error(chalk.red(`Please report this bug: https://github.com/dawson-org/dawson-cli/issues`));
+    process.exit(1);
+  })
+  .then(() => {
+    process.exit(0);
+  });
 }

@@ -12,8 +12,9 @@
     "prepublish": "npm run clean && npm run compile",
     "test": "npm run compile && npm run lint && npm run tape",
     "lint": "semistandard --fix | snazzy",
+    "lint-link": "npm run lint && npm link",
     "lint:watch": "nodemon -w src -x npm -- run lint",
-    "link:watch": "nodemon -w src -x npm -- link",
+    "link:watch": "nodemon -w src -x npm -- run lint-link",
     "tape": "NODE_ENV=testing tape -r babel-register src/**/*.spec.js | tap-dot"
   },
   "semistandard": {
@@ -25,6 +26,8 @@
     "aws-sdk": "^2.6.3",
     "babel-register": "^6.16.3",
     "babel-runtime": "^6.11.6",
+    "chalk": "^1.1.3",
+    "cli-table": "^0.3.1",
     "colors": "^1.1.2",
     "common-tags": "^1.3.1",
     "console.table": "^0.7.0",
@@ -37,10 +40,11 @@
     "http-proxy": "^1.14.0",
     "indent-string": "^3.0.0",
     "listr": "^0.8.0",
+    "listr-verbose-renderer": "^0.2.0",
     "lodash": "^4.17.2",
     "mime": "^1.3.4",
     "minimatch": "^3.0.3",
-    "moment": "^2.14.1",
+    "moment": "^2.17.0",
     "prettyjson": "^1.1.3",
     "progress": "^1.1.8",
     "recursive-readdir": "^2.0.0",
@@ -48,7 +52,8 @@
     "simple-spinner": "0.0.5",
     "temp": "^0.8.3",
     "update-notifier": "^1.0.2",
-    "yargs": "^6.0.0"
+    "yargs": "^6.0.0",
+    "zen-observable": "^0.3.0"
   },
   "bin": "lib/index.js",
   "devDependencies": {
