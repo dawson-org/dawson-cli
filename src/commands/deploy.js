@@ -519,6 +519,6 @@ export function run (argv) {
     appStage: argv.stage,
     verbose: argv.verbose
   })
-  .catch(error => error('Uncaught error', error.message, error.stack))
+  .catch(err => error('Uncaught error', err.message, err.stack))
   .then(() => {});
 }

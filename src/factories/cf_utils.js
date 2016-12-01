@@ -1,6 +1,9 @@
 
+import { oneLineTrim } from 'common-tags';
 import Observable from 'zen-observable';
 import AWS from 'aws-sdk';
+import Table from 'cli-table';
+import moment from 'moment';
 
 import { debug, error } from '../logger';
 
@@ -208,8 +211,9 @@ export function getStackResources ({ stackName }) {
 
 let LAST_STACK_REASON = '';
 export function waitForUpdateCompleted (args) {
+  const startTimestamp = Date.now();
   return new Promise(resolve => {
-    uiPollStackStatusHelper(args, (err) => {
+    uiPollStackStatusHelper(args, startTimestamp, (err) => {
       if (err) {
         throw err;
       }
@@ -218,8 +222,9 @@ export function waitForUpdateCompleted (args) {
   });
 }
 export function observerForUpdateCompleted (args) {
+  const startTimestamp = Date.now();
   return new Observable(observer =>
-    uiPollStackStatusHelper(args, (err) => {
+    uiPollStackStatusHelper(args, startTimestamp, (err) => {
       if (err) {
         throw err;
       }
@@ -227,7 +232,7 @@ export function observerForUpdateCompleted (args) {
     }, (status, reason) => observer.next(`status: ${status} ${reason ? `(${reason})` : ''}`))
   );
 }
-function uiPollStackStatusHelper ({ stackName }, done, onProgress = () => {}) {
+function uiPollStackStatusHelper ({ stackName }, startTimestamp, done, onProgress = () => {}) {
   cloudformation.describeStacks({
     StackName: stackName
   }, (err, data) => {
@@ -284,9 +289,36 @@ function uiPollStackStatusHelper ({ stackName }, done, onProgress = () => {}) {
     }
     if (action === 'error') {
       error(`\nStack update failed:`, LAST_STACK_REASON);
-      error(`You may inspect stack events:\n$ AWS_REGION=${cloudformation.config.region} aws cloudformation describe-stack-events --stack-name ${stackName} --query "StackEvents[?ResourceStatus == 'UPDATE_FAILED'].{ resource: LogicalResourceId, message: ResourceStatusReason, properties: ResourceProperties }"`);
-      return;
+      cloudformation.describeStackEvents({
+        StackName: stackName
+      })
+      .promise()
+      .then(describeResult => {
+        const failedEvents = describeResult.StackEvents
+          .filter(e => e.Timestamp >= startTimestamp)
+          .filter(e => e.ResourceStatus.includes('FAILED'))
+          .map(e => ([
+            moment(e.Timestamp).fromNow(),
+            e.ResourceStatus || '',
+            e.ResourceStatusReason || '',
+            e.LogicalResourceId || ''
+          ]));
+        const table = new Table({
+          head: ['Timestamp', 'Status', 'Reason', 'Logical Id']
+        });
+        table.push(...failedEvents);
+        error('\nThe stack update has failed.');
+        if (describeResult.StackEvents[0]) {
+          error('You may further inspect stack events from the console at this link:',
+            oneLineTrim`https://${AWS_REGION}.console.aws.amazon.com/cloudformation/home
+            ?region=${AWS_REGION}#/stacks?tab=events
+              &stackId=${encodeURIComponent(describeResult.StackEvents[0].StackId)}
+            `);
+        }
+        error(table.toString());
         done(new Error('Stack update failed:' + LAST_STACK_REASON), null);
+        return;
+      });
     }
     if (action === 'succeed') {
       debug(`\nStack update completed!`);
