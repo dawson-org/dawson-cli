@@ -85,7 +85,8 @@ const argv = yargs
 
   .command('dev', 'Runs a development server proxying assets (from /) and API Gateway (from /prod)', () =>
     yargs
-      .describe('proxy-assets-url', 'Serve the root from this url URL (useful if you use Webpack Dev Server)')
+      .describe('assets-proxy', 'Serve static assets from this url URL (useful if you use Webpack Dev Server)')
+      .alias('assets-url', 'assets-proxy')
       .describe('assets-path', 'Root directory to serve static assets from.')
       .describe('port', 'Port to listen on')
       .demand('port')

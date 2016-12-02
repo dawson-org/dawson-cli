@@ -361,7 +361,7 @@ export function run (argv) {
   const {
     stage,
     port,
-    proxyAssetsUrl,
+    assetsProxy,
     assetsPath,
     verbose
   } = argv;
@@ -435,9 +435,9 @@ export function run (argv) {
         })
         .pipe(res);
       } else {
-        if (proxyAssetsUrl) {
+        if (assetsProxy) {
           proxy.web(req, res, {
-            target: proxyAssetsUrl
+            target: assetsProxy
           });
         } else {
           warning(stripIndent`
