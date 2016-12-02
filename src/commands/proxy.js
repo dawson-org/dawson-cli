@@ -129,26 +129,25 @@ async function processAPIRequest (req, res, { body, outputs, resources, pathname
       if (errorResponse.unhandled === true) {
         warning('Unhandled Error:'.bold, oneLine`
           Your lambda function returned an invalid error. Error messages must be valid JSON.stringfy-ed strings and
-          should contain an httpStatus (int) property. This error will be swallowed and a generic HTTP 500 response will be returned to the client.
+          should contain an httpStatus (int) and a response (string|object) property. This error will be swallowed and a generic HTTP 500 response will be returned to the client.
           Please refer to the documentation for instruction on how to deliver proper error responses.
         `);
       }
-      res.writeHead(errorResponse.httpStatus, {
+      if (typeof errorResponse.response !== 'string') {
+        errorResponse.response = 'unhandled error (check the console for details)';
+      }
+      res.writeHead(errorResponse.httpStatus || 500, {
         'Content-Type': contentType
       });
       if (contentType === 'application/json') {
         res.write(JSON.stringify(errorResponse));
-      } else if (contentType === 'text/plain') {
-        res.write(errorResponse.response);
-      } else if (contentType === 'text/html') {
-        res.write(errorResponse.response);
       } else {
         res.write(errorResponse.response);
       }
       res.end();
       return;
     }
-    if (runner.api.redirects) {
+    if (runner.api.redirects && data.response && data.response.Location) {
       const location = data.response.Location;
       res.writeHead(307, {
         'Content-Type': 'text/plain',
@@ -559,7 +558,7 @@ function setupWatcher ({ stage, stackName }) {
   let bundleInProgress = false;
   const onWatch = (fileName) => {
     const ignoreList = [
-      ...SETTINGS.zipIgnore || [],
+      ...SETTINGS.ignore || [],
       '**/node_modules',
       '.dawson-dist/**',
       '**/~*',

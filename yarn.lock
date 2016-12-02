@@ -2834,6 +2834,12 @@ progress@^1.1.8:
   version "1.1.8"
   resolved "https://registry.yarnpkg.com/progress/-/progress-1.1.8.tgz#e260c78f6161cdd9b0e56cc3e0a85de17c7a57be"
 
+prop-types@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-0.2.0.tgz#b52108434bd826e1083570548d143d57f8474c31"
+  dependencies:
+    invariant "^2.2.0"
+
 proto-list@~1.2.1:
   version "1.2.4"
   resolved "https://registry.yarnpkg.com/proto-list/-/proto-list-1.2.4.tgz#212d5bfe1318306a420f6402b8e26ff39647a849"
