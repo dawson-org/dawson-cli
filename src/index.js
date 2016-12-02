@@ -29,10 +29,6 @@ const DAWSON_STAGE = process.env.DAWSON_STAGE || 'default';
 const argv = yargs
   .usage('$0 <command> [command-options]')
 
-  .describe('verbose', 'Enable verbose logging')
-  .boolean('verbose')
-  .alias('v')
-
   .command('deploy', 'Deploy your app or a single function', () =>
     yargs
       .boolean('danger-delete-resources')
@@ -41,6 +37,9 @@ const argv = yargs
       .describe('stage', 'Application stage to work on')
       .default('stage', DAWSON_STAGE)
       .alias('s')
+      .describe('verbose', 'Verbose output')
+      .boolean('verbose')
+      .alias('v')
       .strict()
       .help()
   , later(deployRun))
@@ -63,6 +62,9 @@ const argv = yargs
       .describe('stage', 'Application stage to work on')
       .default('stage', DAWSON_STAGE)
       .alias('s')
+      .describe('verbose', 'Verbose output')
+      .boolean('verbose')
+      .alias('v')
       .strict()
       .help()
   , later(logRun))
@@ -77,6 +79,9 @@ const argv = yargs
       .describe('shell', 'Outputs bash-compatible variable declarations')
       .alias('s')
       .default('shell', false)
+      .describe('verbose', 'Verbose output')
+      .boolean('verbose')
+      .alias('v')
       .strict()
       .help()
   , later(describeRun))
@@ -92,6 +97,9 @@ const argv = yargs
       .describe('stage', 'Application stage to work on')
       .default('stage', DAWSON_STAGE)
       .alias('s')
+      .describe('verbose', 'Verbose output')
+      .boolean('verbose')
+      .alias('v')
       .strict()
       .help()
   , later(proxyRun))
