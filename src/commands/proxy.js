@@ -28,6 +28,7 @@ import dockerLambda from 'docker-lambda';
 import taskCreateBundle from '../libs/createBundle';
 
 import AWS from 'aws-sdk';
+const AWS_REGION = AWS.config.region;
 const sts = new AWS.STS({});
 const iam = new AWS.IAM({});
 
@@ -464,8 +465,30 @@ export function run (argv) {
       task: () => new Listr([
         {
           title: 'getting stack details from CloudFormation',
-          task: async () => {
-            [ outputs, resources ] = await getOutputsAndResources({ stackName });
+          task: () => {
+            return getOutputsAndResources({ stackName })
+              .catch(e => {
+                throw createError({
+                  kind: 'Failed to describe CloudFormation Stack',
+                  reason: `dawson could not find a CloudFormation stack for your app.`,
+                  detailedReason: stripIndent`
+                    The stack named '${stackName}' (stage: ${stage}, region: ${AWS_REGION})
+                    cannot be described.
+                    AWS Error: "${e.message}"
+                    If this is the first time you are using this app,
+                    you just need to run $ dawson deploy
+                  `,
+                  solution: stripIndent`
+                    * deploy this app / stage (check AWS_STAGE or --stage)
+                    * use the correct AWS Account (check AWS_PROFILE, AWS_ACCESS_KEY_ID)
+                    * use the correct region (check AWS_REGION)
+                    * check the 'name' property in your package.json
+                  `
+                });
+              })
+              .then(([ _outputs, _resources ]) => {
+                [ outputs, resources ] = [ _outputs, _resources ];
+              });
           }
         },
         {
