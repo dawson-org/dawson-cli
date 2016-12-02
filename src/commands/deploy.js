@@ -6,7 +6,7 @@ import Listr from 'listr';
 import verboseRenderer from 'listr-verbose-renderer';
 import chalk from 'chalk';
 
-import { SETTINGS, API_DEFINITIONS, APP_NAME, getCloudFrontSettings, getHostedZoneId } from '../config';
+import { RESERVED_FUCTION_NAMES, SETTINGS, API_DEFINITIONS, APP_NAME, getCloudFrontSettings, getHostedZoneId } from '../config';
 const { cloudfront: cloudfrontStagesSettings } = SETTINGS;
 
 import { debug, danger, warning, success } from '../logger';
@@ -60,8 +60,6 @@ import {
 import {
   templateRoute53
 } from '../factories/cf_route53';
-
-const RESERVED_FUCTION_NAMES = ['processCFTemplate'];
 
 async function taskUpdateSupportStack ({ appStage, supportStackName }) {
   await createSupportResources({ stackName: supportStackName, cloudfrontStagesSettings });

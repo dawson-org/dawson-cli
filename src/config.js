@@ -6,9 +6,73 @@ require('babel-register');
 import { inspect } from 'util';
 import { stripIndent } from 'common-tags';
 import execa from 'execa';
+import Type from 'prop-types';
 
 import createError from './libs/error';
 export const PROJECT_ROOT = process.env.PWD;
+
+export const RESERVED_FUCTION_NAMES = ['processCFTemplate'];
+
+const FUNCTION_CONFIGURATION_PROPERTIES = [
+  'path',
+  'authorizer',
+  'method',
+  'policyStatements',
+  'redirects',
+  'responseContentType'
+];
+
+const FUNCTION_CONFIGURATION_SCHEMA = {
+  api: Type.shape({
+    path: function (props, propName) {
+      const val = props[propName];
+      if (typeof val !== 'string' &&
+          val !== false) {
+        return new Error(`path must be a string or 'false'`);
+      }
+      if (val !== val.trim()) {
+        return new Error(`path must not start or end with a space`);
+      }
+      if (val === '') {
+        return;
+      }
+      if (!/^[^?#]+$/.test(val)) {
+        return new Error(`path should not contain ? #`);
+      }
+      if (val[0] === '/' || val[val.length - 1] === '/') {
+        return new Error(`path should not begin or end with a '/'`);
+      }
+      if (!val.split(/\//g).every(token => /^{[^?#]+}$/.test(token) || /^[^?#{}]+$/.test(token))) {
+        return new Error(`path part eiter must start and end with a curly brace or must not contain any curly brace, and it cannot contain two consecutive slashes`);
+      }
+    },
+    authorizer: Type.func,
+    method: Type.oneOf(['GET', 'POST', 'PUT', 'HEAD', 'DELETE', 'OPTIONS']),
+    policyStatements: Type.arrayOf(Type.shape({
+      Effect: Type.string.isRequired,
+      Action: Type.oneOfType([
+        Type.string,
+        Type.arrayOf(Type.string)
+      ]).isRequired,
+      Resource: Type.oneOfType([
+        Type.string, // single arn
+        Type.arrayOf(Type.string), // multiple arns
+        Type.objectOf(Type.string), // single arn with Fn::Join or Ref or Fn::Sub
+        Type.arrayOf(Type.objectOf(Type.string)) // multiple arns with Fn::Join or Ref or Fn::Sub
+      ]).isRequired
+    })),
+    redirects: Type.bool,
+    responseContentType: function (props, propName) {
+      if (typeof props[propName] === 'undefined') {
+        return;
+      }
+      if (!/^\w+\/\w+$/.test(props[propName])) {
+        return new Error(`responseContentType should match regexp '\\w+/\\w+'`);
+      }
+    }
+  })
+};
+
 
 let requiredPkgJson;
 let requiredApi;
@@ -127,6 +191,33 @@ function validatePackageJSON (source) {
   return validateDawsonConfig(source.dawson);
 }
 
+function validateAPI (source) {
+  const apiDefinitions = Object.values(source)
+    .filter(f => !RESERVED_FUCTION_NAMES.includes(f.name));
+
+  let current;
+  try {
+    apiDefinitions.forEach(runner => {
+      current = runner.name;
+      let currentPropertyName;
+      if (!Object.keys(runner.api).every(configKey => {
+        currentPropertyName = configKey;
+        return FUNCTION_CONFIGURATION_PROPERTIES.includes(configKey);
+      })) {
+        throw new Error(`encountered unkown property: 'api.${currentPropertyName}'`);
+      }
+      Type.validateWithErrors(FUNCTION_CONFIGURATION_SCHEMA, runner);
+    });
+  } catch (e) {
+    return [
+      `Invalid function configuration for ${current}: ${e.message}`,
+      `Check the api property of this function. Refer to the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/`
+    ];
+  }
+
+  return true;
+}
+
 if (process.env.NODE_ENV !== 'testing') {
   try {
     requiredPkgJson = require(PROJECT_ROOT + '/package.json');
@@ -203,6 +294,16 @@ if (process.env.NODE_ENV !== 'testing') {
         * you are running code at top-level in your api.js or in any file that it requires
           and such code thrown a ${e.name}. Move that code into a function
         `
+    }).toFormattedString());
+    process.exit(1);
+  }
+
+  const apiValidationResult = validateAPI(requiredApi);
+  if (apiValidationResult !== true) {
+    console.error(createError({
+      kind: `dawson configuration error`,
+      reason: '' + apiValidationResult[0],
+      solution: '' + apiValidationResult[1]
     }).toFormattedString());
     process.exit(1);
   }
