@@ -546,7 +546,7 @@ export function run (argv) {
 
 function setupWatcher ({ stage, stackName }) {
   log(indent(stripIndent`
-    Reload: watching ${process.cwd()}**/* for changes.
+    Reload: watching ${process.cwd()}/** for changes.
             The proxy will auto reload on file changes.
             You must manually restart the proxy when
               * adding or updating npm dependencies
