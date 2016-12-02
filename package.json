@@ -5,8 +5,7 @@
   "repository": "https://github.com/lusentis/dawson",
   "main": "lib/index.js",
   "scripts": {
-    "compile": "babel -s true -d lib/ src/ --ignore *.AppleDouble*",
-    "compile:watch": "babel --watch -s true -d lib/ src/ --ignore *.AppleDouble*",
+    "compile": "babel -s true --source-maps inline -d lib/ src/ --ignore *.AppleDouble*",
     "dev": "npm run compile:watch",
     "clean": "rm -rf lib",
     "prepublish": "npm run clean && npm run compile",
@@ -51,6 +50,7 @@
     "recursive-readdir": "^2.0.0",
     "send": "^0.14.1",
     "simple-spinner": "0.0.5",
+    "source-map-support": "^0.4.6",
     "temp": "^0.8.3",
     "update-notifier": "^1.0.2",
     "yargs": "^6.0.0",
