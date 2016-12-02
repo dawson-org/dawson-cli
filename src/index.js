@@ -46,6 +46,7 @@ const argv = yargs
       .describe('stage', 'Application stage to work on')
       .default('stage', DAWSON_STAGE)
       .alias('s')
+      .strict()
       .help()
   , later(deployRun))
 
@@ -67,6 +68,7 @@ const argv = yargs
       .describe('stage', 'Application stage to work on')
       .default('stage', DAWSON_STAGE)
       .alias('s')
+      .strict()
       .help()
   , later(logRun))
 
@@ -80,6 +82,7 @@ const argv = yargs
       .describe('shell', 'Outputs bash-compatible variable declarations')
       .alias('s')
       .default('shell', false)
+      .strict()
       .help()
   , later(describeRun))
 
@@ -94,11 +97,14 @@ const argv = yargs
       .describe('stage', 'Application stage to work on')
       .default('stage', DAWSON_STAGE)
       .alias('s')
+      .strict()
       .help()
   , later(proxyRun))
 
-  .demand(1)
   .help()
+  .version()
+  .demand(1)
+  .strict()
   .argv;
 
 if (!PKG_JSON.name) {
