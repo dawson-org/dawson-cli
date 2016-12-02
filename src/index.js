@@ -35,12 +35,6 @@ const argv = yargs
 
   .command('deploy', 'Deploy your app or a single function', () =>
     yargs
-      .describe('function-name', 'When the deploy is completed, tail logs for this function')
-      .alias('f', 'function-name')
-      .boolean('no-uploads')
-      .default('no-uploads', false)
-      .describe('no-uploads', 'Do not create/upload lambda zips')
-      .alias('U', 'no-uploads')
       .boolean('danger-delete-resources')
       .default('danger-delete-resources', false)
       .describe('danger-delete-resources', 'Allow APIs, Distributions, DynamoDB Tables, Buckets to be deleted/replaced as part of a stack update. YOU WILL LOOSE YOUR DATA AND CNAMEs WILL CHANGE!')

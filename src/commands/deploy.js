@@ -351,7 +351,6 @@ async function taskRestoreStackPolicy ({ dangerDeleteResources, stackName }) {
 
 export async function deploy ({
   appStage,
-  noUploads = false,
   dangerDeleteResources = false,
   verbose = false
 }) {
@@ -369,7 +368,6 @@ export async function deploy ({
           dangerDeleteResources,
           defs: Object.entries(API_DEFINITIONS),
           hostedZoneId: getHostedZoneId({ appStage }),
-          skip: noUploads,
           stackName: templateStackName({ appName: APP_NAME, stage: appStage }),
           stageName: 'prod',
           appStage,
@@ -524,7 +522,6 @@ export async function deploy ({
 
 export function run (argv) {
   deploy({
-    noUploads: argv['no-uploads'],
     dangerDeleteResources: argv['danger-delete-resources'],
     appStage: argv.stage,
     verbose: argv.verbose
