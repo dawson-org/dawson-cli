@@ -509,6 +509,24 @@ export function run (argv) {
       Development proxy started
       http://0.0.0.0:${port}
     `, 3));
+
+    // startup banner:
+    //  / ⇒ <ASSETS LOCATION>
+    //  ⤷ /prod ⇒ <api>
+    //  ⤷ /assets ⇒ <ASSETS LOCATION>
+
+    const rootIsAPI = requestForAPI({ url: '/' });
+    let assetsLocation = '(assets location not configured)';
+    if (assetsPath) { assetsLocation = `${process.cwd()}/assets/`; }
+    if (assetsProxy) { assetsLocation = `${assetsProxy}`; }
+    log('\n', indent(stripIndent`
+      / ⇒ ${rootIsAPI ? '<api>' : `${assetsLocation}`}
+       ${rootIsAPI
+         ? `⤷ /assets ⇒ ${assetsLocation}`
+         : `⤷ /prod ⇒ <api>`}
+    `, 3));
+    log('');
+
     setupWatcher({ stage, stackName });
   })
   .catch(err => {
