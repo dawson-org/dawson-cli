@@ -559,8 +559,8 @@ function setupWatcher ({ stage, stackName }) {
   let bundleInProgress = false;
   const onWatch = (fileName) => {
     const ignoreList = [
-      ...SETTINGS.zipIgnore,
       'node_modules',
+      ...SETTINGS.zipIgnore || [],
       '.dawson-dist/**',
       '~*',
       '.*'
