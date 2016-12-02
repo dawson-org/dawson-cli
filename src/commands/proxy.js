@@ -7,7 +7,6 @@
 // This feature is preview-quality
 //
 
-import assert from 'assert';
 import qs from 'querystring';
 import { createProxyServer } from 'http-proxy';
 import send from 'send';
@@ -15,11 +14,16 @@ import { createServer } from 'http';
 import { parse } from 'url';
 import pathModule from 'path';
 import util from 'util';
-import fs from 'fs';
-import { oneLine } from 'common-tags';
+import watch from 'node-watch';
+import { oneLine, stripIndent } from 'common-tags';
 import minimatch from 'minimatch';
 import { throttle } from 'lodash';
+import indent from 'indent-string';
+import Listr from 'listr';
+import verboseRenderer from 'listr-verbose-renderer';
+import chalk from 'chalk';
 
+import createError from '../libs/error';
 import dockerLambda from 'docker-lambda';
 import taskCreateBundle from '../libs/createBundle';
 
@@ -66,6 +70,10 @@ function findApi ({ method, pathname }) {
     }
   });
   if (!found) {
+    error(stripIndent`
+      Error: dawson couldn't find any function to handle your request.
+      If you have just added this method, have you restarted the proxy?
+    `);
     throw new Error(`API not found at path ${pathname}`);
   }
   return found;
@@ -169,20 +177,20 @@ async function processAPIRequest (req, res, { body, outputs, resources, pathname
     } else {
       res.write(data.response);
     }
-    log('End method execution');
+    log(`============== Log Fragment End ==============\n`.dim);
     res.end();
     return;
   };
 
   if (!credentialsCache.has(runner)) {
-    log('Credentials Cache miss: executing AssumeRole, this will take a while.');
+    log(`   [STS] requesting AWS Temporary Credentials for Lambda '${runner.name}' (this will take a few seconds)`);
     credentialsCache.set(runner, await assumeRole(resources, runner));
   }
   const credentials = credentialsCache.get(runner);
 
   const doCall = () => {
     try {
-      console.log(`\nBegin method execution: '${runner.name}'`);
+      log(`\n============= Log Fragment Begin =============`.dim);
       const invokeResult = dockerLambda({
         event,
         taskDir: `${process.cwd()}/.dawson-dist`,
@@ -219,35 +227,35 @@ async function processAPIRequest (req, res, { body, outputs, resources, pathname
   }
 }
 
-function findRoleName (stackResources, cfLogicalName) {
+function findRoleName (stackResources, runner) {
+  const functionName = runner.name;
+  const lambdaName = functionName[0].toUpperCase() + functionName.substring(1);
+  const cfLogicalRoleName = templateLambdaRoleName({ lambdaName });
   let found = null;
   stackResources.forEach(resource => {
-    if (resource.LogicalResourceId === cfLogicalName) {
+    if (resource.LogicalResourceId === cfLogicalRoleName) {
       found = resource.PhysicalResourceId;
     }
   });
   if (!found) {
-    throw new Error(`Cannot find an IAM Role for '${cfLogicalName}'`);
+    throw new Error(`Cannot find an IAM Role for '${cfLogicalRoleName}'`);
   }
   return found;
 }
 
 async function assumeRole (stackResources, runner) {
-  const functionName = runner.name;
-  const lambdaName = functionName[0].toUpperCase() + functionName.substring(1);
-  const cfLogicalRoleName = templateLambdaRoleName({ lambdaName });
-  const roleName = findRoleName(stackResources, cfLogicalRoleName);
+  const roleName = findRoleName(stackResources, runner);
   const getRoleResult = await iam.getRole({
     RoleName: roleName
   }).promise();
   const roleArn = getRoleResult.Role.Arn;
-  log('Assuming Role ARN', roleArn);
+  debug('   [AWS STS] Assuming Role ARN', roleArn);
   const assumeRoleParams = {
     RoleArn: roleArn,
     RoleSessionName: 'dawson-dev-proxy'
   };
   const assumedRole = await sts.assumeRole(assumeRoleParams).promise();
-  log('Assumed Credentials', assumedRole.Credentials.AccessKeyId);
+  debug('   [AWS STS] Assumed Credentials', assumedRole.Credentials.AccessKeyId);
   return assumedRole.Credentials;
 }
 
@@ -256,17 +264,17 @@ function runAuthorizer ({ authorizer, event, stageVariables, req, res, successCa
   // @TODO: correctly handle 401, 403, 500 response as described in the documentation
 
   const token = event.params.header.token;
-  console.log(` 🔒 Invoking authorizer, token = ${util.inspect(token)}`.yellow.dim);
+  log(`   🔒 Invoking authorizer, token = ${util.inspect(token)}`.yellow.dim);
 
   const fail = (httpStatusCode = 403, ...logs) => {
-    console.error(...logs);
+    error(...logs);
     res.writeHead(httpStatusCode, { 'Content-Type': 'application/json' });
     res.write(JSON.stringify({ message: 'Unauthorized' }));
     res.end();
   };
 
   if (!token) {
-    fail(401, ' 🔒'.red, `No authorization header found. You must specify a 'token' header with your request.`.red);
+    fail(401, '   🔒'.red, `No authorization header found. You must specify a 'token' header with your request.`.red);
     return;
   }
 
@@ -278,21 +286,21 @@ function runAuthorizer ({ authorizer, event, stageVariables, req, res, successCa
     templateOutputs: stageVariables,
     succeed: ({ policyDocument }, principalId) => {
       if (!policyDocument || !Array.isArray(policyDocument.Statement)) {
-        fail(403, ' 🔒'.red, `Authorizer did not return a policy document`.red, policyDocument);
+        fail(403, '   🔒'.red, `Authorizer did not return a policy document`.red, policyDocument);
         return;
       }
       if (!policyDocument.Statement.find(item => item.Effect === 'Allow' && item.Action === 'execute-api:Invoke' && item.Resource === 'arn:fake')) {
-        fail(403, ' 🔒'.red, `Authorizer did not return a valid policy document`.red, policyDocument);
+        fail(403, '   🔒'.red, `Authorizer did not return a valid policy document`.red, policyDocument);
         return;
       }
       event.authorizer = {
         principalId
       };
-      console.log(` 🔓 Authorization succeeded`.yellow.dim);
+      console.log(`   🔓 Authorization succeeded`.yellow.dim);
       successCallback();
     },
     fail: message => {
-      fail(403, ' 🔒'.red, `Authorizer failed with message: '${message}'`.red);
+      fail(403, '   🔒'.red, `Authorizer failed with message: '${message}'`.red);
     }
   });
 }
@@ -332,7 +340,6 @@ function parseAssetsUrlString (req) {
 let outputsAndResourcesCache = null;
 async function getOutputsAndResources ({ stackName }) {
   if (!outputsAndResourcesCache) {
-    log('Getting describing stack Outputs and Resources');
     outputsAndResourcesCache = await Promise.all([
       getStackOutputs({ stackName }),
       getStackResources({ stackName })
@@ -341,16 +348,12 @@ async function getOutputsAndResources ({ stackName }) {
   return outputsAndResourcesCache;
 }
 
-function createBundle ({ stage, stackName }) {
+function createBundle ({ stage, stackName, onlyCompile = false }) {
   return taskCreateBundle({
     appStageName: stage,
     noUpload: true,
+    onlyCompile,
     stackName
-  })
-  .run()
-  .catch(err => {
-    error(`An error occurred while creating your app bundle`);
-    error(err);
   });
 }
 
@@ -358,11 +361,10 @@ export function run (argv) {
   const {
     stage,
     port,
-    proxyAssetsUrl,
-    assetsPathname
+    assetsProxy,
+    assetsPath,
+    verbose
   } = argv;
-
-  assert(proxyAssetsUrl || assetsPathname, 'You must specify either --proxy-assets-url or --assets-pathname');
 
   const stackName = templateStackName({ appName: APP_NAME, stage });
 
@@ -371,6 +373,8 @@ export function run (argv) {
   proxy.on('error', err => {
     error(`Proxy request error: ${err.message}`.bold.red);
   });
+
+  let outputs, resources;
 
   const server = createServer((req, res) => {
     debug(` -> ${req.method} ${req.url}`);
@@ -388,22 +392,12 @@ export function run (argv) {
       let rawBody = new Buffer('');
       let jsonBody = {};
       const next = () => {
-        Promise.resolve({ stackName })
-        .then(getOutputsAndResources)
-        .catch(err => {
-          error('Error getting stack outputs and resources', err);
-        })
-        .then(([ outputs, resources ]) => {
-          processAPIRequest(req, res, {
-            pathname,
-            querystring,
-            body: jsonBody,
-            outputs,
-            resources
-          });
-        })
-        .catch(err => {
-          error('processAPIRequest error', err);
+        processAPIRequest(req, res, {
+          pathname,
+          querystring,
+          body: jsonBody,
+          outputs,
+          resources
         });
       };
       if (req.method === 'GET' || req.method === 'OPTIONS' || req.method === 'HEAD') {
@@ -426,24 +420,33 @@ export function run (argv) {
       });
       req.resume();
     } else {
-      if (assetsPathname) {
+      if (assetsPath) {
         const path = parseAssetsUrlString(req);
         send(req, path, {
           cacheControl: false,
-          root: pathModule.join(process.cwd(), assetsPathname)
+          root: pathModule.join(process.cwd(), assetsPath)
         })
         .on('error', error => {
           res.writeHead(error.status || 500);
-          const message = `Resource not found in '/assets' at path '${path}'`;
-          console.log(message.yellow.bold);
+          const message = `Resource not found (root: ${pathModule.join(process.cwd(), assetsPath)}) at path '${path}'`;
+          warning(message);
           res.write(message);
           res.end();
         })
         .pipe(res);
       } else {
-        proxy.web(req, res, {
-          target: proxyAssetsUrl
-        });
+        if (assetsProxy) {
+          proxy.web(req, res, {
+            target: assetsProxy
+          });
+        } else {
+          warning(stripIndent`
+            Proxy doesn't know how to handle request for '${req.url}',
+            because your did not provide ---proxy-assets-url nor --assets-path
+          `);
+          res.writeHead(500);
+          res.end();
+        }
       }
     }
   });
@@ -452,19 +455,109 @@ export function run (argv) {
     error('Server error', err);
   });
 
-  createBundle({ stage, stackName })
+  const startupTasks = new Listr([
+    {
+      title: 'creating first bundle',
+      task: () => createBundle({ stage, stackName })
+    },
+    {
+      title: 'validating AWS resources',
+      task: () => new Listr([
+        {
+          title: 'getting stack details from CloudFormation',
+          task: async () => {
+            [ outputs, resources ] = await getOutputsAndResources({ stackName });
+          }
+        },
+        {
+          title: 'checking IAM Roles',
+          task: () => {
+            Object.values(API_DEFINITIONS).every(runner => {
+              if (runner.name === 'processCFTemplate') {
+                return true;
+              }
+              try {
+                const roleName = findRoleName(resources, runner);
+                debug(`Function '${runner.name}' will execute with IAM Role '${roleName}'`);
+                return true;
+              } catch (e) {
+                throw createError({
+                  kind: 'Missing resources',
+                  reason: `Function '${runner.name}' has not yet been deployed.`,
+                  detailedReason: stripIndent`
+                    dawson couldn't find any role to use when executing this function.
+                    This happens when you're invoking a function that has never been deployed before.
+                    Before a function can be executed, it must have been deployed at least once.
+                  `,
+                  solution: 'execute $ dawson deploy, wait for the deploy to complete and then run this command again.'
+                });
+              }
+            });
+          }
+        }
+      ])
+    }
+  ], {
+    concurrent: true,
+    renderer: verbose ? verboseRenderer : undefined
+  });
+
+  startupTasks.run()
   .then(() => {
     server.listen(port);
-    success(`\nDevelopment proxy listening on http://0.0.0.0:${port}`.bold.green);
+    success('\n' + indent(stripIndent`
+      Development proxy started
+      http://0.0.0.0:${port}
+    `, 3));
+
+    // startup banner:
+    //  / ⇒ <ASSETS LOCATION>
+    //  ⤷ /prod ⇒ <api>
+    //  ⤷ /assets ⇒ <ASSETS LOCATION>
+
+    const rootIsAPI = requestForAPI({ url: '/' });
+    let assetsLocation = '(assets location not configured)';
+    if (assetsPath) { assetsLocation = `${process.cwd()}/assets/`; }
+    if (assetsProxy) { assetsLocation = `${assetsProxy}`; }
+    log('\n', indent(stripIndent`
+      / ⇒ ${rootIsAPI ? '<api>' : `${assetsLocation}`}
+       ${rootIsAPI
+         ? `⤷ /assets ⇒ ${assetsLocation}`
+         : `⤷ /prod ⇒ <api>`}
+    `, 3));
+    log('');
+
     setupWatcher({ stage, stackName });
+  })
+  .catch(err => {
+    if (err.isDawsonError) {
+      console.error(err.toFormattedString());
+      process.exit(1);
+    }
+    console.error(
+      chalk.red.bold('dawson internal error:'),
+      err.message
+    );
+    console.error(err.stack);
+    console.error(chalk.red(`Please report this bug: https://github.com/dawson-org/dawson-cli/issues`));
+    process.exit(1);
   });
 }
 
 function setupWatcher ({ stage, stackName }) {
-  log(`Reload: watching ${process.cwd()} for changes`.dim);
-  log(`        proxy will auto reload on file changes`.dim);
+  log(indent(stripIndent`
+    Reload: watching ${process.cwd()}/** for changes.
+            The proxy will auto reload on file changes.
+            You must manually restart the proxy when
+              * adding or updating npm dependencies
+              * adding a Lambda function or updating its configuration
+              * updating Lambda policyStatements
+              * updating CloudFormation resources
+  `.dim, 3));
+  log('');
+
   let bundleInProgress = false;
-  const onWatch = (eventType, fileName) => {
+  const onWatch = (fileName) => {
     const ignoreList = [
       ...SETTINGS.zipIgnore,
       'node_modules',
@@ -477,22 +570,23 @@ function setupWatcher ({ stage, stackName }) {
       return;
     }
 
-    if (eventType === 'rename' ||
-        !ignoreList.every(pattern => !minimatch(fileName, pattern))) {
-      log(`Reload: [ignored event] ${eventType.toUpperCase()} ${fileName}`.dim);
+    if (!ignoreList.every(pattern => !minimatch(fileName, `${process.cwd()}/${pattern}`))) {
+      log(`   Reload: [ignored] ${fileName}`.dim);
       return;
     }
 
-    log(`Reload: ${eventType.toUpperCase()} ${fileName}`.dim);
+    log(`   Reload: ${fileName}`.dim);
     bundleInProgress = true;
-    createBundle({ stage, stackName })
+    createBundle({ stage, stackName, onlyCompile: true }).run()
     .then(() => {
       bundleInProgress = false;
-      log(`Reload:`.dim, `reloaded at ${new Date().toLocaleTimeString()}`.yellow);
+      log(`   Reload:`.dim, `reloaded at ${new Date().toLocaleTimeString()}`.yellow);
     })
-    .catch(() => { bundleInProgress = false; });
+    .catch(err => {
+      bundleInProgress = false;
+      throw err;
+    });
   };
-  fs.watch(process.cwd(), {
-    recursive: true
-  }, throttle(onWatch, 500, { 'options.trailing': true }));
+  const watchEE = watch(process.cwd(), { recursive: true });
+  watchEE.on('change', throttle(onWatch, 500, { 'options.trailing': true }));
 }

@@ -102,21 +102,29 @@ export default function taskCreateBundle ({
   appStageName,
   excludeList = [],
   stackName,
-  noUpload = false
+  noUpload = false,
+  onlyCompile = false
 }, result) {
   return new Listr([
     {
-      title: 'cleaning up',
-      task: async (ctx) => {
-        const { tempZipFile } = await createTempFiles();
+      title: 'configuring',
+      task: ctx => {
         Object.assign(ctx, {
           bucketName,
           excludeList,
-          tempZipFile,
           uuid: `${appStageName}-bundle`,
           stackName,
-          noUpload
+          noUpload,
+          onlyCompile
         });
+      }
+    },
+    {
+      title: 'cleaning up',
+      skip: ctx => ctx.onlyCompile,
+      task: async (ctx) => {
+        const { tempZipFile } = await createTempFiles();
+        Object.assign(ctx, { tempZipFile });
       }
     },
     {
@@ -125,6 +133,7 @@ export default function taskCreateBundle ({
     },
     {
       title: 'installing dependencies',
+      skip: ctx => ctx.onlyCompile,
       task: install
     },
     {
@@ -137,7 +146,7 @@ export default function taskCreateBundle ({
     },
     {
       title: 'creating zip archive',
-      skip: ctx => ctx.noUpload,
+      skip: ctx => ctx.noUpload || ctx.onlyCompile,
       task: async (ctx) => {
         const { tempZipFile, excludeList } = ctx;
         const { tempZipFileSize } = await zipRoot({ tempZipFile, excludeList });
@@ -146,7 +155,7 @@ export default function taskCreateBundle ({
     },
     {
       title: 'uploading to s3',
-      skip: ctx => ctx.noUpload,
+      skip: ctx => ctx.noUpload || ctx.onlyCompile,
       task: async (ctx) => {
         const { bucketName, uuid, tempZipFile, tempZipFileSize } = ctx;
         const { zipS3Location } = await uploadS3({ bucketName, uuid, tempZipFile, tempZipFileSize });
