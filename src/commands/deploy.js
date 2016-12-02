@@ -331,9 +331,6 @@ async function taskCreateUploadStackTemplate ({ supportBucketName, stackName, cf
 
 async function taskRemoveStackPolicy ({ dangerDeleteResources, stackName }) {
   if (dangerDeleteResources === true) {
-    danger(stripIndent`
-      DANGER: You have used the '--danger-delete-storage' so, as part of this stack update
-      your DynamoDB Tables and/or S3 Buckets may be deleted, including all of its content.`);
     await removeStackPolicy({ stackName });
   }
 }
@@ -354,6 +351,12 @@ export async function deploy ({
   dangerDeleteResources = false,
   verbose = false
 }) {
+  if (dangerDeleteResources) {
+    danger(stripIndent`
+      DANGER: You have used the '--danger-delete-resources' so, as part of this stack update
+      your DynamoDB Tables and/or S3 Buckets may be deleted, including all of its content.`);
+  }
+
   const tasks = new Listr([
     {
       title: 'running pre-deploy hook',
