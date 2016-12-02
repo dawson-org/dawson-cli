@@ -41,8 +41,8 @@ async function createTempFiles () {
 }
 
 function compile () {
-  const zipIgnore = SETTINGS.zipIgnore || [];
-  return execa('babel', ['.', '--out-dir', '.dawson-dist/', '--ignore', `node_modules,${zipIgnore.join(',')}`, '--copy-files']);
+  const ignore = SETTINGS.ignore || [];
+  return execa('babel', ['.', '--out-dir', '.dawson-dist/', '--ignore', `node_modules,${ignore.join(',')}`, '--copy-files']);
 }
 
 function install () {

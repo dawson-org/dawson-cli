@@ -131,7 +131,7 @@ function taskUploadZip ({ supportBucketName, appStage, stackName }, ctx) {
   return taskCreateBundle({
     bucketName: supportBucketName,
     appStageName: appStage,
-    excludeList: SETTINGS.zipIgnore,
+    excludeList: SETTINGS.ignore,
     stackName
   }, ctx);
 }
