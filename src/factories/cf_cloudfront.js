@@ -60,9 +60,10 @@ export function templateCloudfrontDistributionName () {
 function templateViewerCertificate ({
   stageName,
   alias,
-  acmCertificateArn
+  acmCertificateArn,
+  skipAcmCertificate
 }) {
-  if (!alias) {
+  if (!alias || skipAcmCertificate) {
     return {
       'ViewerCertificate': {
         'CloudFrontDefaultCertificate': 'true'
@@ -80,7 +81,8 @@ function templateViewerCertificate ({
 export function templateCloudfrontDistribution ({
   stageName,
   alias,
-  acmCertificateArn
+  acmCertificateArn,
+  skipAcmCertificate
 }) {
   const aliasesConfig = {};
   if (alias) {
@@ -206,7 +208,7 @@ export function templateCloudfrontDistribution ({
           'DefaultCacheBehavior': defaultCB,
           'CacheBehaviors': [otherCB],
           'PriceClass': 'PriceClass_200',
-          ...templateViewerCertificate({ stageName, alias, acmCertificateArn }),
+          ...templateViewerCertificate({ stageName, alias, acmCertificateArn, skipAcmCertificate }),
           ...partialWebACLId(),
           ...CustomErrorResponses
         }
