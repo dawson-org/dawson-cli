@@ -218,13 +218,17 @@ function taskCreateFunctionTemplatePartial ({ index, def, stackName, zipS3Locati
   return { template, methodDefinition };
 }
 
-function taskCreateCloudFrontTemplate ({ stageName, cloudfrontSettings, acmCertificateArn }) {
+function taskCreateCloudFrontTemplate ({ stageName, cloudfrontSettings, acmCertificateArn, skipAcmCertificate }) {
   const cloudfrontCustomDomain = typeof cloudfrontSettings === 'string' ? cloudfrontSettings : null;
+  if (skipAcmCertificate === true) {
+    debug(`Skipping ACM SSL/TLS Certificate validation`);
+  }
   const cloudfrontPartial = (cloudfrontSettings !== false)
     ? templateCloudfrontDistribution({
       stageName,
       alias: cloudfrontCustomDomain,
-      acmCertificateArn
+      acmCertificateArn,
+      skipAcmCertificate
     })
     : {};
   return { cloudfrontCustomDomain, cloudfrontPartial };
@@ -349,6 +353,7 @@ async function taskRestoreStackPolicy ({ dangerDeleteResources, stackName }) {
 export async function deploy ({
   appStage,
   dangerDeleteResources = false,
+  skipAcmCertificate = false,
   verbose = false
 }) {
   if (dangerDeleteResources) {
@@ -369,6 +374,7 @@ export async function deploy ({
         Object.assign(ctx, {
           cloudfrontSettings: getCloudFrontSettings({ appStage }),
           dangerDeleteResources,
+          skipAcmCertificate,
           defs: Object.entries(API_DEFINITIONS),
           hostedZoneId: getHostedZoneId({ appStage }),
           stackName: templateStackName({ appName: APP_NAME, stage: appStage }),
@@ -384,7 +390,7 @@ export async function deploy ({
         return new Listr([
           {
             title: 'validating ACM SSL/TLS Certificate',
-            skip: ({ cloudfrontSettings }) => typeof cloudfrontSettings !== 'string',
+            skip: ({ cloudfrontSettings, skipAcmCertificate }) => (typeof cloudfrontSettings !== 'string' || skipAcmCertificate === true),
             task: async (ctx) => {
               const { acmCertificateArn } = await taskRequestACMCert(ctx);
               Object.assign(ctx, { acmCertificateArn });
@@ -416,6 +422,7 @@ export async function deploy ({
           cloudfrontSettings,
           defs,
           hostedZoneId,
+          skipAcmCertificate,
           stackName,
           stageName,
           supportBucketName,
@@ -438,7 +445,7 @@ export async function deploy ({
           }
         }
 
-        const { cloudfrontCustomDomain, cloudfrontPartial } = taskCreateCloudFrontTemplate({ stageName, cloudfrontSettings, acmCertificateArn });
+        const { cloudfrontCustomDomain, cloudfrontPartial } = taskCreateCloudFrontTemplate({ stageName, cloudfrontSettings, acmCertificateArn, skipAcmCertificate });
 
         const { route53Enabled, route53Partial } = taskCreateRoute53Template({ cloudfrontCustomDomain, hostedZoneId });
         await taskCheckRoute53Prerequisites({ route53Enabled, hostedZoneId, cloudfrontCustomDomain });
@@ -526,6 +533,7 @@ export async function deploy ({
 export function run (argv) {
   deploy({
     dangerDeleteResources: argv['danger-delete-resources'],
+    skipAcmCertificate: argv['skip-acm'],
     appStage: argv.stage,
     verbose: argv.verbose
   })
