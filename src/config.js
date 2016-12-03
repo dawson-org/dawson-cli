@@ -21,6 +21,15 @@ const FUNCTION_CONFIGURATION_PROPERTIES = [
   'responseContentType'
 ];
 
+const APP_CONFIGURATION_PROPERTIES = [
+  'pre-deploy',
+  'post-deploy',
+  'ignore',
+  'cloudfront',
+  'route53',
+  'cloudfrontRootOrigin'
+];
+
 const FUNCTION_CONFIGURATION_SCHEMA = {
   api: Type.shape({
     path: function (props, propName) {
@@ -96,7 +105,7 @@ function validateCloudFrontConfig (cloudfront) {
 
 function validateRoute53Config (route53) {
   const message = [
-    `The value of the 'route53' property in your package.json is invalid.`,
+    `The value of the 'route53' property in your package.json is invalid (expected object<string>).`,
     `Please check the documentation: https://github.com/dawson-org/dawson-cli/wiki/`
   ];
   if (typeof route53 === 'undefined') { return true; }
@@ -111,6 +120,17 @@ function validateRoute53Config (route53) {
 }
 
 function validateDawsonConfig (dawson) {
+  let currentPropertyName;
+  if (!Object.keys(dawson).every(key => {
+    currentPropertyName = key;
+    return APP_CONFIGURATION_PROPERTIES.includes(key);
+  })) {
+    return [
+      `Encountered an unknown property 'dawson.${currentPropertyName}' in package.json`,
+      `Please check the documentation: https://github.com/dawson-org/dawson-cli/wiki/`
+    ];
+  }
+
   const cloudfrontIsValid = validateCloudFrontConfig(dawson.cloudfront);
   if (cloudfrontIsValid !== true) { return cloudfrontIsValid; }
 
