@@ -166,22 +166,16 @@ async function processAPIRequest (req, res, {
       res.end();
       return;
     }
-    if (typeof data.response !== 'string' && !data.html ||
-        typeof data.html !== 'string' && !data.response ||
-        (typeof data.response === 'undefined' && typeof data.html === 'undefined')) {
-      error(`Your function must return a string, unless 'responseContentType' is application/json.`);
+    if (typeof data.response !== 'string') {
+      error(`Your function must return a string (or an Object if 'responseContentType' is 'application/json')`);
       res.writeHead(500, { 'Content-Type': 'text/plain' });
       res.write('dawson message: function returned an invalid body');
       res.end();
       return;
     }
     res.writeHead(200, { 'Content-Type': contentType });
-    if (contentType === 'application/json') {
-      res.write(data.response);
-    } else if (contentType === 'text/plain') {
-      res.write(data.response);
-    } else if (contentType === 'text/html') {
-      res.write(data.html);
+    if (typeof data.response === 'object') {
+      res.write(JSON.stringify(data.response));
     } else {
       res.write(data.response);
     }

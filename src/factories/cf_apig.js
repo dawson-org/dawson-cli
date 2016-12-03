@@ -171,57 +171,22 @@ export function templateLambdaIntegration ({
   responseContentType,
   redirects
 }) {
-  let responseTemplate;
-  let errorResponseTemplate;
+  let responseTemplate = {
+    [responseContentType]: stripIndent`
+      #set($inputRoot = $input.path('$'))
+      $inputRoot.response
+    `
+  };
+  let errorResponseTemplate = {
+    [responseContentType]: stripIndent`
+      #set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+      $errorMessageObj.response
+    `
+  };
   if (responseContentType.includes('application/json')) {
-    responseTemplate = {
-      'application/json': stripIndent`
-        #set($inputRoot = $input.path('$'))
-        $inputRoot.response
-      `
-    };
     errorResponseTemplate = {
       'application/json': stripIndent`
         $input.path('$.errorMessage')
-      `
-    };
-  } else if (responseContentType.includes('text/plain')) {
-    responseTemplate = {
-      'text/plain': stripIndent`
-        #set($inputRoot = $input.path('$'))
-        $inputRoot.response
-      `
-    };
-    errorResponseTemplate = {
-      'text/plain': stripIndent`
-        #set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
-        $errorMessageObj.response
-      `
-    };
-  } else if (responseContentType.includes('text/html')) {
-    responseTemplate = {
-      'text/html': stripIndent`
-        #set($inputRoot = $input.path('$'))
-        $inputRoot.html
-      `
-    };
-    errorResponseTemplate = {
-      'text/html': stripIndent`
-        #set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
-        $errorMessageObj.response
-      `
-    };
-  } else {
-    responseTemplate = {
-      [responseContentType]: stripIndent`
-        #set($inputRoot = $input.path('$'))
-        $inputRoot.response
-      `
-    };
-    errorResponseTemplate = {
-      [responseContentType]: stripIndent`
-        #set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
-        $errorMessageObj.response
       `
     };
   }

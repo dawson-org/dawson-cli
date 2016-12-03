@@ -1,93 +1,94 @@
 
+import { stripIndent } from 'common-tags';
+
 import { error } from '../logger';
 
-export const RUNNER_FUNCTION_BODY = `
-Promise.resolve()
-.then(function () {
-  return runner(event, context);
-})
-.then(function (data) {
-  if (event.meta && event.meta.expectedResponseContentType.indexOf('text/html') !== -1) {
-    callback(null, { html: data });
-  } else if (event.meta && event.meta.expectedResponseContentType.indexOf('application/json') !== -1) {
-    callback(null, { response: JSON.stringify(data) });
-  } else if (event.meta && event.meta.expectedResponseContentType.indexOf('text/plain') !== -1) {
-    callback(null, { response: data });
-  } else {
-    console.log('WARNING: Unexpected content type (in event.meta), forwarding result without transformations.');
-    callback(null, { response: data });
-  }
-})
-.catch(function (err) {
-  try {
-    // Promise rejections should be Errors containing a JSON-stringified 'message property'
-    // which contains the error information to be displayed.
-    // If the property is not valid JSON, the error is not exposed to the client
-    // and a generic HTTP 500 error will be exposed
-    JSON.parse(err.message);
-    console.error('Lambda will terminate with error', err.message);
-    return callback(err.message);
-  } catch (_jsonError) {
-    console.error('Unhandled error will be swallowed and reported as HTTP 500:');
-    console.error(err);
-    const opaqueError = {
-      unhandled: true,
-      message: 'Unhandled internal error',
-      httpStatus: 500
+function getWrappingCode (apis, name) {
+  const apiConfig = apis[name].api || {};
+  const hasEndpoint = apiConfig.path !== false;
+  const body = stripIndent`
+    module.exports.${name} = function (event, context, callback) {
+      const runner = require('./api').${name};
+      Promise.resolve()
+      .then(function () {
+        return runner(event, context);
+      })
+      .then(function (data) {
+        ${hasEndpoint
+          ? stripIndent`
+            if (event.meta && event.meta.expectedResponseContentType.indexOf('application/json') !== -1) {
+              return callback(null, { response: JSON.stringify(data) });
+            }
+            callback(null, { response: data });
+          `
+          : stripIndent`
+            // this function has not been called via API Gateway, we return the value as-is
+            return callback(null, data);
+          `
+        }
+      })
+      .catch(function (err) {
+        try {
+          // Promise rejections should be Errors containing a JSON-stringified 'message property'
+          // which contains the error information to be displayed.
+          // If the property is not valid JSON, the error is not exposed to the client
+          // and a generic HTTP 500 error will be exposed
+          JSON.parse(err.message);
+          console.error('Lambda will terminate with error', err.message);
+          return callback(err.message);
+        } catch (_jsonError) {
+          console.error('Unhandled error will be swallowed and reported as HTTP 500:');
+          console.error(err);
+          const opaqueError = {
+            unhandled: true,
+            message: 'Unhandled internal error',
+            httpStatus: 500
+          };
+          return callback(JSON.stringify(opaqueError));
+        }
+      });
     };
-    return callback(JSON.stringify(opaqueError));
-  }
-});
-`;
+  `;
+  return body;
+}
+
 
 function prepareIndexFile (apis, stackName) {
-  const exp = Object.keys(apis).map(name => {
-    // const apiConfig = apis[name].api || {};
-    const body = RUNNER_FUNCTION_BODY;
-    return `
-      module.exports.${name} = function (event, context, callback) {
-        const runner = require('./api').${name};
-        ${body}
-      };
-    `;
-  });
+  const exportedFunctions = Object.keys(apis).map(name => getWrappingCode(apis, name));
 
-  return `
-  // This is the content of index.js
-  // which is require-d by lambda
-  // which then executes the handler property
-  //
-  process.env.BABEL_CACHE_PATH = '/tmp/babel-cache';
-  require("babel-polyfill");
+  return stripIndent`
+    require('babel-polyfill');
 
-  const AWS = require('aws-sdk');
-  const cloudformation = new AWS.CloudFormation({});
-  const stackName = '${stackName}';
-  var stackOutputs = null;
+    const stackName = '${stackName}';
+    var stackOutputs = null;
 
-  function describeOutputs() {
+    function describeOutputs() {
       if (!stackOutputs) {
-          const params = {
-              StackName: stackName,
-          };
-          return cloudformation.describeStacks(params).promise()
-          .then(result => {
-              const outputs = result.Stacks[0].Outputs;
-              const ret = {};
-              outputs.forEach(output => {
-                 ret[output.OutputKey] = output.OutputValue; 
-              });
-              return ret;
-          })
-          .catch(err => {
-              console.error(\`Error describing stack ${stackName}\`, err.message, err.stack);
+        const AWS = require('aws-sdk');
+        const cloudformation = new AWS.CloudFormation({});
+        const params = {
+          StackName: stackName,
+        };
+        return cloudformation.describeStacks(params).promise()
+        .then(result => {
+          const outputs = result.Stacks[0].Outputs;
+          const ret = {};
+          outputs.forEach(output => {
+            ret[output.OutputKey] = output.OutputValue; 
           });
+          stackOutputs = ret;
+          return ret;
+        })
+        .catch(err => {
+          console.error(\`Error describing stack ${stackName}\`, err.message, err.stack);
+          throw err;
+        });
       } else {
-          return Promise.resolve(stackOutputs);
+        return Promise.resolve(stackOutputs);
       }
-  }
+    }
 
-  ${exp.join('\n\n')}
+    ${exportedFunctions.join('\n\n')}
   `;
 }
 
