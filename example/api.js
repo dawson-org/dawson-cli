@@ -199,7 +199,6 @@ export async function defaultAuthorizer (event, context) {
 }
 defaultAuthorizer.api = {
   path: false,
-  isEventHandler: true,
   policyStatements: [{
     Effect: 'Allow',
     Action: 'dynamodb:GetItem',

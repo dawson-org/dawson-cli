@@ -40,25 +40,10 @@ Promise.resolve()
 });
 `;
 
-const RUNNER_FUNCTION_BODY_EVENTHANDLER = `
-describeOutputs().then(outputsMap => {
-  stackOutputs = outputsMap;
-  context.templateOutputs = stackOutputs;
-  runner(event, context)
-  .then(result => callback(null, result))
-  .catch(callback);
-});
-`;
-
 function prepareIndexFile (apis, stackName) {
   const exp = Object.keys(apis).map(name => {
-    const apiConfig = apis[name].api || {};
-    let body;
-    if (apiConfig.isEventHandler === true) {
-      body = RUNNER_FUNCTION_BODY_EVENTHANDLER;
-    } else {
-      body = RUNNER_FUNCTION_BODY;
-    }
+    // const apiConfig = apis[name].api || {};
+    const body = RUNNER_FUNCTION_BODY;
     return `
       module.exports.${name} = function (event, context, callback) {
         const runner = require('./api').${name};
