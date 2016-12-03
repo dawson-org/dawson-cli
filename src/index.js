@@ -59,7 +59,7 @@ const argv = yargs
       .describe('request-id', 'Filter logs by Lambda RequestId')
       .alias('r', 'request-id')
       .describe('follow', 'Follow logs, i.e. never exit and keep polling and printing new lines')
-      .alias('-t', 'follow')
+      .alias('t', 'follow')
       .boolean('follow')
       .default('follow', false)
       .describe('stage', 'Application stage to work on')
