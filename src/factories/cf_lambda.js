@@ -62,7 +62,6 @@ export function templatePolicyDocument ({
 
 export function templateLambdaExecutionRole ({
   lambdaName,
-  keepWarm = false,
   policyStatements = []
 }) {
   return {
@@ -102,7 +101,6 @@ export function templateLambda ({
   inlineCode = LAMBDA_DEMO_INLINE_CODE,
   zipS3Location = null,
   policyStatements,
-  keepWarm = false,
   runtime = 'nodejs4.3'
 }) {
   const code = (zipS3Location)
@@ -115,8 +113,7 @@ export function templateLambda ({
   return {
     ...templateLambdaExecutionRole({
       lambdaName,
-      policyStatements,
-      keepWarm
+      policyStatements
     }),
     [`${templateLambdaName({ lambdaName })}`]: {
       'Type': 'AWS::Lambda::Function',

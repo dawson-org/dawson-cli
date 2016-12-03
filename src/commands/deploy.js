@@ -43,10 +43,6 @@ import {
 } from '../factories/cf_lambda';
 
 import {
-  templateCWEventRule
-} from '../factories/cf_cloudwatch';
-
-import {
   templateAssetsBucket,
   templateAssetsBucketName
 } from '../factories/cf_s3';
@@ -144,7 +140,6 @@ function taskCreateFunctionTemplatePartial ({ index, def, stackName, zipS3Locati
     policyStatements: policyStatements = [],
     responseContentType = 'text/html',
     runtime,
-    keepWarm = false,
     authorizer,
     redirects = false
   } = def.api;
@@ -163,8 +158,7 @@ function taskCreateFunctionTemplatePartial ({ index, def, stackName, zipS3Locati
     handlerFunctionName: def.name,
     zipS3Location,
     policyStatements,
-    runtime,
-    keepWarm
+    runtime
   });
 
   if (resourcePath === false) {
@@ -193,15 +187,6 @@ function taskCreateFunctionTemplatePartial ({ index, def, stackName, zipS3Locati
       })
     };
     methodDefinition = { resourceName, httpMethod };
-  }
-
-  if (keepWarm === true) {
-    template = {
-      ...template,
-      ...templateCWEventRule({
-        lambdaName
-      })
-    };
   }
 
   return { template, methodDefinition };
