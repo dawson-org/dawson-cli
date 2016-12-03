@@ -39,9 +39,7 @@ Promise.resolve()
   }
 });
 `;
-const RUNNER_FUNCTION_BODY_UNWRAPPED = `
-runner(event, context, callback);
-`;
+
 const RUNNER_FUNCTION_BODY_EVENTHANDLER = `
 describeOutputs().then(outputsMap => {
   stackOutputs = outputsMap;
@@ -56,14 +54,10 @@ function prepareIndexFile (apis, stackName) {
   const exp = Object.keys(apis).map(name => {
     const apiConfig = apis[name].api || {};
     let body;
-    if (apiConfig.noWrap === true) {
-      body = RUNNER_FUNCTION_BODY_UNWRAPPED;
+    if (apiConfig.isEventHandler === true) {
+      body = RUNNER_FUNCTION_BODY_EVENTHANDLER;
     } else {
-      if (apiConfig.isEventHandler === true) {
-        body = RUNNER_FUNCTION_BODY_EVENTHANDLER;
-      } else {
-        body = RUNNER_FUNCTION_BODY;
-      }
+      body = RUNNER_FUNCTION_BODY;
     }
     return `
       module.exports.${name} = function (event, context, callback) {
