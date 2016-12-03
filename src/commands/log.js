@@ -102,7 +102,7 @@ export function run (argv) {
       o.ResourceType === 'AWS::Lambda::Function' && o.LogicalResourceId === cfLambdaName
     );
     if (!awsLambdaResource) {
-      const errMsg = 'Lambda function with given name does not exist or has not been deployed yet';
+      const errMsg = 'Lambda function with this name does not exist or it has not been deployed yet';
       error(errMsg);
       return Promise.reject(errMsg);
     }
@@ -114,6 +114,6 @@ export function run (argv) {
     return filterAndPrint(awsLambdaName, argv, Date.now() - 3600 * 1000, follow);
   })
   .catch(err => {
-    error('Error tailing logs', err.message, err);
+    error(`Error tailing logs for this function. This probabily means that this function has never been executed or its log has not been delivered yet (AWS Error: '${err.message}')`);
   });
 }
