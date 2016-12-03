@@ -2,7 +2,8 @@
 import { sortBy } from 'lodash';
 
 import { error, log, title } from '../logger';
-import { APP_NAME } from '../config';
+
+import loadConfig from '../config';
 
 import {
   getStackOutputs,
@@ -10,6 +11,7 @@ import {
 } from '../factories/cf_utils';
 
 export function run (argv) {
+  const { APP_NAME } = loadConfig();
   const {
     stage,
     outputName,

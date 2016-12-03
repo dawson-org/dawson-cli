@@ -6,8 +6,7 @@ import Listr from 'listr';
 import verboseRenderer from 'listr-verbose-renderer';
 import chalk from 'chalk';
 
-import { RESERVED_FUCTION_NAMES, SETTINGS, API_DEFINITIONS, APP_NAME, getCloudFrontSettings, getHostedZoneId } from '../config';
-const { cloudfront: cloudfrontStagesSettings } = SETTINGS;
+import loadConfig, { RESERVED_FUCTION_NAMES } from '../config';
 
 import { debug, danger, warning, success } from '../logger';
 import taskCreateBundle from '../libs/createBundle';
@@ -61,8 +60,8 @@ import {
   templateRoute53
 } from '../factories/cf_route53';
 
-async function taskUpdateSupportStack ({ appStage, supportStackName }) {
-  await createSupportResources({ stackName: supportStackName, cloudfrontStagesSettings });
+async function taskUpdateSupportStack ({ appStage, supportStackName, cloudfrontConfigMap }) {
+  await createSupportResources({ stackName: supportStackName, cloudfrontConfigMap });
   const supportOutputs = await getStackOutputs({ stackName: supportStackName });
   const supportBucketName = supportOutputs.find(o => o.OutputKey === 'SupportBucket').OutputValue;
   return { supportBucketName };
@@ -125,11 +124,11 @@ async function taskRequestACMCert ({ cloudfrontSettings }) {
   }
 }
 
-function taskUploadZip ({ supportBucketName, appStage, stackName }, ctx) {
+function taskUploadZip ({ supportBucketName, appStage, stackName, ignore }, ctx) {
   return taskCreateBundle({
     bucketName: supportBucketName,
     appStageName: appStage,
-    excludeList: SETTINGS.ignore,
+    excludeList: ignore,
     stackName
   }, ctx);
 }
@@ -154,14 +153,6 @@ function taskCreateFunctionTemplatePartial ({ index, def, stackName, zipS3Locati
   debug(`=> #${index} Found function ${name.bold} at ${httpMethod.bold} /${resourcePath.bold}`);
 
   const authorizerFunctionName = authorizer ? authorizer.name : null;
-  if (authorizerFunctionName) {
-    if (typeof API_DEFINITIONS[authorizerFunctionName] !== 'function') {
-      throw new Error(`The authorizer function '${authorizerFunctionName}' must also be exported`);
-    }
-    if (!API_DEFINITIONS[authorizerFunctionName].api || !API_DEFINITIONS[authorizerFunctionName].api.isEventHandler) {
-      throw new Error(`The authorizer function '${authorizerFunctionName}' must have api.isEventHandler set to true`);
-    }
-  }
 
   let template = {};
   let methodDefinition = null;
@@ -216,7 +207,7 @@ function taskCreateFunctionTemplatePartial ({ index, def, stackName, zipS3Locati
   return { template, methodDefinition };
 }
 
-function taskCreateCloudFrontTemplate ({ stageName, cloudfrontSettings, acmCertificateArn, skipAcmCertificate }) {
+function taskCreateCloudFrontTemplate ({ stageName, cloudfrontSettings, acmCertificateArn, skipAcmCertificate, cloudfrontRootOrigin }) {
   const cloudfrontCustomDomain = typeof cloudfrontSettings === 'string' ? cloudfrontSettings : null;
   if (skipAcmCertificate === true) {
     debug(`Skipping ACM SSL/TLS Certificate validation`);
@@ -226,7 +217,8 @@ function taskCreateCloudFrontTemplate ({ stageName, cloudfrontSettings, acmCerti
       stageName,
       alias: cloudfrontCustomDomain,
       acmCertificateArn,
-      skipAcmCertificate
+      skipAcmCertificate,
+      cloudfrontRootOrigin
     })
     : {};
   return { cloudfrontCustomDomain, cloudfrontPartial };
@@ -253,7 +245,16 @@ async function taskCheckRoute53Prerequisites ({ route53Enabled, hostedZoneId, cl
   }
 }
 
-function taskProcessTemplate ({ appStage, stageName, cloudfrontPartial, route53Partial, cloudfrontSettings, functionTemplatePartials, methodsInTemplate }) {
+function taskProcessTemplate ({
+  appStage,
+  stageName,
+  cloudfrontPartial,
+  route53Partial,
+  cloudfrontSettings,
+  functionTemplatePartials,
+  methodsInTemplate,
+  API_DEFINITIONS
+}) {
   const deploymentUid = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   let cfTemplate = {
     Parameters: {
@@ -354,6 +355,16 @@ export async function deploy ({
   skipAcmCertificate = false,
   verbose = false
 }) {
+  const {
+    SETTINGS,
+    API_DEFINITIONS,
+    APP_NAME,
+    getCloudFrontSettings,
+    getHostedZoneId
+  } = loadConfig();
+  const cloudfrontStagesMap = SETTINGS.cloudfront;
+  const cloudfrontRootOrigin = SETTINGS.cloudfrontRootOrigin || 'api';
+
   if (dangerDeleteResources) {
     danger(stripIndent`
       DANGER: You have used the '--danger-delete-resources' so, as part of this stack update
@@ -378,7 +389,10 @@ export async function deploy ({
           stackName: templateStackName({ appName: APP_NAME, stage: appStage }),
           stageName: 'prod',
           appStage,
-          supportStackName: templateStackName({ appName: `${APP_NAME}Support` })
+          supportStackName: templateStackName({ appName: `${APP_NAME}Support` }),
+          cloudfrontRootOrigin: cloudfrontRootOrigin,
+          ignore: SETTINGS.ignore,
+          cloudfrontConfigMap: cloudfrontStagesMap
         });
       }
     },
@@ -424,7 +438,8 @@ export async function deploy ({
           stackName,
           stageName,
           supportBucketName,
-          zipS3Location
+          zipS3Location,
+          cloudfrontRootOrigin
         } = ctx;
         const methodsInTemplate = []; // used by DependsOn to prevent APIG to abort deployment because "API contains no methods"
         let functionTemplatePartials = {};
@@ -443,7 +458,13 @@ export async function deploy ({
           }
         }
 
-        const { cloudfrontCustomDomain, cloudfrontPartial } = taskCreateCloudFrontTemplate({ stageName, cloudfrontSettings, acmCertificateArn, skipAcmCertificate });
+        const { cloudfrontCustomDomain, cloudfrontPartial } = taskCreateCloudFrontTemplate({
+          stageName,
+          cloudfrontSettings,
+          acmCertificateArn,
+          skipAcmCertificate,
+          cloudfrontRootOrigin
+        });
 
         const { route53Enabled, route53Partial } = taskCreateRoute53Template({ cloudfrontCustomDomain, hostedZoneId });
         await taskCheckRoute53Prerequisites({ route53Enabled, hostedZoneId, cloudfrontCustomDomain });
@@ -455,7 +476,8 @@ export async function deploy ({
           route53Partial,
           cloudfrontSettings,
           functionTemplatePartials,
-          methodsInTemplate
+          methodsInTemplate,
+          API_DEFINITIONS
         });
 
         const { cfParams } = await taskCreateUploadStackTemplate({ supportBucketName, stackName, cfTemplateJSON });

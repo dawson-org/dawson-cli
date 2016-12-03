@@ -9,7 +9,7 @@ const cwlogs = new AWS.CloudWatchLogs({});
 const filterLogEvents = promisify(cwlogs.filterLogEvents.bind(cwlogs));
 
 import { title, error, log } from '../logger';
-import { APP_NAME } from '../config';
+import loadConfig from '../config';
 
 import {
   templateLambdaName
@@ -86,6 +86,7 @@ export function filterAndPrint (awsLambdaName, params, startTime = 0, follow = f
 }
 
 export function run (argv) {
+  const { APP_NAME } = loadConfig();
   const {
     stage,
     functionName,

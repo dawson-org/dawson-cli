@@ -1,6 +1,4 @@
 
-import { SETTINGS } from '../config';
-
 import {
   templateAPIID
 } from './cf_apig';
@@ -8,11 +6,6 @@ import {
 import {
   templateAssetsBucketName
 } from './cf_s3';
-
-const cloudfrontRootOrigin = SETTINGS.cloudfrontRootOrigin || 'api';
-if (cloudfrontRootOrigin !== 'assets' && cloudfrontRootOrigin !== 'api') {
-  throw new Error('Invalid parameter value for cloudfrontRootOrigin. Allowed values are: assets, api');
-}
 
 // WebACL
 //
@@ -82,7 +75,8 @@ export function templateCloudfrontDistribution ({
   stageName,
   alias,
   acmCertificateArn,
-  skipAcmCertificate
+  skipAcmCertificate,
+  cloudfrontRootOrigin
 }) {
   const aliasesConfig = {};
   if (alias) {

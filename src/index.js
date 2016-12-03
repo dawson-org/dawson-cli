@@ -8,7 +8,7 @@ import AWS from 'aws-sdk';
 
 import updateNotifier from 'update-notifier';
 import pkg from '../package.json';
-import { PKG_JSON } from './config';
+import loadConfig from './config';
 
 const notifier = updateNotifier({
   pkg,
@@ -113,41 +113,39 @@ const argv = yargs
   .strict()
   .argv;
 
-if (!PKG_JSON.name) {
-  error('Missing Configuration: You need to specify a `name` field in package.json');
-  process.exit(1);
-}
+if (!argv.help && !argv.version) {
+  if (argv.stage && process.env.DAWSON_STAGE && argv.stage !== process.env.DAWSON_STAGE) {
+    error('Configuration Error: you have specified both --stage and DAWSON_STAGE but they have different values.');
+    process.exit(1);
+  }
 
-if (argv.stage && process.env.DAWSON_STAGE && argv.stage !== process.env.DAWSON_STAGE) {
-  error('Configuration Error: you have specified both --stage and DAWSON_STAGE but they have different values.');
-  process.exit(1);
-}
+  if (!argv.stage) {
+    error('Missing Configuration: we couldn\'t determine which stage to deploy to, please use the --stage argument or set DAWSON_STAGE.');
+    process.exit(1);
+  }
 
-if (!argv.stage) {
-  error('Missing Configuration: we could determine which stage to deploy to, please use the --stage argument or set DAWSON_STAGE.');
-  process.exit(1);
-}
+  if (!AWS.config.region) {
+    error('Missing Configuration: you must set an AWS Region using the AWS_REGION environment variable.');
+    process.exit(1);
+  }
 
-if (!AWS.config.region) {
-  error('Missing Configuration: you must set an AWS Region using the AWS_REGION environment variable.');
-  process.exit(1);
-}
+  if (!AWS.config.credentials) {
+    error('Missing Configuration: no AWS Credentials could be loaded, please set AWS_PROFILE or AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY (and AWS_SESSION_TOKEN if applicable).');
+    process.exit(1);
+  }
 
-if (!AWS.config.credentials) {
-  error('Missing Configuration: no AWS Credentials could be loaded, please set AWS_PROFILE or AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY (and AWS_SESSION_TOKEN if applicable).');
-  process.exit(1);
-}
+  if (argv.verbose === true) {
+    enableDebug();
+  }
 
-if (argv.verbose === true) {
-  enableDebug();
-}
+  const { PKG_JSON } = loadConfig();
 
-if (!argv.shell && !argv['output-name']) {
-  process.stdout.write('\x1B[2J\x1B[0f');
+  if (!argv.shell && !argv['output-name']) {
+    process.stdout.write('\x1B[2J\x1B[0f');
+    log('');
+    log('   dawson'.bold.blue, 'v' + pkg.version);
+    log('  ', PKG_JSON.name.yellow.dim.bold, '↣', AWS.config.region.yellow.dim.bold, '↣', argv.stage.yellow.bold);
+    log('  ', new Date().toLocaleString().gray);
+    log('');
+  }
 }
-
-log('');
-log('   dawson'.bold.blue, 'v' + pkg.version);
-log('  ', PKG_JSON.name.yellow.dim.bold, '↣', AWS.config.region.yellow.dim.bold, '↣', argv.stage.yellow.bold);
-log('  ', new Date().toLocaleString().gray);
-log('');

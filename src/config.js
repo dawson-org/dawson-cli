@@ -9,7 +9,6 @@ import execa from 'execa';
 import Type from 'prop-types';
 
 import createError from './libs/error';
-export const PROJECT_ROOT = process.env.PWD;
 
 export const RESERVED_FUCTION_NAMES = ['processCFTemplate'];
 
@@ -198,6 +197,12 @@ function validateAPI (source) {
   let current;
   try {
     apiDefinitions.forEach(runner => {
+      if (!runner.name) {
+        throw new Error(`function should have a name`);
+      }
+      if (typeof runner.api !== 'object') {
+        throw new Error(`missing api configuration`);
+      }
       current = runner.name;
       let currentPropertyName;
       if (!Object.keys(runner.api).every(configKey => {
@@ -215,22 +220,47 @@ function validateAPI (source) {
     ];
   }
 
+  try {
+    apiDefinitions.forEach(runner => {
+      if (runner.api.authorizer != null) {
+        const authorizerName = runner.api.authorizer.name;
+        if (typeof source[authorizerName] !== 'function') {
+          return [
+            `Authorizer '${authorizerName}' should be exported from api.js`,
+            `Check the api property of this function. Refer to the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/`
+          ];
+        }
+        if (source[authorizerName].api.path !== false) {
+          return [
+            `Authorizer '${authorizerName}' should have api.path === false`,
+            `Check the api property of this function. Refer to the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/`
+          ];
+        }
+      }
+    });
+  } catch (e) {
+    return [
+      `Invalid function configuration for ${current}: ${e.message}`,
+      `Check the api property of this function. Refer to the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/`
+    ];
+  }
+
   return true;
 }
 
-if (process.env.NODE_ENV !== 'testing') {
+export default function loadConfig (rootDir = process.cwd()) {
   try {
-    requiredPkgJson = require(PROJECT_ROOT + '/package.json');
+    requiredPkgJson = require(rootDir + '/package.json');
   } catch (e) {
     console.error(createError({
       kind: 'Cannot find package.json',
       reason: 'There is no package.json file in the current directory',
       detailedReason: stripIndent`
-          You are running this command from '${process.cwd()}' which does not
+          You are running this command from '${rootDir}' which does not
           contain a package.json file as required by dawson.
         `,
       solution: stripIndent`
-        * check if the file exists by running 'stat ${process.cwd()}/package.json'
+        * check if the file exists by running 'stat ${rootDir}/package.json'
         * run dawson from the correct folder
         * check file permissions on package.json
         `
@@ -238,8 +268,19 @@ if (process.env.NODE_ENV !== 'testing') {
     process.exit(1);
   }
 
+  if (!requiredPkgJson.name) {
+    console.error(createError({
+      kind: 'Missing app name',
+      reason: `The package.json shuold contain a 'name' field`,
+      solution: stripIndent`
+        * add a non-empty 'name' field to your package.json.
+        `
+    }).toFormattedString());
+    process.exit(1);
+  }
+
   try {
-    requiredApi = require(PROJECT_ROOT + '/api');
+    requiredApi = require(rootDir + '/api');
   } catch (e) {
     if (e._babel) {
       console.error(createError({
@@ -259,11 +300,11 @@ if (process.env.NODE_ENV !== 'testing') {
         kind: 'Cannot find api.js',
         reason: 'There is no api.js file in the current directory',
         detailedReason: stripIndent`
-          You are running this command from '${process.cwd()}' which does not
+          You are running this command from '${rootDir}' which does not
           contain an api.js file as required by dawson.
         `,
         solution: stripIndent`
-        * check if the file exists by running 'stat ${process.cwd()}/api.js'
+        * check if the file exists by running 'stat ${rootDir}/api.js'
         * run dawson from the correct folder
         * check file permissions on api.js
         `
@@ -327,15 +368,17 @@ if (process.env.NODE_ENV !== 'testing') {
     }).toFormattedString());
     process.exit(1);
   }
-} else {
-  requiredPkgJson = { dawson: {} };
-  requiredApi = {};
+
+  const appName = requiredPkgJson.name;
+  const settings = requiredPkgJson.dawson || {};
+
+  return {
+    API_DEFINITIONS: requiredApi,
+    APP_NAME: appName,
+    PKG_JSON: requiredPkgJson,
+    PROJECT_ROOT: rootDir,
+    SETTINGS: settings,
+    getCloudFrontSettings: ({ appStage }) => settings.cloudfront ? (settings.cloudfront[appStage] || true) : true,
+    getHostedZoneId: ({ appStage }) => settings.route53 ? settings.route53[appStage] : null
+  };
 }
-
-export const PKG_JSON = requiredPkgJson;
-export const APP_NAME = PKG_JSON.name;
-export const SETTINGS = PKG_JSON.dawson || {};
-export const API_DEFINITIONS = requiredApi;
-
-export const getCloudFrontSettings = ({ appStage }) => SETTINGS.cloudfront ? SETTINGS.cloudfront[appStage] : true;
-export const getHostedZoneId = ({ appStage }) => SETTINGS.route53 ? SETTINGS.route53[appStage] : null;

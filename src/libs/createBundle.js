@@ -7,7 +7,7 @@ import execa from 'execa';
 import del from 'del';
 import Listr from 'listr';
 
-import { PROJECT_ROOT, API_DEFINITIONS, SETTINGS } from '../config';
+import loadConfig from '../config';
 import createIndex from './createIndex';
 
 const s3 = new AWS.S3({});
@@ -40,8 +40,7 @@ async function createTempFiles () {
   return { tempZipFile };
 }
 
-function compile () {
-  const ignore = SETTINGS.ignore || [];
+function compile ({ ignore = [] }) {
   return execa('babel', ['.', '--out-dir', '.dawson-dist/', '--ignore', `node_modules,${ignore.join(',')}`, '--copy-files']);
 }
 
@@ -56,7 +55,7 @@ function writeIndex ({ indexFileContents }) {
     { encoding: 'utf8' });
 }
 
-async function zipRoot ({ tempZipFile, excludeList }) {
+async function zipRoot ({ tempZipFile, excludeList, PROJECT_ROOT }) {
   const excludeArg = '--exclude ' + [...excludeList, '.git', '.AppleDouble'].map(i => `\\*${i}\\*`).join(' ');
   await execa.shell(`cd .dawson-dist && zip -r ${tempZipFile} . ${excludeArg}`, {
     cwd: PROJECT_ROOT,
@@ -105,6 +104,7 @@ export default function taskCreateBundle ({
   noUpload = false,
   onlyCompile = false
 }, result) {
+  const { PROJECT_ROOT, API_DEFINITIONS, SETTINGS } = loadConfig();
   return new Listr([
     {
       title: 'configuring',
@@ -115,7 +115,8 @@ export default function taskCreateBundle ({
           uuid: `${appStageName}-bundle`,
           stackName,
           noUpload,
-          onlyCompile
+          onlyCompile,
+          ignore: SETTINGS.ignore
         });
       }
     },
@@ -149,7 +150,7 @@ export default function taskCreateBundle ({
       skip: ctx => ctx.noUpload || ctx.onlyCompile,
       task: async (ctx) => {
         const { tempZipFile, excludeList } = ctx;
-        const { tempZipFileSize } = await zipRoot({ tempZipFile, excludeList });
+        const { tempZipFileSize } = await zipRoot({ tempZipFile, excludeList, PROJECT_ROOT });
         Object.assign(ctx, { tempZipFileSize });
       }
     },

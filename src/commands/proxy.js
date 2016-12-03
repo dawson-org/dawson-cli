@@ -35,8 +35,8 @@ const iam = new AWS.IAM({});
 const credentialsCache = new WeakMap();
 
 import { log, debug, warning, error, success } from '../logger';
-import { SETTINGS, API_DEFINITIONS, APP_NAME } from '../config';
 import { compare } from '../libs/pathmatch';
+import loadConfig from '../config';
 
 import {
   getStackOutputs,
@@ -48,7 +48,7 @@ import {
   templateLambdaRoleName
 } from '../factories/cf_lambda';
 
-function findApi ({ method, pathname }) {
+function findApi ({ method, pathname, API_DEFINITIONS }) {
   let found = null;
   Object.keys(API_DEFINITIONS).forEach(name => {
     if (found) return;
@@ -84,13 +84,21 @@ function getContentType (fn) {
   return fn.api.responseContentType || 'text/html';
 }
 
-async function processAPIRequest (req, res, { body, outputs, resources, pathname, querystring }) {
+async function processAPIRequest (req, res, {
+  body,
+  outputs,
+  resources,
+  pathname,
+  querystring,
+  API_DEFINITIONS,
+  PROJECT_ROOT
+}) {
   const stageVariables = {};
   outputs.forEach(output => {
     stageVariables[output.OutputKey] = output.OutputValue;
   });
   try {
-    var runner = findApi({ method: req.method, pathname });
+    var runner = findApi({ method: req.method, pathname, API_DEFINITIONS });
   } catch (e) {
     if (e.message.match(/API not found at path/)) {
       const message = `API not found at path '${req.url}'`;
@@ -193,7 +201,7 @@ async function processAPIRequest (req, res, { body, outputs, resources, pathname
       log(`\n============= Log Fragment Begin =============`.dim);
       const invokeResult = dockerLambda({
         event,
-        taskDir: `${process.cwd()}/.dawson-dist`,
+        taskDir: `${PROJECT_ROOT}/.dawson-dist`,
         handler: `daniloindex.${runner.name}`,
         dockerArgs: []
           .concat(['-m', '512M'])
@@ -305,7 +313,7 @@ function runAuthorizer ({ authorizer, event, stageVariables, req, res, successCa
   });
 }
 
-function requestForAPI (req) {
+function requestForAPI (req, SETTINGS) {
   if (SETTINGS.cloudfrontRootOrigin === 'assets') {
     return req.url.startsWith('/prod');
   } else {
@@ -313,7 +321,7 @@ function requestForAPI (req) {
   }
 }
 
-function parseAPIUrl (req) {
+function parseAPIUrl (req, SETTINGS) {
   let urlString;
   if (SETTINGS.cloudfrontRootOrigin === 'assets') {
     urlString = req.url.replace('/prod', '');
@@ -324,7 +332,7 @@ function parseAPIUrl (req) {
   return url;
 }
 
-function parseAssetsUrlString (req) {
+function parseAssetsUrlString (req, SETTINGS) {
   let urlString;
   if (SETTINGS.cloudfrontRootOrigin !== 'assets') {
     urlString = req.url.replace('/assets', '');
@@ -358,6 +366,7 @@ function createBundle ({ stage, stackName, onlyCompile = false }) {
 }
 
 export function run (argv) {
+  const { SETTINGS, API_DEFINITIONS, APP_NAME, PROJECT_ROOT } = loadConfig();
   const {
     stage,
     port,
@@ -385,8 +394,8 @@ export function run (argv) {
       return;
     }
 
-    if (requestForAPI(req)) {
-      const url = parseAPIUrl(req);
+    if (requestForAPI(req, SETTINGS)) {
+      const url = parseAPIUrl(req, SETTINGS);
       const pathname = url.pathname;
       const querystring = qs.parse(url.query);
       let rawBody = new Buffer('');
@@ -397,7 +406,9 @@ export function run (argv) {
           querystring,
           body: jsonBody,
           outputs,
-          resources
+          resources,
+          API_DEFINITIONS,
+          PROJECT_ROOT
         });
       };
       if (req.method === 'GET' || req.method === 'OPTIONS' || req.method === 'HEAD') {
@@ -421,14 +432,14 @@ export function run (argv) {
       req.resume();
     } else {
       if (assetsPath) {
-        const path = parseAssetsUrlString(req);
+        const path = parseAssetsUrlString(req, SETTINGS);
         send(req, path, {
           cacheControl: false,
-          root: pathModule.join(process.cwd(), assetsPath)
+          root: pathModule.join(PROJECT_ROOT, assetsPath)
         })
         .on('error', error => {
           res.writeHead(error.status || 500);
-          const message = `Resource not found (root: ${pathModule.join(process.cwd(), assetsPath)}) at path '${path}'`;
+          const message = `Resource not found (root: ${pathModule.join(PROJECT_ROOT, assetsPath)}) at path '${path}'`;
           warning(message);
           res.write(message);
           res.end();
@@ -440,9 +451,9 @@ export function run (argv) {
             target: assetsProxy
           });
         } else {
-          warning(stripIndent`
+          warning('\n', oneLine`
             Proxy doesn't know how to handle request for '${req.url}',
-            because your did not provide ---proxy-assets-url nor --assets-path
+            because your did not provide --assets-url nor --assets-path
           `);
           res.writeHead(500);
           res.end();
@@ -537,9 +548,9 @@ export function run (argv) {
     //  ⤷ /prod ⇒ <api>
     //  ⤷ /assets ⇒ <ASSETS LOCATION>
 
-    const rootIsAPI = requestForAPI({ url: '/' });
+    const rootIsAPI = requestForAPI({ url: '/' }, SETTINGS);
     let assetsLocation = '(assets location not configured)';
-    if (assetsPath) { assetsLocation = `${process.cwd()}/assets/`; }
+    if (assetsPath) { assetsLocation = `${PROJECT_ROOT}/assets/`; }
     if (assetsProxy) { assetsLocation = `${assetsProxy}`; }
     log('\n', indent(stripIndent`
       / ⇒ ${rootIsAPI ? '<api>' : `${assetsLocation}`}
@@ -549,7 +560,7 @@ export function run (argv) {
     `, 3));
     log('');
 
-    setupWatcher({ stage, stackName });
+    setupWatcher({ stage, stackName, ignore: SETTINGS.ignore, PROJECT_ROOT });
   })
   .catch(err => {
     if (err.isDawsonError) {
@@ -566,9 +577,9 @@ export function run (argv) {
   });
 }
 
-function setupWatcher ({ stage, stackName }) {
+function setupWatcher ({ stage, stackName, ignore = [], PROJECT_ROOT }) {
   log(indent(stripIndent`
-    Reload: watching ${process.cwd()}/** for changes.
+    Reload: watching ${PROJECT_ROOT}/** for changes.
             The proxy will auto reload on file changes.
             You must manually restart the proxy when
               * adding or updating npm dependencies
@@ -581,7 +592,7 @@ function setupWatcher ({ stage, stackName }) {
   let bundleInProgress = false;
   const onWatch = (fileName) => {
     const ignoreList = [
-      ...SETTINGS.ignore || [],
+      ...ignore,
       '**/node_modules',
       '.dawson-dist/**',
       '**/~*',
@@ -592,7 +603,7 @@ function setupWatcher ({ stage, stackName }) {
       return;
     }
 
-    if (!ignoreList.every(pattern => !minimatch(fileName, `${process.cwd()}/${pattern}`))) {
+    if (!ignoreList.every(pattern => !minimatch(fileName, `${PROJECT_ROOT}/${pattern}`))) {
       log(`   Reload: [ignored] ${fileName}`.dim);
       return;
     }
@@ -609,6 +620,6 @@ function setupWatcher ({ stage, stackName }) {
       throw err;
     });
   };
-  const watchEE = watch(process.cwd(), { recursive: true });
+  const watchEE = watch(PROJECT_ROOT, { recursive: true });
   watchEE.on('change', throttle(onWatch, 500, { 'options.trailing': true }));
 }
