@@ -8,6 +8,7 @@ function getWrappingCode (apis, name) {
   const hasEndpoint = apiConfig.path !== false;
   const body = stripIndent`
     module.exports.${name} = function (event, context, callback) {
+      context.dawsonDescribeOutputs = dawsonDescribeOutputs;
       const runner = require('./api').${name};
       Promise.resolve()
       .then(function () {
@@ -62,7 +63,7 @@ function prepareIndexFile (apis, stackName) {
     const stackName = '${stackName}';
     var stackOutputs = null;
 
-    function describeOutputs() {
+    function dawsonDescribeOutputs() {
       if (!stackOutputs) {
         const AWS = require('aws-sdk');
         const cloudformation = new AWS.CloudFormation({});
