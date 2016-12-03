@@ -369,11 +369,11 @@ export function run (argv) {
   const { SETTINGS, API_DEFINITIONS, APP_NAME, PROJECT_ROOT } = loadConfig();
   const {
     stage,
-    port,
     assetsProxy,
     assetsPath,
     verbose
   } = argv;
+  const port = argv.port || process.env.PORT || 3000;
 
   const stackName = templateStackName({ appName: APP_NAME, stage });
 
