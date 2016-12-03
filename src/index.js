@@ -77,9 +77,12 @@ const argv = yargs
       .describe('stage', 'Application stage to work on')
       .default('stage', DAWSON_STAGE)
       .alias('s')
-      .describe('output-name', 'You can request a single value. Specify the corresponding OutputName. The output of this command is pipeable, for using in bash scripts etc.')
+      .describe('output-name', 'Displays the Value of the specified Output')
       .alias('o')
-      .describe('shell', 'Outputs bash-compatible variable declarations')
+      .describe('resource-id', 'Displays the PhysicalResourceId give its LogicalResourceId')
+      .alias('resource-id', 'logical-resource-id')
+      .alias('resource-id', 'r')
+      .describe('shell', 'Bash-compatible output')
       .alias('s')
       .default('shell', false)
       .describe('verbose', 'Verbose output')
@@ -139,7 +142,7 @@ if (!argv.help && !argv.version) {
 
   const { PKG_JSON } = loadConfig();
 
-  if (!argv.shell && !argv['output-name']) {
+  if (!argv.shell && !argv['output-name'] && !argv['resource-id']) {
     process.stdout.write('\x1B[2J\x1B[0f');
     log('');
     log('   dawson'.bold.blue, 'v' + pkg.version);
