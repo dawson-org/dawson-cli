@@ -1,8 +1,6 @@
 
 import { stripIndent } from 'common-tags';
 
-import { error } from '../logger';
-
 function getWrappingCode (apis, name) {
   const apiConfig = apis[name].api || {};
   const hasEndpoint = apiConfig.path !== false;
@@ -53,9 +51,8 @@ function getWrappingCode (apis, name) {
   return body;
 }
 
-function prepareIndexFile (apis, stackName) {
+export default function createIndex (apis, stackName) {
   const exportedFunctions = Object.keys(apis).map(name => getWrappingCode(apis, name));
-
   return stripIndent`
     require('babel-polyfill');
 
@@ -91,14 +88,3 @@ function prepareIndexFile (apis, stackName) {
     ${exportedFunctions.join('\n\n')}
   `;
 }
-
-export default function compileCode (apis, stackName) {
-  try {
-    const str = prepareIndexFile(apis, stackName);
-    return Promise.resolve(str);
-  } catch (err) {
-    error('Compiler error', err);
-    return Promise.reject(err);
-  }
-}
-
