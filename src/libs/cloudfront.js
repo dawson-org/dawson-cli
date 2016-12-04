@@ -9,7 +9,6 @@ import { oneLineTrim, stripIndent } from 'common-tags';
 import createError from '../libs/error';
 import { AWS_REGION } from '../config';
 import { debug, error } from '../logger';
-import { stackUpload } from '../libs/stackUpload';
 
 const cloudformation = new AWS.CloudFormation({ apiVersion: '2010-05-15' });
 
@@ -53,6 +52,23 @@ export function templateStackName ({ appName, stage }) {
     ? (stage[0].toUpperCase() + stage.substring(1))
     : '';
   return `${appName}${stageUCFirst}`;
+}
+
+function stackUpload ({ bucketName, stackBody }) {
+  const s3 = new AWS.S3({});
+  const key = 'dawson-root-template-' + Date.now() + '-' + Math.floor(Math.random() * 1000) + '.template';
+  const s3Params = {
+    Bucket: bucketName,
+    Key: key,
+    Body: new Buffer(stackBody, 'utf-8')
+  };
+  return s3.putObject(s3Params).promise()
+  .then(data => {
+    const s3Subdomain = (AWS_REGION === 'us-east-1') ? 's3' : `s3-${AWS_REGION}`;
+    const url = `https://${s3Subdomain}.amazonaws.com/${bucketName}/${key}`;
+    debug('Template URL', url);
+    return url;
+  });
 }
 
 function checkStackExists ({ stackName }) {
