@@ -9,11 +9,10 @@ import chalk from 'chalk';
 import { debug, error } from '../logger';
 import createError from '../libs/error';
 
-import {
-  stackUpload
-} from '../libs/stackUpload';
+import { stackUpload } from '../libs/stackUpload';
 
-export const AWS_REGION = AWS.config.region;
+import { AWS_REGION } from '../config';
+
 const cloudformation = new AWS.CloudFormation({ apiVersion: '2010-05-15' });
 
 const SAFE_STACK_POLICY = {
