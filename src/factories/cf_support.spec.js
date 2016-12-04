@@ -1,11 +1,11 @@
 
 import test from 'tape';
 
-import { templateSupportBucket } from './cf_support';
+import { templateSupportBucketName } from './cf_support';
 
-test('templateSupportBucket', t => {
+test('templateSupportBucketName', t => {
   const expected = 'BucketSupport';
-  const actual = templateSupportBucket();
+  const actual = templateSupportBucketName();
   t.equal(actual, expected, 'should BucketSupport');
   t.end();
 });
