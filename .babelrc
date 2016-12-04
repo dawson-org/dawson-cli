@@ -1,10 +1,8 @@
 {
   "plugins": [
-    "transform-object-rest-spread",
-    "transform-runtime"
+    "transform-object-rest-spread"
   ],
   "presets": [
-    "es2017",
-    "es2015"
+    ["env", { "targets": { "node": 6 } }]
   ]
 }

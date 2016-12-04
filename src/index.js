@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import 'babel-polyfill';
 import 'hard-rejection/register';
 import 'source-map-support/register';
 
