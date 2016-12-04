@@ -2770,6 +2770,10 @@ path-type@^1.0.0:
     pify "^2.0.0"
     pinkie-promise "^2.0.0"
 
+pathmatch@^0.0.1:
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/pathmatch/-/pathmatch-0.0.1.tgz#7e54c22fb8148f54ce026151f45ebc1f5c2e5d40"
+
 pify@^2.0.0:
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/pify/-/pify-2.3.0.tgz#ed141a6ac043a849ea588498e7dca8b15330e90c"

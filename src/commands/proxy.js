@@ -22,6 +22,7 @@ import indent from 'indent-string';
 import Listr from 'listr';
 import verboseRenderer from 'listr-verbose-renderer';
 import chalk from 'chalk';
+import { compare } from 'pathmatch';
 
 import createError from '../libs/error';
 import dockerLambda from 'docker-lambda';
@@ -35,7 +36,6 @@ const iam = new AWS.IAM({});
 const credentialsCache = new WeakMap();
 
 import { log, debug, warning, error, success } from '../logger';
-import { compare } from '../libs/pathmatch';
 import loadConfig from '../config';
 
 import {
