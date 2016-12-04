@@ -6,7 +6,7 @@ import Listr from 'listr';
 import verboseRenderer from 'listr-verbose-renderer';
 import chalk from 'chalk';
 
-import loadConfig, { RESERVED_FUCTION_NAMES } from '../config';
+import loadConfig, { RESERVED_FUCTION_NAMES, AWS_REGION } from '../config';
 
 import { debug, danger, warning, success } from '../logger';
 import taskCreateBundle from '../libs/createBundle';
@@ -18,9 +18,8 @@ import {
   removeStackPolicy,
   createOrUpdateStack,
   observerForUpdateCompleted,
-  getStackOutputs,
-  AWS_REGION
-} from '../factories/cf_utils';
+  getStackOutputs
+} from '../libs/cloudfront';
 
 import {
   createSupportResources

@@ -18,7 +18,7 @@ import {
 import {
   getStackResources,
   templateStackName
-} from '../factories/cf_utils';
+} from '../libs/cloudfront';
 
 const stripNewLines = str => str.replace(/\n$/, ' ');
 

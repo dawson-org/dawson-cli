@@ -29,20 +29,19 @@ import dockerLambda from 'docker-lambda';
 import taskCreateBundle from '../libs/createBundle';
 
 import AWS from 'aws-sdk';
-const AWS_REGION = AWS.config.region;
 const sts = new AWS.STS({});
 const iam = new AWS.IAM({});
 
 const credentialsCache = new WeakMap();
 
 import { log, debug, warning, error, success } from '../logger';
-import loadConfig from '../config';
+import loadConfig, { AWS_REGION } from '../config';
 
 import {
   getStackOutputs,
   getStackResources,
   templateStackName
-} from '../factories/cf_utils';
+} from '../libs/cloudfront';
 
 import {
   templateLambdaRoleName

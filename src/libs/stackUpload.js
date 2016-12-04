@@ -1,10 +1,7 @@
 
 import AWS from 'aws-sdk';
 
-import {
-  AWS_REGION
-} from '../factories/cf_utils';
-
+import { AWS_REGION } from '../config';
 import { debug } from '../logger';
 
 export function stackUpload ({ bucketName, stackBody }) {

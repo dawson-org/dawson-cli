@@ -7,7 +7,7 @@ import {
   buildStack,
   createOrUpdateStack,
   waitForUpdateCompleted
-} from './cf_utils';
+} from '../libs/cloudfront';
 
 export function templateSupportBucket () {
   return `BucketSupport`;

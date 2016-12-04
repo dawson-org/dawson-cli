@@ -9,7 +9,7 @@ import {
   getStackOutputs,
   getStackResources,
   templateStackName
-} from '../factories/cf_utils';
+} from '../libs/cloudfront';
 
 export function run (argv) {
   const { APP_NAME } = loadConfig();

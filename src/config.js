@@ -7,9 +7,11 @@ import { inspect } from 'util';
 import { stripIndent } from 'common-tags';
 import execa from 'execa';
 import Type from 'prop-types';
+import AWS from 'aws-sdk';
 
 import createError from './libs/error';
 
+export const AWS_REGION = AWS.config.region;
 export const RESERVED_FUCTION_NAMES = ['processCFTemplate'];
 
 const FUNCTION_CONFIGURATION_PROPERTIES = [
