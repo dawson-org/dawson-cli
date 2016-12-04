@@ -2,8 +2,8 @@
 import test from 'tape';
 
 import {
-  templateCloudfrontDistributionName,
-  templateCloudfrontDistribution
+  templateCloudfrontDistribution,
+  templateCloudfrontDistributionName
 } from './cf_cloudfront';
 
 test('templateCloudfrontDistributionName', t => {

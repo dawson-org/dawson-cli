@@ -1,17 +1,15 @@
 
-import { oneLineTrim, stripIndent } from 'common-tags';
-import Observable from 'zen-observable';
 import AWS from 'aws-sdk';
-import Table from 'cli-table';
-import moment from 'moment';
 import chalk from 'chalk';
+import moment from 'moment';
+import Observable from 'zen-observable';
+import Table from 'cli-table';
+import { oneLineTrim, stripIndent } from 'common-tags';
 
-import { debug, error } from '../logger';
 import createError from '../libs/error';
-
-import { stackUpload } from '../libs/stackUpload';
-
 import { AWS_REGION } from '../config';
+import { debug, error } from '../logger';
+import { stackUpload } from '../libs/stackUpload';
 
 const cloudformation = new AWS.CloudFormation({ apiVersion: '2010-05-15' });
 

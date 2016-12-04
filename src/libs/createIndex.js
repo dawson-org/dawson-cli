@@ -53,7 +53,6 @@ function getWrappingCode (apis, name) {
   return body;
 }
 
-
 function prepareIndexFile (apis, stackName) {
   const exportedFunctions = Object.keys(apis).map(name => getWrappingCode(apis, name));
 

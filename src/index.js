@@ -1,30 +1,27 @@
 #!/usr/bin/env node
 
-import 'source-map-support/register';
 import 'hard-rejection/register';
+import 'source-map-support/register';
 
-import yargs from 'yargs';
 import AWS from 'aws-sdk';
-
 import updateNotifier from 'update-notifier';
-import pkg from '../package.json';
-import loadConfig from './config';
+import yargs from 'yargs';
 
+import loadConfig from './config';
+import pkg from '../package.json';
+import { enableDebug, error, log } from './logger';
+import { run as deployRun } from './commands/deploy';
+import { run as describeRun } from './commands/describe';
+import { run as logRun } from './commands/log';
+import { run as proxyRun } from './commands/proxy';
+
+const DAWSON_STAGE = process.env.DAWSON_STAGE || 'default';
+const later = fn => (...args) => process.nextTick(() => fn(...args));
 const notifier = updateNotifier({
   pkg,
   updateCheckInterval: 1000 * 60 * 60 * 24
 });
 notifier.notify();
-
-import { enableDebug, log, error } from './logger';
-import { run as deployRun } from './commands/deploy';
-import { run as logRun } from './commands/log';
-import { run as describeRun } from './commands/describe';
-import { run as proxyRun } from './commands/proxy';
-
-const later = fn => (...args) => process.nextTick(() => fn(...args));
-
-const DAWSON_STAGE = process.env.DAWSON_STAGE || 'default';
 
 const argv = yargs
   .usage('$0 <command> [command-options]')

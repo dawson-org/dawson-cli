@@ -1,9 +1,7 @@
 
 import test from 'tape';
 
-import {
-  templateSupportBucket
-} from './cf_support';
+import { templateSupportBucket } from './cf_support';
 
 test('templateSupportBucket', t => {
   const expected = 'BucketSupport';

@@ -3,22 +3,22 @@ import test from 'tape';
 
 import {
   templateAPIID,
-  templateResourceName,
-  templateMethodName,
-  templateStageName,
-  templateDeploymentName,
-  templateModelName,
-  templateRest,
-  templateResourceHelper,
-  templateResource,
-  templateModel,
-  templateLambdaIntegration,
-  templateMethod,
-  templateDeployment,
-  templateStage,
   templateAccount,
   templateCloudWatchRole,
-  templateCloudWatchRoleName
+  templateCloudWatchRoleName,
+  templateDeployment,
+  templateDeploymentName,
+  templateLambdaIntegration,
+  templateMethod,
+  templateMethodName,
+  templateModel,
+  templateModelName,
+  templateResource,
+  templateResourceHelper,
+  templateResourceName,
+  templateRest,
+  templateStage,
+  templateStageName
 } from './cf_apig';
 
 test('templateAPIID', t => {

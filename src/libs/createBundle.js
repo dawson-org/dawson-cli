@@ -1,14 +1,14 @@
 
-import promisify from 'es6-promisify';
 import AWS from 'aws-sdk';
-import fs from 'fs';
-import temp from 'temp';
-import execa from 'execa';
 import del from 'del';
+import execa from 'execa';
+import fs from 'fs';
 import Listr from 'listr';
+import promisify from 'es6-promisify';
+import temp from 'temp';
 
-import loadConfig from '../config';
 import createIndex from './createIndex';
+import loadConfig from '../config';
 
 const s3 = new AWS.S3({});
 const putObject = promisify(s3.putObject.bind(s3));

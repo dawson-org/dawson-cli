@@ -7,45 +7,39 @@
 // This feature is preview-quality
 //
 
-import qs from 'querystring';
-import { createProxyServer } from 'http-proxy';
-import send from 'send';
-import { createServer } from 'http';
-import { parse } from 'url';
-import pathModule from 'path';
-import util from 'util';
-import watch from 'node-watch';
-import { oneLine, stripIndent } from 'common-tags';
-import minimatch from 'minimatch';
-import { throttle } from 'lodash';
+import AWS from 'aws-sdk';
+import chalk from 'chalk';
+import dockerLambda from 'docker-lambda';
 import indent from 'indent-string';
 import Listr from 'listr';
+import minimatch from 'minimatch';
+import pathModule from 'path';
+import qs from 'querystring';
+import send from 'send';
+import util from 'util';
 import verboseRenderer from 'listr-verbose-renderer';
-import chalk from 'chalk';
+import watch from 'node-watch';
 import { compare } from 'pathmatch';
+import { createProxyServer } from 'http-proxy';
+import { createServer } from 'http';
+import { oneLine, stripIndent } from 'common-tags';
+import { parse } from 'url';
+import { throttle } from 'lodash';
 
 import createError from '../libs/error';
-import dockerLambda from 'docker-lambda';
-import taskCreateBundle from '../libs/createBundle';
-
-import AWS from 'aws-sdk';
-const sts = new AWS.STS({});
-const iam = new AWS.IAM({});
-
-const credentialsCache = new WeakMap();
-
-import { log, debug, warning, error, success } from '../logger';
 import loadConfig, { AWS_REGION } from '../config';
-
+import taskCreateBundle from '../libs/createBundle';
+import { debug, error, log, success, warning } from '../logger';
 import {
   getStackOutputs,
   getStackResources,
   templateStackName
 } from '../libs/cloudfront';
+import { templateLambdaRoleName } from '../factories/cf_lambda';
 
-import {
-  templateLambdaRoleName
-} from '../factories/cf_lambda';
+const sts = new AWS.STS({});
+const iam = new AWS.IAM({});
+const credentialsCache = new WeakMap();
 
 function findApi ({ method, pathname, API_DEFINITIONS }) {
   let found = null;

@@ -8,7 +8,7 @@ import promisify from 'es6-promisify';
 const cwlogs = new AWS.CloudWatchLogs({});
 const filterLogEvents = promisify(cwlogs.filterLogEvents.bind(cwlogs));
 
-import { title, error, log } from '../logger';
+import { error, log, title } from '../logger';
 import loadConfig from '../config';
 
 import {

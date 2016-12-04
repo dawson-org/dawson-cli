@@ -3,11 +3,11 @@
 // by `require(PROJECT_ROOT + '/api');`
 require('babel-register');
 
-import { inspect } from 'util';
-import { stripIndent } from 'common-tags';
+import AWS from 'aws-sdk';
 import execa from 'execa';
 import Type from 'prop-types';
-import AWS from 'aws-sdk';
+import { inspect } from 'util';
+import { stripIndent } from 'common-tags';
 
 import createError from './libs/error';
 
@@ -82,7 +82,6 @@ const FUNCTION_CONFIGURATION_SCHEMA = {
     }
   })
 };
-
 
 let requiredPkgJson;
 let requiredApi;

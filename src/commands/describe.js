@@ -1,10 +1,9 @@
 
-import { sortBy } from 'lodash';
 import Table from 'cli-table';
+import { sortBy } from 'lodash';
 
-import { error, log, title } from '../logger';
 import loadConfig from '../config';
-
+import { error, log, title } from '../logger';
 import {
   getStackOutputs,
   getStackResources,

@@ -2,8 +2,8 @@
 import test from 'tape';
 
 import {
-  templateAssetsBucketName,
-  templateAssetsBucket
+  templateAssetsBucket,
+  templateAssetsBucketName
 } from './cf_s3';
 
 test('templateAssetsBucketName', t => {

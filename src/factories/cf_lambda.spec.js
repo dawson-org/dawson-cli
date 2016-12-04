@@ -2,10 +2,10 @@
 import test from 'tape';
 
 import {
-  templateLambdaRoleName,
-  templateLambdaName,
+  templateLambda,
   templateLambdaExecutionRole,
-  templateLambda
+  templateLambdaName,
+  templateLambdaRoleName
 } from './cf_lambda';
 
 test('templateLambdaRoleName', t => {

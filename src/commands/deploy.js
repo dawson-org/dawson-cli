@@ -1,59 +1,45 @@
 
-import { stripIndent, oneLine } from 'common-tags';
 import AWS from 'aws-sdk';
+import chalk from 'chalk';
 import execa from 'execa';
 import Listr from 'listr';
 import verboseRenderer from 'listr-verbose-renderer';
-import chalk from 'chalk';
+import { stripIndent, oneLine } from 'common-tags';
 
 import loadConfig, { RESERVED_FUCTION_NAMES, AWS_REGION } from '../config';
-
-import { debug, danger, warning, success } from '../logger';
 import taskCreateBundle from '../libs/createBundle';
-
+import { createSupportResources } from '../factories/cf_support';
+import { debug, danger, warning, success } from '../logger';
+import { templateLambda } from '../factories/cf_lambda';
+import { templateRoute53 } from '../factories/cf_route53';
 import {
-  templateStackName,
   buildStack,
-  restoreStackPolicy,
-  removeStackPolicy,
   createOrUpdateStack,
+  getStackOutputs,
   observerForUpdateCompleted,
-  getStackOutputs
+  removeStackPolicy,
+  restoreStackPolicy,
+  templateStackName
 } from '../libs/cloudfront';
-
 import {
-  createSupportResources
-} from '../factories/cf_support';
-
-import {
-  templateRest,
-  templateResourceHelper,
-  templateMethod,
+  templateAccount,
+  templateAPIID,
+  templateCloudWatchRole,
   templateDeployment,
   templateDeploymentName,
-  templateStage,
-  templateAPIID,
-  templateAccount,
-  templateCloudWatchRole
+  templateMethod,
+  templateResourceHelper,
+  templateRest,
+  templateStage
 } from '../factories/cf_apig';
-
-import {
-  templateLambda
-} from '../factories/cf_lambda';
-
-import {
-  templateAssetsBucket,
-  templateAssetsBucketName
-} from '../factories/cf_s3';
-
 import {
   templateCloudfrontDistribution,
   templateCloudfrontDistributionName
 } from '../factories/cf_cloudfront';
-
 import {
-  templateRoute53
-} from '../factories/cf_route53';
+  templateAssetsBucket,
+  templateAssetsBucketName
+} from '../factories/cf_s3';
 
 async function taskUpdateSupportStack ({ appStage, supportStackName, cloudfrontConfigMap }) {
   await createSupportResources({ stackName: supportStackName, cloudfrontConfigMap });
