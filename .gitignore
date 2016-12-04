@@ -5,3 +5,4 @@ npm-debug.log*
 .AppleDouble
 .DS_Store
 dist
+.nyc_output

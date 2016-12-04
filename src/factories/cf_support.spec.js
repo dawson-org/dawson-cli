@@ -1,7 +1,11 @@
+/* eslint no-unused-vars: 0 */
 
-import test from 'tape';
+import { test } from 'tap';
 
-import { templateSupportBucketName } from './cf_support';
+import {
+  templateSupportBucketName,
+  templateSupportStack
+} from './cf_support';
 
 test('templateSupportBucketName', t => {
   const expected = 'BucketSupport';

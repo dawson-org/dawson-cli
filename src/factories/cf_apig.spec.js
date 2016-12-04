@@ -1,5 +1,5 @@
 
-import test from 'tape';
+import { test } from 'tap';
 
 import {
   templateAPIID,
@@ -8,8 +8,8 @@ import {
   templateCloudWatchRoleName,
   templateDeployment,
   templateDeploymentName,
-  templateLambdaIntegration,
-  templateMethod,
+  // templateLambdaIntegration,
+  // templateMethod,
   templateMethodName,
   templateModel,
   templateModelName,
@@ -167,17 +167,19 @@ test('templateModel', t => {
   t.end();
 });
 
-test.skip('templateLambdaIntegration', t => {
-  const expected = '';
-  const actual = templateLambdaIntegration();
-  t.deepEqual(actual, expected, 'should return');
+test('templateLambdaIntegration', t => {
+  // const expected = '';
+  // const actual = templateLambdaIntegration();
+  // t.deepEqual(actual, expected, 'should return');
+  // @TODO
   t.end();
 });
 
-test.skip('templateMethod', t => {
-  const expected = '';
-  const actual = templateMethod();
-  t.deepEqual(actual, expected, 'should return');
+test('templateMethod', t => {
+  // const expected = '';
+  // const actual = templateMethod();
+  // t.deepEqual(actual, expected, 'should return');
+  // @TODO
   t.end();
 });
 
