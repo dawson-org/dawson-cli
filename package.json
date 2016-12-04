@@ -3,11 +3,11 @@
   "version": "0.6.4",
   "description": "Serverless Web Framework for AWS Lambda and API Gateway",
   "repository": "https://github.com/lusentis/dawson",
-  "main": "lib/index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "compile": "babel -s true --source-maps inline -d lib/ src/ --ignore *.AppleDouble*",
+    "compile": "babel -s true --source-maps inline -d dist/ src/ --ignore *.AppleDouble*",
     "dev": "npm run compile:watch",
-    "clean": "rm -rf lib",
+    "clean": "rm -rf dist/",
     "prepublish": "npm run clean && npm run compile",
     "test": "npm run compile && npm run lint && npm run tape",
     "lint": "semistandard --fix | snazzy",
@@ -58,7 +58,7 @@
     "yargs": "^6.0.0",
     "zen-observable": "^0.3.0"
   },
-  "bin": "lib/index.js",
+  "bin": "dist/index.js",
   "devDependencies": {
     "babel-cli": "^6.14.0",
     "babel-eslint": "^7.0.0",
