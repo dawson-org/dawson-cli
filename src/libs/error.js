@@ -1,7 +1,7 @@
 
-import { oneLine, stripIndent } from 'common-tags';
-import indent from 'indent-string';
 import chalk from 'chalk';
+import indent from 'indent-string';
+import { oneLine, stripIndent } from 'common-tags';
 
 export default function createError ({
   kind = '',

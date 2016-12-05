@@ -1,24 +1,24 @@
 
-import test from 'tape';
+import { test } from 'tap';
 
 import {
   templateAPIID,
-  templateResourceName,
-  templateMethodName,
-  templateStageName,
-  templateDeploymentName,
-  templateModelName,
-  templateRest,
-  templateResourceHelper,
-  templateResource,
-  templateModel,
-  templateLambdaIntegration,
-  templateMethod,
-  templateDeployment,
-  templateStage,
   templateAccount,
   templateCloudWatchRole,
-  templateCloudWatchRoleName
+  templateCloudWatchRoleName,
+  templateDeployment,
+  templateDeploymentName,
+  // templateLambdaIntegration,
+  // templateMethod,
+  templateMethodName,
+  templateModel,
+  templateModelName,
+  templateResource,
+  templateResourceHelper,
+  templateResourceName,
+  templateRest,
+  templateStage,
+  templateStageName
 } from './cf_apig';
 
 test('templateAPIID', t => {
@@ -167,17 +167,19 @@ test('templateModel', t => {
   t.end();
 });
 
-test.skip('templateLambdaIntegration', t => {
-  const expected = '';
-  const actual = templateLambdaIntegration();
-  t.deepEqual(actual, expected, 'should return');
+test('templateLambdaIntegration', t => {
+  // const expected = '';
+  // const actual = templateLambdaIntegration();
+  // t.deepEqual(actual, expected, 'should return');
+  // @TODO
   t.end();
 });
 
-test.skip('templateMethod', t => {
-  const expected = '';
-  const actual = templateMethod();
-  t.deepEqual(actual, expected, 'should return');
+test('templateMethod', t => {
+  // const expected = '';
+  // const actual = templateMethod();
+  // t.deepEqual(actual, expected, 'should return');
+  // @TODO
   t.end();
 });
 

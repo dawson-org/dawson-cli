@@ -1,15 +1,14 @@
 
-import { sortBy } from 'lodash';
 import Table from 'cli-table';
+import { sortBy } from 'lodash';
 
-import { error, log, title } from '../logger';
 import loadConfig from '../config';
-
+import { error, log, title } from '../logger';
 import {
   getStackOutputs,
   getStackResources,
   templateStackName
-} from '../factories/cf_utils';
+} from '../libs/cloudfront';
 
 export function run (argv) {
   const { APP_NAME } = loadConfig();

@@ -1,18 +1,16 @@
 
-import promisify from 'es6-promisify';
 import AWS from 'aws-sdk';
-import fs from 'fs';
-import temp from 'temp';
-import execa from 'execa';
 import del from 'del';
+import execa from 'execa';
+import fs from 'fs';
 import Listr from 'listr';
+import promisify from 'es6-promisify';
+import temp from 'temp';
 
-import loadConfig from '../config';
 import createIndex from './createIndex';
+import loadConfig from '../config';
 
 const s3 = new AWS.S3({});
-const putObject = promisify(s3.putObject.bind(s3));
-const listObjectVersions = promisify(s3.listObjectVersions.bind(s3));
 const writeFile = promisify(fs.writeFile.bind(fs));
 const stat = promisify(fs.stat.bind(fs));
 
@@ -67,10 +65,10 @@ async function zipRoot ({ tempZipFile, excludeList, PROJECT_ROOT }) {
 }
 
 export async function listZipVersions ({ bucketName }) {
-  const response = await listObjectVersions({
+  const response = await s3.listObjectVersions({
     Bucket: bucketName,
     Prefix: S3_ZIP_PREFIX
-  });
+  }).promise();
   return response.Versions;
 }
 
@@ -87,7 +85,7 @@ async function uploadS3 ({
     Body: fs.createReadStream(tempZipFile)
     // you must add VersionId here, when fullfilling promises
   };
-  const data = await putObject(s3Params);
+  const data = await s3.putObject(s3Params).promise();
   const zipS3Location = {
     Bucket: s3Params.Bucket,
     Key: s3Params.Key,

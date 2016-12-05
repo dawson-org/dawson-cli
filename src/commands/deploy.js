@@ -1,64 +1,64 @@
 
-import { stripIndent, oneLine } from 'common-tags';
 import AWS from 'aws-sdk';
+import chalk from 'chalk';
 import execa from 'execa';
 import Listr from 'listr';
 import verboseRenderer from 'listr-verbose-renderer';
-import chalk from 'chalk';
+import { stripIndent, oneLine } from 'common-tags';
 
-import loadConfig, { RESERVED_FUCTION_NAMES } from '../config';
-
-import { debug, danger, warning, success } from '../logger';
+import loadConfig, { RESERVED_FUCTION_NAMES, AWS_REGION } from '../config';
 import taskCreateBundle from '../libs/createBundle';
-
+import { templateSupportStack } from '../factories/cf_support';
+import { debug, danger, warning, success } from '../logger';
+import { templateLambda } from '../factories/cf_lambda';
+import { templateRoute53 } from '../factories/cf_route53';
 import {
-  templateStackName,
   buildStack,
-  restoreStackPolicy,
-  removeStackPolicy,
   createOrUpdateStack,
-  observerForUpdateCompleted,
   getStackOutputs,
-  AWS_REGION
-} from '../factories/cf_utils';
-
+  observerForUpdateCompleted,
+  waitForUpdateCompleted,
+  removeStackPolicy,
+  restoreStackPolicy,
+  templateStackName
+} from '../libs/cloudfront';
 import {
-  createSupportResources
-} from '../factories/cf_support';
-
-import {
-  templateRest,
-  templateResourceHelper,
-  templateMethod,
+  templateAccount,
+  templateAPIID,
+  templateCloudWatchRole,
   templateDeployment,
   templateDeploymentName,
-  templateStage,
-  templateAPIID,
-  templateAccount,
-  templateCloudWatchRole
+  templateMethod,
+  templateResourceHelper,
+  templateRest,
+  templateStage
 } from '../factories/cf_apig';
-
 import {
-  templateLambda
-} from '../factories/cf_lambda';
-
+  templateCloudfrontDistribution,
+  templateCloudfrontDistributionName
+} from '../factories/cf_cloudfront';
 import {
   templateAssetsBucket,
   templateAssetsBucketName
 } from '../factories/cf_s3';
 
-import {
-  templateCloudfrontDistribution,
-  templateCloudfrontDistributionName
-} from '../factories/cf_cloudfront';
-
-import {
-  templateRoute53
-} from '../factories/cf_route53';
-
-async function taskUpdateSupportStack ({ appStage, supportStackName, cloudfrontConfigMap }) {
-  await createSupportResources({ stackName: supportStackName, cloudfrontConfigMap });
-  const supportOutputs = await getStackOutputs({ stackName: supportStackName });
+async function taskUpdateSupportStack ({ appStage, cloudfrontConfigMap, appName }) {
+  const stackName = templateStackName({ appName: `${appName}Support` });
+  const cfTemplate = templateSupportStack();
+  const cfTemplateJSON = JSON.stringify(cfTemplate, null, 2);
+  const cfParams = await buildStack({
+    stackName,
+    cfTemplateJSON,
+    inline: true // support bucket does not exist ad this time
+  });
+  const response = await createOrUpdateStack({ stackName, cfParams, ignoreNoUpdates: true });
+  if (response === false) {
+    debug(`Support Stack doesn't need any update`);
+  } else {
+    await waitForUpdateCompleted({ stackName });
+    debug(`Support Stack update completed`);
+  }
+  const supportOutputs = await getStackOutputs({ stackName });
   const supportBucketName = supportOutputs.find(o => o.OutputKey === 'SupportBucket').OutputValue;
   return { supportBucketName };
 }
@@ -374,10 +374,10 @@ export async function deploy ({
           stackName: templateStackName({ appName: APP_NAME, stage: appStage }),
           stageName: 'prod',
           appStage,
-          supportStackName: templateStackName({ appName: `${APP_NAME}Support` }),
           cloudfrontRootOrigin: cloudfrontRootOrigin,
           ignore: SETTINGS.ignore,
-          cloudfrontConfigMap: cloudfrontStagesMap
+          cloudfrontConfigMap: cloudfrontStagesMap,
+          appName: APP_NAME
         });
       }
     },

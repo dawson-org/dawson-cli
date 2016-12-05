@@ -1,13 +1,15 @@
+/* eslint no-unused-vars: 0 */
 
-import test from 'tape';
+import { test } from 'tap';
 
 import {
-  templateSupportBucket
+  templateSupportBucketName,
+  templateSupportStack
 } from './cf_support';
 
-test('templateSupportBucket', t => {
+test('templateSupportBucketName', t => {
   const expected = 'BucketSupport';
-  const actual = templateSupportBucket();
+  const actual = templateSupportBucketName();
   t.equal(actual, expected, 'should BucketSupport');
   t.end();
 });

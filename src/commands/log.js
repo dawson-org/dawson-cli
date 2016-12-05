@@ -3,12 +3,10 @@ import AWS from 'aws-sdk';
 import indentString from 'indent-string';
 import moment from 'moment';
 import prettyjson from 'prettyjson';
-import promisify from 'es6-promisify';
 
 const cwlogs = new AWS.CloudWatchLogs({});
-const filterLogEvents = promisify(cwlogs.filterLogEvents.bind(cwlogs));
 
-import { title, error, log } from '../logger';
+import { error, log, title } from '../logger';
 import loadConfig from '../config';
 
 import {
@@ -18,7 +16,7 @@ import {
 import {
   getStackResources,
   templateStackName
-} from '../factories/cf_utils';
+} from '../libs/cloudfront';
 
 const stripNewLines = str => str.replace(/\n$/, ' ');
 
@@ -32,12 +30,12 @@ export function filterAndPrint (awsLambdaName, params, startTime = 0, follow = f
   return Promise.resolve()
   .then(() => {
     const filter = requestId ? { filterPattern: `"${requestId}"` } : {};
-    return filterLogEvents({
+    return cwlogs.filterLogEvents({
       logGroupName: `/aws/lambda/${awsLambdaName}`,
       limit,
       ...filter,
       startTime
-    });
+    }).promise();
   })
   .then(({ events }) => {
     if (startTime === 0) {

@@ -1,22 +1,12 @@
 
-import {
-  debug
-} from '../logger';
-
-import {
-  buildStack,
-  createOrUpdateStack,
-  waitForUpdateCompleted
-} from './cf_utils';
-
-export function templateSupportBucket () {
+export function templateSupportBucketName () {
   return `BucketSupport`;
 }
 
-export async function createSupportResources ({ stackName, cloudfrontStagesSettings }) {
-  const cfTemplateJSON = JSON.stringify({
+export function templateSupportStack () {
+  return {
     'Resources': {
-      [`${templateSupportBucket()}`]: {
+      [`${templateSupportBucketName()}`]: {
         'Type': 'AWS::S3::Bucket',
         'Properties': {
           'LifecycleConfiguration': {
@@ -34,21 +24,8 @@ export async function createSupportResources ({ stackName, cloudfrontStagesSetti
     },
     'Outputs': {
       'SupportBucket': {
-        Value: { Ref: `${templateSupportBucket()}` }
+        Value: { Ref: `${templateSupportBucketName()}` }
       }
     }
-  }, null, 2);
-  const cfParams = await buildStack({
-    stackName,
-    cfTemplateJSON,
-    inline: true // support bucket does not exist ad this time
-  });
-  debug('Now updating support resources');
-  const response = await createOrUpdateStack({ stackName, cfParams, ignoreNoUpdates: true });
-  if (response === false) {
-    debug(`Support Stack doesn't need any update`);
-    return;
-  }
-  await waitForUpdateCompleted({ stackName });
-  debug(`Support Stack update completed`);
+  };
 }

@@ -46,7 +46,6 @@ export function templateRest ({ appStage }) {
   };
 }
 
-
 export function templateResourceHelper ({
   resourcePath
 }) {

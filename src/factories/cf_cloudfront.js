@@ -1,11 +1,6 @@
 
-import {
-  templateAPIID
-} from './cf_apig';
-
-import {
-  templateAssetsBucketName
-} from './cf_s3';
+import { templateAPIID } from './cf_apig';
+import { templateAssetsBucketName } from './cf_s3';
 
 // WebACL
 //
