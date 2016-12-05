@@ -52,7 +52,7 @@ export function filterAndPrint (awsLambdaName, params, startTime = 0, follow = f
       if (message.match(/error/i)) { message = message.red; }
 
       let msgToPrint;
-      if (/^\d\d\d\d\-\d\d\-\d\dT/.test(message)) {
+      if (/^\d\d\d\d-\d\d-\d\dT/.test(message)) {
         const requestId = message.substr(25, 36);
         const restMessage = message.substr(62);
         let restMessageColorized;
