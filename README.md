@@ -1,4 +1,5 @@
-# dawson
+![dawson](https://raw.githubusercontent.com/dawson-org/dawson-cli/images/dawson-logo.png)
+
 [![npm version](https://img.shields.io/npm/v/dawson.svg?maxAge=3600)]() 
 [![Build Status](https://travis-ci.org/dawson-org/dawson-cli.svg?branch=master)](https://travis-ci.org/dawson-org/dawson-cli) 
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/b8a879928f4b4ad09a2d4aa7ea30a680)](https://www.codacy.com/app/simone_3096/dawson?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=lusentis/dawson&amp;utm_campaign=Badge_Grade) 
