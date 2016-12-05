@@ -67,10 +67,9 @@ const FUNCTION_CONFIGURATION_SCHEMA = {
         Type.arrayOf(Type.string)
       ]).isRequired,
       Resource: Type.oneOfType([
-        Type.string, // single arn
-        Type.arrayOf(Type.string), // multiple arns
-        Type.objectOf(Type.string), // single arn with Fn::Join or Ref or Fn::Sub
-        Type.arrayOf(Type.objectOf(Type.string)) // multiple arns with Fn::Join or Ref or Fn::Sub
+        Type.string,
+        Type.array,
+        Type.object
       ]).isRequired
     })),
     redirects: Type.bool,
