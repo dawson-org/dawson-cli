@@ -8,7 +8,7 @@ import AWS from 'aws-sdk';
 import updateNotifier from 'update-notifier';
 import yargs from 'yargs';
 
-import loadConfig from './config';
+import loadConfig, { initConfig } from './config';
 import pkg from '../package.json';
 import { enableDebug, error, log } from './logger';
 import { run as deployRun } from './commands/deploy';
@@ -35,6 +35,9 @@ const argv = yargs
       .boolean('skip-acm')
       .default('skip-acm', false)
       .describe('skip-acm', 'Skip ACM SSL/TLS Certificate validation')
+      .boolean('skip-babelrc-validation')
+      .default('skip-babelrc-validation', false)
+      .describe('skip-babelrc-validation', 'Do not attempt to validate .babelrc file against recommended settings')
       .describe('stage', 'Application stage to work on')
       .default('stage', DAWSON_STAGE)
       .alias('stage', 's')
@@ -60,6 +63,9 @@ const argv = yargs
       .alias('follow', 't')
       .boolean('follow')
       .default('follow', false)
+      .boolean('skip-babelrc-validation')
+      .default('skip-babelrc-validation', false)
+      .describe('skip-babelrc-validation', 'Do not attempt to validate .babelrc file against recommended settings')
       .describe('stage', 'Application stage to work on')
       .default('stage', DAWSON_STAGE)
       .alias('stage', 's')
@@ -72,9 +78,6 @@ const argv = yargs
 
   .command('describe', 'List stack outputs', () =>
     yargs
-      .describe('stage', 'Application stage to work on')
-      .default('stage', DAWSON_STAGE)
-      .alias('stage', 's')
       .describe('output-name', 'Displays the Value of the specified Output')
       .alias('output-name', 'o')
       .describe('resource-id', 'Displays the PhysicalResourceId give its LogicalResourceId')
@@ -82,6 +85,12 @@ const argv = yargs
       .alias('resource-id', 'r')
       .describe('shell', 'Bash-compatible output')
       .default('shell', false)
+      .describe('stage', 'Application stage to work on')
+      .default('stage', DAWSON_STAGE)
+      .alias('stage', 's')
+      .boolean('skip-babelrc-validation')
+      .default('skip-babelrc-validation', false)
+      .describe('skip-babelrc-validation', 'Do not attempt to validate .babelrc file against recommended settings')
       .describe('verbose', 'Verbose output')
       .boolean('verbose')
       .alias('verbose', 'v')
@@ -100,6 +109,9 @@ const argv = yargs
       .describe('stage', 'Application stage to work on')
       .default('stage', DAWSON_STAGE)
       .alias('stage', 's')
+      .boolean('skip-babelrc-validation')
+      .default('skip-babelrc-validation', false)
+      .describe('skip-babelrc-validation', 'Do not attempt to validate .babelrc file against recommended settings')
       .describe('verbose', 'Verbose output')
       .boolean('verbose')
       .alias('verbose', 'v')
@@ -138,6 +150,7 @@ if (!argv.help && !argv.version) {
     enableDebug();
   }
 
+  initConfig(argv);
   const { PKG_JSON } = loadConfig();
 
   if (!argv.shell && !argv['output-name'] && !argv['resource-id']) {

@@ -5,8 +5,10 @@ require('babel-register');
 
 import AWS from 'aws-sdk';
 import execa from 'execa';
+import JSON5 from 'json5';
 import Type from 'prop-types';
 import { inspect } from 'util';
+import { readFileSync } from 'fs';
 import { stripIndent } from 'common-tags';
 
 import createError from './libs/error';
@@ -208,7 +210,47 @@ function validatePackageJSON (source) {
       `
     ];
   }
+  if (!source.devDependencies || !Object.keys(source.devDependencies).includes('babel-preset-env')) {
+    return [
+      `You are missing a required devDependency: 'babel-preset-env'.`,
+      stripIndent`
+        Please add 'babel-preset-env' to the 'devDependencies' field in package.json.
+        Check the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/
+      `
+    ];
+  }
   return validateDawsonConfig(source.dawson);
+}
+
+function validateBabelRc (rootDir) {
+  try {
+    const babelRcContents = readFileSync(rootDir + '/.babelrc');
+    const babelConfig = JSON5.parse(babelRcContents);
+    if (!babelConfig.presets ||
+        !babelConfig.presets.some(preset =>
+          JSON.stringify(preset) === JSON.stringify(['env', { 'targets': { 'node': 4 } }]))
+      ) {
+      throw new Error(`missing preset "env" with "node": 4 target`);
+    }
+    return true;
+  } catch (e) {
+    return [
+      `Babel is missing the 'env' preset`,
+      stripIndent`
+        You need to create a .babelrc file and specify at least the "env" preset (${e.message}).
+        You can copy-paste the following lines in a '${rootDir}/.babelrc' file:
+        {
+          "presets": [
+            ["env", { "targets": { "node": 4 } }]
+          ]
+        }
+
+        If you want to skip this check and you're absolutely sure to have configured babel
+        correctly, you can run this command with --skip-babelrc-validation
+        Check the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/
+      `
+    ];
+  }
 }
 
 function validateAPI (source) {
@@ -267,6 +309,13 @@ function validateAPI (source) {
   }
 
   return true;
+}
+
+let skipValidateBabelRc = false;
+export function initConfig (argv) {
+  if (argv['skip-babelrc-validation'] === true) {
+    skipValidateBabelRc = argv['skip-babelrc-validation'];
+  }
 }
 
 export default function loadConfig (rootDir = process.cwd()) {
@@ -338,10 +387,10 @@ export default function loadConfig (rootDir = process.cwd()) {
         reason: 'Your code contains a SyntaxError and could not be executed by node',
         detailedReason: 'Your file has been transpiled with babel but node is not able to execute it\n\n' + inspect(e),
         solution: stripIndent`
-        * check your babel configuration, if you are using export, import, async, await
-          you may need to include the es2015 and es2017 presets or the appropriate
-          transform plugin
-        * check the syntax of the api.js file by running it with 'node'
+        * check your babel configuration, if you are using non-'latest' features
+          you may need to include the appropriate transform plugin
+        * check the babel documentation: https://babeljs.io/docs/plugins/
+        * check the syntax of the api.js file by running it with 'babel-node'
         `
       }).toFormattedString());
       process.exit(1);
@@ -378,6 +427,18 @@ export default function loadConfig (rootDir = process.cwd()) {
       solution: '' + pkgJsonValidationResult[1]
     }).toFormattedString());
     process.exit(1);
+  }
+
+  if (!skipValidateBabelRc) {
+    const babelValidationResult = validateBabelRc(rootDir);
+    if (babelValidationResult !== true) {
+      console.error(createError({
+        kind: `babel configuration error`,
+        reason: '' + babelValidationResult[0],
+        solution: '' + babelValidationResult[1]
+      }).toFormattedString());
+      process.exit(1);
+    }
   }
 
   const systemValidationResult = validateSystem();
