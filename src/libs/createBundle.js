@@ -33,7 +33,7 @@ process.on('exit', cleanupTemp);
 // --- / ---
 
 async function createTempFiles () {
-  const tempZipFile = tempPath('danilo-zip');
+  const tempZipFile = tempPath('dawson-zip');
   await del('.dawson-dist');
   return { tempZipFile };
 }
@@ -48,7 +48,7 @@ function install ({ skipChmod }) {
 
 function writeIndex ({ indexFileContents }) {
   return writeFile(
-    process.cwd() + '/.dawson-dist/daniloindex.js',
+    process.cwd() + '/.dawson-dist/dawsonindex.js',
     indexFileContents,
     { encoding: 'utf8' });
 }

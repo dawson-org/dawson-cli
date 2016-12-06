@@ -189,7 +189,7 @@ async function processAPIRequest (req, res, {
       const invokeResult = dockerLambda({
         event,
         taskDir: `${PROJECT_ROOT}/.dawson-dist`,
-        handler: `daniloindex.${runner.name}`,
+        handler: `dawsonindex.${runner.name}`,
         dockerArgs: []
           .concat(['-m', '512M'])
           .concat(['--env', `NODE_ENV=${process.env.NODE_ENV || 'development'}`])

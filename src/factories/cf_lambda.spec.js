@@ -145,7 +145,7 @@ test('templateLambda', t => {
     LambdaMyFunction: {
       'Type': 'AWS::Lambda::Function',
       'Properties': {
-        'Handler': `daniloindex.myFunction`,
+        'Handler': `dawsonindex.myFunction`,
         'Role': { 'Fn::GetAtt': ['ExecutionRoleForLambdaMyFunction', 'Arn'] },
         'Code': {
           S3Bucket: 'demobucket',

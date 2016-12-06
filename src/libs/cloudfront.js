@@ -103,7 +103,7 @@ export async function buildStack ({ supportBucketName = null, stackName, cfTempl
     Parameters: [],
     Tags: [{
       Key: 'createdBy',
-      Value: 'danilo'
+      Value: 'dawson'
     }],
     ...templateSource,
     StackPolicyBody: JSON.stringify(SAFE_STACK_POLICY),

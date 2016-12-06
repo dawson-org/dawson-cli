@@ -118,7 +118,7 @@ export function templateLambda ({
     [`${templateLambdaName({ lambdaName })}`]: {
       'Type': 'AWS::Lambda::Function',
       'Properties': {
-        'Handler': `daniloindex.${handlerFunctionName}`,
+        'Handler': `dawsonindex.${handlerFunctionName}`,
         'Role': { 'Fn::GetAtt': [`${templateLambdaRoleName({ lambdaName })}`, 'Arn'] },
         'Code': code,
         'Runtime': runtime,
