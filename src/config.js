@@ -79,7 +79,7 @@ const FUNCTION_CONFIGURATION_SCHEMA = {
       if (typeof props[propName] === 'undefined') {
         return;
       }
-      if (!/^\w+\/\w+$/.test(props[propName])) {
+      if (!/^\w+\/(\w|-|\.)+$/.test(props[propName])) {
         return new Error(`responseContentType should match regexp '\\w+/\\w+'`);
       }
     }
