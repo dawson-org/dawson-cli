@@ -38,8 +38,10 @@ const FUNCTION_CONFIGURATION_SCHEMA = {
   api: Type.shape({
     path: function (props, propName) {
       const val = props[propName];
-      if (typeof val !== 'string' &&
-          val !== false) {
+      if (val === false) {
+        return;
+      }
+      if (typeof val !== 'string') {
         return new Error(`path must be a string or 'false'`);
       }
       if (val !== val.trim()) {
