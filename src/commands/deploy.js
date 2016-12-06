@@ -120,12 +120,13 @@ async function taskRequestACMCert ({ cloudfrontSettings }) {
   }
 }
 
-function taskUploadZip ({ supportBucketName, appStage, stackName, ignore }, ctx) {
+function taskUploadZip ({ supportBucketName, appStage, stackName, ignore, skipChmod }, ctx) {
   return taskCreateBundle({
     bucketName: supportBucketName,
     appStageName: appStage,
     excludeList: ignore,
-    stackName
+    stackName,
+    skipChmod
   }, ctx);
 }
 
@@ -338,7 +339,8 @@ export async function deploy ({
   appStage,
   dangerDeleteResources = false,
   skipAcmCertificate = false,
-  verbose = false
+  verbose = false,
+  skipChmod = false
 }) {
   const {
     SETTINGS,
@@ -377,7 +379,8 @@ export async function deploy ({
           cloudfrontRootOrigin: cloudfrontRootOrigin,
           ignore: SETTINGS.ignore,
           cloudfrontConfigMap: cloudfrontStagesMap,
-          appName: APP_NAME
+          appName: APP_NAME,
+          skipChmod
         });
       }
     },
@@ -540,7 +543,8 @@ export function run (argv) {
     dangerDeleteResources: argv['danger-delete-resources'],
     skipAcmCertificate: argv['skip-acm'],
     appStage: argv.stage,
-    verbose: argv.verbose
+    verbose: argv.verbose,
+    skipChmod: argv['skip-chmod']
   })
   .catch(err => {
     if (err.isDawsonError) {

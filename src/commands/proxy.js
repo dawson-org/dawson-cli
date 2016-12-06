@@ -343,12 +343,13 @@ async function getOutputsAndResources ({ stackName }) {
   return outputsAndResourcesCache;
 }
 
-function createBundle ({ stage, stackName, onlyCompile = false }) {
+function createBundle ({ stage, stackName, onlyCompile = false, skipChmod }) {
   return taskCreateBundle({
     appStageName: stage,
     noUpload: true,
     onlyCompile,
-    stackName
+    stackName,
+    skipChmod
   });
 }
 
@@ -358,7 +359,8 @@ export function run (argv) {
     stage,
     assetsProxy,
     assetsPath,
-    verbose
+    verbose,
+    skipChmod
   } = argv;
   const port = argv.port || process.env.PORT || 3000;
 
@@ -456,7 +458,7 @@ export function run (argv) {
   const startupTasks = new Listr([
     {
       title: 'creating first bundle',
-      task: () => createBundle({ stage, stackName })
+      task: () => createBundle({ stage, stackName, skipChmod })
     },
     {
       title: 'validating AWS resources',

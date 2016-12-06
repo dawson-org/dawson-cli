@@ -42,8 +42,8 @@ function compile ({ ignore = [] }) {
   return execa('babel', ['.', '--out-dir', '.dawson-dist/', '--ignore', `node_modules,${ignore.join(',')}`, '--copy-files']);
 }
 
-function install () {
-  return execa.shell('cd .dawson-dist && yarn');
+function install ({ skipChmod }) {
+  return execa.shell(`cd .dawson-dist && yarn ${skipChmod ? '' : '&& chmod -Rf a+rX .'}`);
 }
 
 function writeIndex ({ indexFileContents }) {
@@ -100,7 +100,8 @@ export default function taskCreateBundle ({
   excludeList = [],
   stackName,
   noUpload = false,
-  onlyCompile = false
+  onlyCompile = false,
+  skipChmod = false
 }, result) {
   const { PROJECT_ROOT, API_DEFINITIONS, SETTINGS } = loadConfig();
   return new Listr([
@@ -114,7 +115,8 @@ export default function taskCreateBundle ({
           stackName,
           noUpload,
           onlyCompile,
-          ignore: SETTINGS.ignore
+          ignore: SETTINGS.ignore,
+          skipChmod
         });
       }
     },
@@ -133,7 +135,7 @@ export default function taskCreateBundle ({
     {
       title: 'installing dependencies',
       skip: ctx => ctx.onlyCompile,
-      task: install
+      task: ctx => install({ skipChmod: ctx.skipChmod })
     },
     {
       title: 'creating index file',
