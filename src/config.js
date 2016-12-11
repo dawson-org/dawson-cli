@@ -191,33 +191,6 @@ function validatePackageJSON (source) {
       `Please check the documentation: https://github.com/dawson-org/dawson-cli/wiki/`
     ];
   }
-  if (!source.dependencies || !Object.keys(source.dependencies).includes('babel-polyfill')) {
-    return [
-      `You are missing a required dependency: 'babel-polyfill'.`,
-      stripIndent`
-        Please add 'babel-polyfill' to the 'dependencies' field in package.json.
-        Check the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/
-      `
-    ];
-  }
-  if (!source.devDependencies || !Object.keys(source.devDependencies).includes('babel-register')) {
-    return [
-      `You are missing a required devDependency: 'babel-register'.`,
-      stripIndent`
-        Please add 'babel-register' to the 'devDependencies' field in package.json.
-        Check the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/
-      `
-    ];
-  }
-  if (!source.devDependencies || !Object.keys(source.devDependencies).includes('babel-cli')) {
-    return [
-      `You are missing a required devDependency: 'babel-cli'.`,
-      stripIndent`
-        Please add 'babel-cli' to the 'devDependencies' field in package.json.
-        Check the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/
-      `
-    ];
-  }
   if (!source.devDependencies || !Object.keys(source.devDependencies).includes('babel-preset-env')) {
     return [
       `You are missing a required devDependency: 'babel-preset-env'.`,
