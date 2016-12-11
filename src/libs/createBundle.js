@@ -43,7 +43,7 @@ function compile ({ ignore = [] }) {
 }
 
 function install ({ skipChmod }) {
-  return execa.shell(`cd .dawson-dist && yarn ${skipChmod ? '' : '&& chmod -Rf a+rX .'}`);
+  return execa.shell(`cd .dawson-dist && yarn add babel-polyfill && yarn ${skipChmod ? '' : '&& chmod -Rf a+rX .'}`);
 }
 
 function writeIndex ({ indexFileContents }) {
