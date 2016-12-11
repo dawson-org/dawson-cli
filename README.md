@@ -87,6 +87,7 @@ In case you have an issue, make sure you have updated to the latest version (e.g
 * https://www.terraform.io/
 * https://github.com/awslabs/chalice
 * https://github.com/Miserlou/Zappa
+* https://github.com/jorgebastida/gordon
 
 
 ## License
