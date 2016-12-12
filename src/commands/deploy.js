@@ -264,8 +264,10 @@ function taskProcessTemplate ({
     },
     Outputs: {
       ...customTemplateObjects.Outputs,
+      BucketAssets: {
         Value: { 'Ref': `${templateAssetsBucketName()}` }
       },
+      DistributionWWW: {
         Value: cloudfrontSettings
                 ? { 'Fn::GetAtt': [`${templateCloudfrontDistributionName()}`, 'DomainName'] }
                 : 'CloudFront disabled from config'
@@ -509,6 +511,7 @@ export async function deploy ({
 
     if (cloudfrontSettings) {
       const outputs = await getStackOutputs({ stackName });
+      const cloudfrontDNS = outputs.find(o => o.OutputKey === 'DistributionWWW').OutputValue;
 
       if (cloudfrontCustomDomain) {
         success(`   DNS: ${cloudfrontCustomDomain} CNAME ${cloudfrontDNS}`);
