@@ -429,8 +429,7 @@ export function templateDeployment ({
 
 export function templateStage ({
   stageName,
-  deploymentUid,
-  stageVariables = {}
+  deploymentUid
 }) {
   return {
     [`${templateStageName({ stageName })}`]: {
@@ -441,9 +440,6 @@ export function templateStage ({
         'Description': `${stageName} Stage`,
         'RestApiId': { Ref: `${templateAPIID()}` },
         'StageName': `${stageName}`,
-        'Variables': {
-          ...stageVariables
-        },
         'MethodSettings': [{
           'HttpMethod': '*',
           'ResourcePath': '/*',

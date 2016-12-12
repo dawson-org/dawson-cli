@@ -347,7 +347,7 @@ function uiPollStackStatusHelper ({ stackName }, startTimestamp, done, onProgres
             ),
           solution: stripIndent`
             This usually happens because:
-            * you have introduced an error when extending your template using 'processCFTemplate'
+            * you have introduced an error when extending your template using 'customTemplateFragment'
             * the 'domain' you specified as cloudfront CNAME is already being used
             * you have reached a limit on your AWS Account (https://docs.aws.amazon.com/general/latest/gr/aws_service_limits.html)
             * you are trying to deploy to an unsupported region (https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/)

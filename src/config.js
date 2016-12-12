@@ -14,7 +14,7 @@ import { stripIndent } from 'common-tags';
 import createError from './libs/error';
 
 export const AWS_REGION = AWS.config.region;
-export const RESERVED_FUCTION_NAMES = ['processCFTemplate'];
+export const RESERVED_FUCTION_NAMES = ['customTemplateFragment'];
 
 const FUNCTION_CONFIGURATION_PROPERTIES = [
   'path',
@@ -237,6 +237,13 @@ function validateBabelRc (rootDir) {
 function validateAPI (source) {
   const apiDefinitions = Object.values(source)
     .filter(f => !RESERVED_FUCTION_NAMES.includes(f.name));
+
+  if (source.customTemplateFragment && typeof source.customTemplateFragment !== 'function') {
+    return [
+      `if 'customTemplateFragment' is defined, it must be a 'function', not '${typeof source.customTemplateFragment}'`,
+      `Refer to the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/`
+    ];
+  }
 
   let current;
   try {

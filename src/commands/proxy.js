@@ -495,7 +495,7 @@ export function run (argv) {
           title: 'checking IAM Roles',
           task: () => {
             Object.values(API_DEFINITIONS).every(runner => {
-              if (runner.name === 'processCFTemplate') {
+              if (runner.name === 'customTemplateFragment') {
                 return true;
               }
               try {

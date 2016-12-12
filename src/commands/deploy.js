@@ -130,7 +130,7 @@ function taskUploadZip ({ supportBucketName, appStage, stackName, ignore, skipCh
   }, ctx);
 }
 
-function taskCreateFunctionTemplatePartial ({ index, def, stackName, zipS3Location }) {
+function taskCreateFunctionTemplatePartial ({ index, def, stackName, zipS3Location, environment }) {
   if (typeof def.api !== 'object') {
     throw new Error(`You must specify an 'api' property for '${def.name}' function`);
   }
@@ -159,7 +159,8 @@ function taskCreateFunctionTemplatePartial ({ index, def, stackName, zipS3Locati
     handlerFunctionName: def.name,
     zipS3Location,
     policyStatements,
-    runtime
+    runtime,
+    environment
   });
 
   if (resourcePath === false) {
@@ -232,6 +233,7 @@ async function taskCheckRoute53Prerequisites ({ route53Enabled, hostedZoneId, cl
 }
 
 function taskProcessTemplate ({
+  customTemplateObjects,
   appStage,
   stageName,
   cloudfrontPartial,
@@ -239,9 +241,9 @@ function taskProcessTemplate ({
   cloudfrontSettings,
   functionTemplatePartials,
   methodsInTemplate,
-  API_DEFINITIONS
+  API_DEFINITIONS,
+  deploymentUid
 }) {
-  const deploymentUid = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   let cfTemplate = {
     Parameters: {
       DawsonStage: {
@@ -250,6 +252,7 @@ function taskProcessTemplate ({
       }
     },
     Resources: {
+      ...customTemplateObjects.Resources,
       ...templateAssetsBucket(),
       ...templateRest({ appStage }),
       ...functionTemplatePartials,
@@ -271,6 +274,7 @@ function taskProcessTemplate ({
         Value: { 'Fn::GetAtt': [`${templateAssetsBucketName()}`, 'DomainName'] }
       },
       S3AssetsBucket: {
+      ...customTemplateObjects.Outputs,
         Value: { 'Ref': `${templateAssetsBucketName()}` }
       },
       CloudFrontDNS: {
@@ -287,23 +291,11 @@ function taskProcessTemplate ({
     }
   };
 
-  if (typeof API_DEFINITIONS.processCFTemplate === 'function') {
-    cfTemplate = API_DEFINITIONS.processCFTemplate(cfTemplate, { deploymentLogicalName: `${templateDeploymentName({ deploymentUid })}` });
-  }
-
-  const stageVariables = {};
-  Object.keys(cfTemplate.Outputs).forEach(outputName => {
-    stageVariables[outputName] = {
-      'Fn::Base64': cfTemplate.Outputs[outputName].Value
-    };
-  });
-
   cfTemplate.Resources = {
     ...cfTemplate.Resources,
     ...templateStage({
       stageName,
-      deploymentUid,
-      stageVariables
+      deploymentUid
     }),
     ...templateCloudWatchRole(),
     ...templateAccount()
@@ -431,12 +423,23 @@ export async function deploy ({
         } = ctx;
         const methodsInTemplate = []; // used by DependsOn to prevent APIG to abort deployment because "API contains no methods"
         let functionTemplatePartials = {};
+        const deploymentUid = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+
+        let customTemplateObjects = {};
+        if (typeof API_DEFINITIONS.customTemplateFragment === 'function') {
+          customTemplateObjects = API_DEFINITIONS.customTemplateFragment({}, { deploymentLogicalName: `${templateDeploymentName({ deploymentUid })}` });
+        }
+
+        const environment = {};
+        Object.keys(customTemplateObjects.Outputs || {}).forEach(outputName => {
+          environment[outputName] = customTemplateObjects.Outputs[outputName].Value;
+        });
 
         for (const [index, def] of defs) {
           if (RESERVED_FUCTION_NAMES.includes(def.name)) {
             continue;
           }
-          const { template, methodDefinition } = taskCreateFunctionTemplatePartial({ index, def, stackName, zipS3Location });
+          const { template, methodDefinition } = taskCreateFunctionTemplatePartial({ index, def, stackName, zipS3Location, environment });
           functionTemplatePartials = {
             ...functionTemplatePartials,
             ...template
@@ -458,6 +461,7 @@ export async function deploy ({
         await taskCheckRoute53Prerequisites({ route53Enabled, hostedZoneId, cloudfrontCustomDomain });
 
         const { cfTemplateJSON } = taskProcessTemplate({
+          customTemplateObjects,
           appStage,
           stageName,
           cloudfrontPartial,
@@ -465,7 +469,8 @@ export async function deploy ({
           cloudfrontSettings,
           functionTemplatePartials,
           methodsInTemplate,
-          API_DEFINITIONS
+          API_DEFINITIONS,
+          deploymentUid
         });
 
         const { cfParams } = await taskCreateUploadStackTemplate({ supportBucketName, stackName, cfTemplateJSON });
