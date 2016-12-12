@@ -100,7 +100,6 @@ export async function buildStack ({ supportBucketName = null, stackName, cfTempl
   var params = {
     StackName: stackName,
     Capabilities: ['CAPABILITY_IAM'],
-    Parameters: [],
     Tags: [{
       Key: 'createdBy',
       Value: 'dawson'
@@ -112,67 +111,6 @@ export async function buildStack ({ supportBucketName = null, stackName, cfTempl
   return params;
 }
 
-async function doCreateChangeSet ({ stackName, cfParams }) {
-  var params = {
-    ChangeSetName: 'DawsonUserChangeSet' + Date.now(),
-    StackName: stackName,
-    Capabilities: [
-      'CAPABILITY_IAM'
-    ],
-    TemplateBody: cfParams.TemplateBody,
-    TemplateURL: cfParams.TemplateURL
-  };
-  const result = await cloudformation.createChangeSet(params).promise();
-  const changeSetId = result.Id;
-  let status = null;
-  while (status !== 'CREATE_COMPLETE') {
-    const description = await cloudformation.describeChangeSet({
-      ChangeSetName: changeSetId
-    }).promise();
-    if (description.Status === 'FAILED') {
-      if (description.StatusReason.includes('didn\'t contain changes')) {
-        // "The submitted information didn\'t contain changes. Submit different information to create a change set."
-        return false;
-      }
-      debug('Cannot crate changeset', description);
-      throw new Error('Change Set failed to create');
-    } else if (description.Status === 'CREATE_COMPLETE') {
-      const debugStr = description.Changes
-      .sort((change1, change2) => (
-        (change2.ResourceChange.Action + change2.ResourceChange.LogicalResourceId) <
-        (change1.ResourceChange.Action + change1.ResourceChange.LogicalResourceId)
-        ? 1 : -1))
-      .map(change => {
-        let color;
-        switch (change.ResourceChange.Action) {
-          case 'Add':
-            color = 'green';
-            break;
-          case 'Modify':
-            color = 'yellow';
-            break;
-          case 'Remove':
-            color = 'red';
-            break;
-        }
-        return `${change.ResourceChange.LogicalResourceId[color]}`;
-      }).join(', ');
-      debug('  resources affected by this update:', debugStr);
-    } else {
-      // wait and loop
-      await new Promise(resolve => setTimeout(resolve, 3000));
-    }
-    status = description.Status;
-  }
-  return changeSetId;
-}
-
-async function doExecuteChangeSet ({ changeSetId }) {
-  return await cloudformation.executeChangeSet({
-    ChangeSetName: changeSetId
-  }).promise();
-}
-
 export async function createOrUpdateStack ({ stackName, cfParams, dryrun, ignoreNoUpdates = false }) {
   const stackExists = await checkStackExists({ stackName });
   let updateStackResponse;
@@ -180,13 +118,7 @@ export async function createOrUpdateStack ({ stackName, cfParams, dryrun, ignore
   try {
     if (stackExists) {
       delete cfParams.OnFailure;
-      const changeSetId = await doCreateChangeSet({ stackName, cfParams });
-      if (changeSetId) {
-        // only if the ChangeSet has been created successfully
-        await doExecuteChangeSet({ changeSetId });
-      } else {
-        return false;
-      }
+      updateStackResponse = await cloudformation.updateStack(cfParams).promise();
     } else {
       updateStackResponse = await cloudformation.createStack(cfParams).promise();
     }
