@@ -261,13 +261,10 @@ export function templateLambdaIntegration ({
           "context" : {
             "apiId": "$context.apiId",
             "authorizer": {
-              "principalId": "$context.authorizer.principalId",
-              "claims": {
-                #foreach($property in $context.authorizer.claims.keySet())
-                "$property": "$context.authorizer.claims.get($property)"
-                #if($foreach.hasNext),#end
-                #end
-              }
+              #foreach($property in $context.authorizer.keySet())
+              "$property": "$context.authorizer.get($property)"
+              #if($foreach.hasNext),#end
+              #end
             },
             "httpMethod": "$context.httpMethod",
             "identity": {
