@@ -198,6 +198,7 @@ function taskCreateCloudFrontTemplate ({ stageName, cloudfrontSettings, acmCerti
   if (skipAcmCertificate === true) {
     debug(`Skipping ACM SSL/TLS Certificate validation`);
   }
+  debug(`cloudfrontSettings for this stage: ${cloudfrontSettings}`);
   const cloudfrontPartial = (cloudfrontSettings !== false)
     ? templateCloudfrontDistribution({
       stageName,
