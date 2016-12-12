@@ -413,8 +413,8 @@ export function run (argv) {
         try {
           jsonBody = JSON.parse(rawUTFBody);
         } catch (err) {
-          error(`Could not parse JSON request body`.red.bold, rawUTFBody.red);
-          jsonBody = {};
+          log(`Could not parse JSON request body, trying querystring`.red.bold, rawUTFBody.red);
+          jsonBody = { formData: qs.parse(rawUTFBody) };
         }
         next();
       });
