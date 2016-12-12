@@ -241,13 +241,13 @@ function validateAPI (source) {
   let current;
   try {
     apiDefinitions.forEach(runner => {
+      current = runner.name;
       if (!runner.name) {
         throw new Error(`function should have a name`);
       }
       if (typeof runner.api !== 'object') {
         throw new Error(`missing api configuration`);
       }
-      current = runner.name;
       let currentPropertyName;
       if (!Object.keys(runner.api).every(configKey => {
         currentPropertyName = configKey;
