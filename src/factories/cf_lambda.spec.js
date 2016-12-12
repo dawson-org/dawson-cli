@@ -154,7 +154,12 @@ test('templateLambda', t => {
         },
         'Runtime': 'foobar',
         'MemorySize': 1024,
-        'Timeout': 30
+        'Timeout': 30,
+        'Environment': {
+          'Variables': {
+            'DAWSON_myBar': 'baz'
+          }
+        }
       }
     }
   };
@@ -163,7 +168,10 @@ test('templateLambda', t => {
     handlerFunctionName: 'myFunction',
     zipS3Location: { Bucket: 'demobucket', Key: 'demokey', VersionId: 'demoversion' },
     runtime: 'foobar',
-    policyStatements: []
+    policyStatements: [],
+    environment: {
+      'myBar': 'baz'
+    }
   });
   t.deepEqual(actual, expected, 'should return a lambda template');
   t.end();

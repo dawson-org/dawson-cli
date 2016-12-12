@@ -417,8 +417,7 @@ export async function deploy ({
 
         const environment = {};
         Object.keys(customTemplateObjects.Outputs || {}).forEach(outputName => {
-          const prefixedOutputName = `DAWSON_${outputName}`;
-          environment[prefixedOutputName] = customTemplateObjects.Outputs[outputName].Value;
+          environment[outputName] = customTemplateObjects.Outputs[outputName].Value;
         });
 
         for (const [index, def] of defs) {

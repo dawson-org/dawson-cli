@@ -102,7 +102,7 @@ export function templateLambda ({
   zipS3Location = null,
   policyStatements,
   runtime = 'nodejs4.3',
-  environment
+  environment = {}
 }) {
   const code = (zipS3Location)
     ? {
@@ -111,6 +111,13 @@ export function templateLambda ({
       S3ObjectVersion: zipS3Location.VersionId
     }
     : { ZipFile: inlineCode };
+
+  const prefixedEnvironment = {};
+  Object.keys(environment).forEach(envKey => {
+    const prefixedEnvKey = `DAWSON_${envKey}`;
+    prefixedEnvironment[prefixedEnvKey] = environment[envKey];
+  });
+
   return {
     ...templateLambdaExecutionRole({
       lambdaName,
@@ -127,7 +134,7 @@ export function templateLambda ({
         'Timeout': 30,
         'Environment': {
           'Variables': {
-            ...environment
+            ...prefixedEnvironment
           }
         }
       }

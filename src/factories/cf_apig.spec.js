@@ -214,9 +214,6 @@ test('templateStage', t => {
         'Description': 'prod Stage',
         'RestApiId': { Ref: 'API' },
         'StageName': 'prod',
-        'Variables': {
-          abc: '123'
-        },
         'MethodSettings': [{
           'HttpMethod': '*',
           'ResourcePath': '/*',
@@ -228,8 +225,7 @@ test('templateStage', t => {
   };
   const actual = templateStage({
     stageName: 'prod',
-    deploymentUid: '1234567',
-    stageVariables: { abc: '123' }
+    deploymentUid: '1234567'
   });
   t.deepEqual(actual, expected, 'should return the stage template');
   t.end();
