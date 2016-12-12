@@ -435,13 +435,23 @@ export default function loadConfig (rootDir = process.cwd()) {
   const appName = requiredPkgJson.name;
   const settings = requiredPkgJson.dawson || {};
 
+  const getCloudFrontSettings = ({ appStage }) => {
+    if (!settings.cloudfront) {
+      return true;
+    }
+    if (typeof settings.cloudfront[appStage] === 'undefined') {
+      return true;
+    }
+    return settings.cloudfront[appStage];
+  };
+
   return {
     API_DEFINITIONS: requiredApi,
     APP_NAME: appName,
     PKG_JSON: requiredPkgJson,
     PROJECT_ROOT: rootDir,
     SETTINGS: settings,
-    getCloudFrontSettings: ({ appStage }) => settings.cloudfront ? (settings.cloudfront[appStage] || true) : true,
+    getCloudFrontSettings,
     getHostedZoneId: ({ appStage }) => settings.route53 ? settings.route53[appStage] : null
   };
 }
