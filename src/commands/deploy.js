@@ -6,7 +6,7 @@ import Listr from 'listr';
 import verboseRenderer from 'listr-verbose-renderer';
 import { stripIndent, oneLine } from 'common-tags';
 
-import loadConfig, { RESERVED_FUCTION_NAMES, AWS_REGION } from '../config';
+import loadConfig, { RESERVED_FUCTION_NAMES } from '../config';
 import taskCreateBundle from '../libs/createBundle';
 import { templateSupportStack } from '../factories/cf_support';
 import { debug, danger, warning, success } from '../logger';
@@ -24,7 +24,6 @@ import {
 } from '../libs/cloudfront';
 import {
   templateAccount,
-  templateAPIID,
   templateCloudWatchRole,
   templateDeployment,
   templateDeploymentName,
@@ -264,29 +263,12 @@ function taskProcessTemplate ({
       ...route53Partial
     },
     Outputs: {
-      ApiGatewayUrl: {
-        Value: { 'Fn::Join': ['', [
-          'https://', { Ref: `${templateAPIID()}` },
-          '.execute-api.', AWS_REGION, '.amazonaws.com', `/${stageName}`
-        ]]}
-      },
-      S3AssetsDNS: {
-        Value: { 'Fn::GetAtt': [`${templateAssetsBucketName()}`, 'DomainName'] }
-      },
-      S3AssetsBucket: {
       ...customTemplateObjects.Outputs,
         Value: { 'Ref': `${templateAssetsBucketName()}` }
       },
-      CloudFrontDNS: {
         Value: cloudfrontSettings
                 ? { 'Fn::GetAtt': [`${templateCloudfrontDistributionName()}`, 'DomainName'] }
                 : 'CloudFront disabled from config'
-      },
-      RestApiId: {
-        Value: { 'Ref': `${templateAPIID()}` }
-      },
-      DeploymentId: {
-        Value: { 'Ref': `${templateDeploymentName({ deploymentUid })}` }
       }
     }
   };
@@ -527,7 +509,6 @@ export async function deploy ({
 
     if (cloudfrontSettings) {
       const outputs = await getStackOutputs({ stackName });
-      const cloudfrontDNS = outputs.find(o => o.OutputKey === 'CloudFrontDNS').OutputValue;
 
       if (cloudfrontCustomDomain) {
         success(`   DNS: ${cloudfrontCustomDomain} CNAME ${cloudfrontDNS}`);
