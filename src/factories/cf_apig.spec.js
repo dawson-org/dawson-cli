@@ -4,8 +4,6 @@ import { test } from 'tap';
 import {
   templateAPIID,
   templateAccount,
-  templateCloudWatchRole,
-  templateCloudWatchRoleName,
   templateDeployment,
   templateDeploymentName,
   // templateLambdaIntegration,
@@ -231,13 +229,6 @@ test('templateStage', t => {
   t.end();
 });
 
-test('templateCloudWatchRoleName', t => {
-  const expected = 'APIGatewayCloudWatchIAMRole';
-  const actual = templateCloudWatchRoleName();
-  t.equal(actual, expected, 'should return the role name for CloudWatch');
-  t.end();
-});
-
 test('templateAccount', t => {
   const expected = {
     'APIGatewayAccount': {
@@ -248,29 +239,6 @@ test('templateAccount', t => {
     }
   };
   const actual = templateAccount();
-  t.deepEqual(actual, expected, 'should return the stage template');
-  t.end();
-});
-
-test('templateCloudWatchRole', t => {
-  const expected = {
-    'APIGatewayCloudWatchIAMRole': {
-      'Type': 'AWS::IAM::Role',
-      'Properties': {
-        'AssumeRolePolicyDocument': {
-          'Version': '2012-10-17',
-          'Statement': [{
-            'Effect': 'Allow',
-            'Principal': { 'Service': ['apigateway.amazonaws.com'] },
-            'Action': 'sts:AssumeRole'
-          }]
-        },
-        'Path': '/',
-        'ManagedPolicyArns': ['arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs']
-      }
-    }
-  };
-  const actual = templateCloudWatchRole();
   t.deepEqual(actual, expected, 'should return the stage template');
   t.end();
 });

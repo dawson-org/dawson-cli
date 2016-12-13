@@ -30,10 +30,6 @@ export function templateModelName ({ modelName }) {
   return `Model${modelName}`;
 }
 
-export function templateCloudWatchRoleName () {
-  return 'APIGatewayCloudWatchIAMRole';
-}
-
 export function templateRest ({ appStage }) {
   return {
     [`${templateAPIID()}`]: {
@@ -453,18 +449,19 @@ export function templateStage ({
 
 export function templateAccount () {
   return {
+    ...templateCloudWatchRole(),
     'APIGatewayAccount': {
       'Type': 'AWS::ApiGateway::Account',
       'Properties': {
-        'CloudWatchRoleArn': { 'Fn::GetAtt': [ templateCloudWatchRoleName(), 'Arn' ] }
+        'CloudWatchRoleArn': { 'Fn::Sub': '${RoleAPIGatewayAccount.Arn}' } // eslint-disable-line
       }
     }
   };
 }
 
-export function templateCloudWatchRole () {
+function templateCloudWatchRole () {
   return {
-    [templateCloudWatchRoleName()]: {
+    'RoleAPIGatewayAccount': {
       'Type': 'AWS::IAM::Role',
       'Properties': {
         'AssumeRolePolicyDocument': {

@@ -24,7 +24,6 @@ import {
 } from '../libs/cloudfront';
 import {
   templateAccount,
-  templateCloudWatchRole,
   templateDeployment,
   templateDeploymentName,
   templateMethod,
@@ -282,7 +281,6 @@ function taskProcessTemplate ({
       stageName,
       deploymentUid
     }),
-    ...templateCloudWatchRole(),
     ...templateAccount()
   };
 
