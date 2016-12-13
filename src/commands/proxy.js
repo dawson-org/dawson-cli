@@ -387,6 +387,14 @@ export function run (argv) {
       return;
     }
 
+    if (req.headers['content-type'] &&
+        !['application/json', 'application/x-www-form-urlencoded'].includes(req.headers['content-type'])) {
+      res.writeHead(415);
+      res.write('Unsupported media type');
+      res.end();
+      return;
+    }
+
     if (requestForAPI(req, SETTINGS)) {
       const url = parseAPIUrl(req, SETTINGS);
       const pathname = url.pathname;
@@ -414,12 +422,21 @@ export function run (argv) {
       req.on('end', () => {
         rawBody = Buffer.concat([rawBody]);
         const rawUTFBody = rawBody.toString('utf8');
-        try {
-          jsonBody = JSON.parse(rawUTFBody);
-        } catch (err) {
-          error(`Could not parse JSON request body`.red.bold, rawUTFBody.red);
-          jsonBody = {};
+
+        if (req.headers['content-type'] === 'application/x-www-form-urlencoded') {
+          jsonBody = rawUTFBody;
+        } else if (req.headers['content-type'] === 'application/json') {
+          try {
+            jsonBody = JSON.parse(rawUTFBody);
+          } catch (err) {
+            error(`Could not parse JSON request body`.red.bold, rawUTFBody.red);
+            res.writeHead(400);
+            res.write('Request body is not a valid JSON string');
+            res.end();
+            return;
+          }
         }
+
         next();
       });
       req.resume();
