@@ -24,7 +24,7 @@
   "author": "Simone Lusenti <lusenti.s@gmail.com>",
   "license": "GPL-3.0",
   "dependencies": {
-    "aws-sdk": "^2.6.3",
+    "aws-sdk": "^2.7.17",
     "babel-polyfill": "^6.16.0",
     "babel-register": "^6.16.3",
     "chalk": "^1.1.3",
