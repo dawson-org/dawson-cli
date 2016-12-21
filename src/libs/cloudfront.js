@@ -66,7 +66,12 @@ function stackUpload ({ bucketName, stackBody }) {
   .then(data => {
     const s3Subdomain = (AWS_REGION === 'us-east-1') ? 's3' : `s3-${AWS_REGION}`;
     const url = `https://${s3Subdomain}.amazonaws.com/${bucketName}/${key}`;
-    debug('Template URL', url);
+    const signedDebugUrl = s3.getSignedUrl('getObject', {
+      Bucket: bucketName,
+      Key: key,
+      Expires: 300
+    });
+    debug('Template URL (signed)', signedDebugUrl);
     return url;
   });
 }
