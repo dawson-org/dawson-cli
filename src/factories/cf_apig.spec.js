@@ -242,22 +242,22 @@ test('templateAccount', t => {
         'AssumeRolePolicyDocument': {
           'Statement': [
             {
-              'Action': 'sts:AssumeRole'
-              'Effect': 'Allow'
+              'Action': 'sts:AssumeRole',
+              'Effect': 'Allow',
               'Principal': {
                 'Service': [
                   'apigateway.amazonaws.com'
                 ]
               }
             }
-          ]
+          ],
           'Version': '2012-10-17'
-        }
+        },
         'ManagedPolicyArns': [
           'arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs'
-        ]
+        ],
         'Path': '/'
-      }
+      },
       'Type': 'AWS::IAM::Role'
     }
   };
