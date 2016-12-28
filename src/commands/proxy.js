@@ -282,7 +282,10 @@ function runAuthorizer ({ authorizer, event, envVariables, req, res, successCall
     authorizationToken: token,
     methodArn: 'arn:fake'
   }, {
-    succeed: ({ policyDocument }, principalId) => {
+    succeed: ({ policyDocument, principalId, context }) => {
+      if (!Object.values(context).every(val => ['number', 'string', 'boolean'].includes(typeof val))) {
+        throw new Error('Authorizer Error: augmented context values can only be of type number, string or boolean.');
+      }
       if (!policyDocument || !Array.isArray(policyDocument.Statement)) {
         fail(403, '   🔒'.red, `Authorizer did not return a policy document`.red, policyDocument);
         return;
@@ -292,6 +295,7 @@ function runAuthorizer ({ authorizer, event, envVariables, req, res, successCall
         return;
       }
       event.authorizer = {
+        ...context,
         principalId
       };
       console.log(`   🔓 Authorization succeeded`.yellow.dim);
