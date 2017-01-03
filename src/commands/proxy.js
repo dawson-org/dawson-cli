@@ -607,8 +607,8 @@ function setupWatcher ({ stage, stackName, ignore = [], PROJECT_ROOT }) {
   const onWatch = (fileName) => {
     const ignoreList = [
       ...ignore,
-      '**/node_modules',
-      '.dawson-dist/**',
+      '**/node_modules/**',
+      '**/.dawson-dist/**',
       '**/~*',
       '**/.*'
     ];
@@ -617,12 +617,12 @@ function setupWatcher ({ stage, stackName, ignore = [], PROJECT_ROOT }) {
       return;
     }
 
-    if (!ignoreList.every(pattern => !minimatch(fileName, `${PROJECT_ROOT}/${pattern}`))) {
-      log(`   Reload: [ignored] ${fileName}`.dim);
+    if (ignoreList.some(pattern => minimatch(fileName, pattern))) {
+      debug(`   Reload: [ignored] ${fileName}`.dim);
       return;
     }
 
-    log(`   Reload: ${fileName}`.dim);
+    log(`   Reload: ${fileName}...`.dim);
     bundleInProgress = true;
     createBundle({ stage, stackName, onlyCompile: true }).run()
     .then(() => {
