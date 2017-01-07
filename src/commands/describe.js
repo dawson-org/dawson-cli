@@ -43,21 +43,23 @@ export function run (argv) {
       }
     }
 
-    const sortedResources = sortBy(resources, ['ResourceType', 'resourceId']);
+    const sortedResources = sortBy(resources, ['ResourceType', 'LogicalResourceId']);
     if (shell) {
-      sortedResources.forEach(({ PhysicalResourceId, resourceId }) => {
-        process.stdout.write(`${PhysicalResourceId}=${resourceId}\n`);
+      sortedResources.forEach(({ PhysicalResourceId, LogicalResourceId }) => {
+        process.stdout.write(`${LogicalResourceId}=${PhysicalResourceId}\n`);
       });
     } else {
       const table = new Table({
-        head: ['resourceId', 'PhysicalResourceId']
+        head: ['LogicalResourceId', 'PhysicalResourceId']
       });
-      table.push(...sortedResources.map(({ resourceId, PhysicalResourceId }) => ([ resourceId, PhysicalResourceId ])));
+      table.push(...sortedResources.map(({ LogicalResourceId, PhysicalResourceId }) => ([ LogicalResourceId, PhysicalResourceId ])));
       title('Stack Resources');
       console.log(table.toString());
     }
 
-    log('');
+    if (!shell) {
+      log('');
+    }
 
     const outputValues = Object.values(outputs);
     const sortedOutputs = sortBy(outputValues, ['OutputKey']);

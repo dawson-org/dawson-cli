@@ -6,7 +6,7 @@ import Listr from 'listr';
 import verboseRenderer from 'listr-verbose-renderer';
 import { stripIndent, oneLine } from 'common-tags';
 
-import loadConfig, { RESERVED_FUCTION_NAMES, AWS_REGION } from '../config';
+import loadConfig, { RESERVED_FUCTION_NAMES } from '../config';
 import taskCreateBundle from '../libs/createBundle';
 import { templateSupportStack } from '../factories/cf_support';
 import { debug, danger, warning, success } from '../logger';
@@ -24,8 +24,6 @@ import {
 } from '../libs/cloudfront';
 import {
   templateAccount,
-  templateAPIID,
-  templateCloudWatchRole,
   templateDeployment,
   templateDeploymentName,
   templateMethod,
@@ -130,7 +128,7 @@ function taskUploadZip ({ supportBucketName, appStage, stackName, ignore, skipCh
   }, ctx);
 }
 
-function taskCreateFunctionTemplatePartial ({ index, def, stackName, zipS3Location }) {
+function taskCreateFunctionTemplatePartial ({ index, def, stackName, zipS3Location, environment }) {
   if (typeof def.api !== 'object') {
     throw new Error(`You must specify an 'api' property for '${def.name}' function`);
   }
@@ -159,7 +157,8 @@ function taskCreateFunctionTemplatePartial ({ index, def, stackName, zipS3Locati
     handlerFunctionName: def.name,
     zipS3Location,
     policyStatements,
-    runtime
+    runtime,
+    environment
   });
 
   if (resourcePath === false) {
@@ -198,6 +197,7 @@ function taskCreateCloudFrontTemplate ({ stageName, cloudfrontSettings, acmCerti
   if (skipAcmCertificate === true) {
     debug(`Skipping ACM SSL/TLS Certificate validation`);
   }
+  debug(`cloudfrontSettings for this stage: ${cloudfrontSettings}`);
   const cloudfrontPartial = (cloudfrontSettings !== false)
     ? templateCloudfrontDistribution({
       stageName,
@@ -232,6 +232,7 @@ async function taskCheckRoute53Prerequisites ({ route53Enabled, hostedZoneId, cl
 }
 
 function taskProcessTemplate ({
+  customTemplateObjects,
   appStage,
   stageName,
   cloudfrontPartial,
@@ -239,9 +240,9 @@ function taskProcessTemplate ({
   cloudfrontSettings,
   functionTemplatePartials,
   methodsInTemplate,
-  API_DEFINITIONS
+  API_DEFINITIONS,
+  deploymentUid
 }) {
-  const deploymentUid = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   let cfTemplate = {
     Parameters: {
       DawsonStage: {
@@ -250,6 +251,7 @@ function taskProcessTemplate ({
       }
     },
     Resources: {
+      ...customTemplateObjects.Resources,
       ...templateAssetsBucket(),
       ...templateRest({ appStage }),
       ...functionTemplatePartials,
@@ -261,51 +263,24 @@ function taskProcessTemplate ({
       ...route53Partial
     },
     Outputs: {
-      ApiGatewayUrl: {
-        Value: { 'Fn::Join': ['', [
-          'https://', { Ref: `${templateAPIID()}` },
-          '.execute-api.', AWS_REGION, '.amazonaws.com', `/${stageName}`
-        ]]}
-      },
-      S3AssetsDNS: {
-        Value: { 'Fn::GetAtt': [`${templateAssetsBucketName()}`, 'DomainName'] }
-      },
-      S3AssetsBucket: {
+      ...customTemplateObjects.Outputs,
+      BucketAssets: {
         Value: { 'Ref': `${templateAssetsBucketName()}` }
       },
-      CloudFrontDNS: {
+      DistributionWWW: {
         Value: cloudfrontSettings
                 ? { 'Fn::GetAtt': [`${templateCloudfrontDistributionName()}`, 'DomainName'] }
                 : 'CloudFront disabled from config'
-      },
-      RestApiId: {
-        Value: { 'Ref': `${templateAPIID()}` }
-      },
-      DeploymentId: {
-        Value: { 'Ref': `${templateDeploymentName({ deploymentUid })}` }
       }
     }
   };
-
-  if (typeof API_DEFINITIONS.processCFTemplate === 'function') {
-    cfTemplate = API_DEFINITIONS.processCFTemplate(cfTemplate, { deploymentLogicalName: `${templateDeploymentName({ deploymentUid })}` });
-  }
-
-  const stageVariables = {};
-  Object.keys(cfTemplate.Outputs).forEach(outputName => {
-    stageVariables[outputName] = {
-      'Fn::Base64': cfTemplate.Outputs[outputName].Value
-    };
-  });
 
   cfTemplate.Resources = {
     ...cfTemplate.Resources,
     ...templateStage({
       stageName,
-      deploymentUid,
-      stageVariables
+      deploymentUid
     }),
-    ...templateCloudWatchRole(),
     ...templateAccount()
   };
 
@@ -431,12 +406,23 @@ export async function deploy ({
         } = ctx;
         const methodsInTemplate = []; // used by DependsOn to prevent APIG to abort deployment because "API contains no methods"
         let functionTemplatePartials = {};
+        const deploymentUid = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+
+        let customTemplateObjects = {};
+        if (typeof API_DEFINITIONS.customTemplateFragment === 'function') {
+          customTemplateObjects = API_DEFINITIONS.customTemplateFragment({}, { deploymentLogicalName: `${templateDeploymentName({ deploymentUid })}` });
+        }
+
+        const environment = {};
+        Object.keys(customTemplateObjects.Outputs || {}).forEach(outputName => {
+          environment[outputName] = customTemplateObjects.Outputs[outputName].Value;
+        });
 
         for (const [index, def] of defs) {
           if (RESERVED_FUCTION_NAMES.includes(def.name)) {
             continue;
           }
-          const { template, methodDefinition } = taskCreateFunctionTemplatePartial({ index, def, stackName, zipS3Location });
+          const { template, methodDefinition } = taskCreateFunctionTemplatePartial({ index, def, stackName, zipS3Location, environment });
           functionTemplatePartials = {
             ...functionTemplatePartials,
             ...template
@@ -458,6 +444,7 @@ export async function deploy ({
         await taskCheckRoute53Prerequisites({ route53Enabled, hostedZoneId, cloudfrontCustomDomain });
 
         const { cfTemplateJSON } = taskProcessTemplate({
+          customTemplateObjects,
           appStage,
           stageName,
           cloudfrontPartial,
@@ -465,7 +452,8 @@ export async function deploy ({
           cloudfrontSettings,
           functionTemplatePartials,
           methodsInTemplate,
-          API_DEFINITIONS
+          API_DEFINITIONS,
+          deploymentUid
         });
 
         const { cfParams } = await taskCreateUploadStackTemplate({ supportBucketName, stackName, cfTemplateJSON });
@@ -522,7 +510,7 @@ export async function deploy ({
 
     if (cloudfrontSettings) {
       const outputs = await getStackOutputs({ stackName });
-      const cloudfrontDNS = outputs.find(o => o.OutputKey === 'CloudFrontDNS').OutputValue;
+      const cloudfrontDNS = outputs.find(o => o.OutputKey === 'DistributionWWW').OutputValue;
 
       if (cloudfrontCustomDomain) {
         success(`   DNS: ${cloudfrontCustomDomain} CNAME ${cloudfrontDNS}`);

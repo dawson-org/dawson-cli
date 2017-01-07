@@ -6,6 +6,48 @@ import {
   templateLambdaName
 } from './cf_lambda';
 
+const getMappingTemplate = ({ apigResponseContentType }) => stripIndent`
+#set($allParams = $input.params())
+{
+  "params" : {
+    #foreach($type in $allParams.keySet())
+    #set($params = $allParams.get($type))
+    "$type" : {
+      #foreach($paramName in $params.keySet())
+      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
+      #if($foreach.hasNext),#end
+      #end
+    }
+    #if($foreach.hasNext),#end
+    #end
+  },
+  "context" : {
+    "apiId": "$context.apiId",
+    "authorizer": {
+      #foreach($property in $context.authorizer.keySet())
+      "$property": "$context.authorizer.get($property)"
+      #if($foreach.hasNext),#end
+      #end
+    },
+    "httpMethod": "$context.httpMethod",
+    "identity": {
+      #foreach($property in $context.identity.keySet())
+      "$property": "$context.identity.get($property)"
+      #if($foreach.hasNext),#end
+      #end
+    },
+    "requestId": "$context.requestId",
+    "resourceId": "$context.resourceId",
+    "resourcePath": "$context.resourcePath",
+    "stage": "$context.stage"
+  },
+  "body": $input.json('$'),
+  "meta": {
+    "expectedResponseContentType": "${apigResponseContentType}"
+  }
+}
+`;
+
 export function templateAPIID () {
   return `API`;
 }
@@ -28,10 +70,6 @@ export function templateDeploymentName ({ deploymentUid }) {
 
 export function templateModelName ({ modelName }) {
   return `Model${modelName}`;
-}
-
-export function templateCloudWatchRoleName () {
-  return 'APIGatewayCloudWatchIAMRole';
 }
 
 export function templateRest ({ appStage }) {
@@ -243,53 +281,8 @@ export function templateLambdaIntegration ({
     'RequestTemplates': {
       // https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-mapping-template-reference.html#util-template-reference
       // § "Param Mapping Template Example" and above
-      'application/json': stripIndent`
-        #set($allParams = $input.params())
-        {
-          "params" : {
-            #foreach($type in $allParams.keySet())
-            #set($params = $allParams.get($type))
-            "$type" : {
-              #foreach($paramName in $params.keySet())
-              "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
-              #if($foreach.hasNext),#end
-              #end
-            }
-            #if($foreach.hasNext),#end
-            #end
-          },
-          "context" : {
-            "apiId": "$context.apiId",
-            "authorizer": {
-              #foreach($property in $context.authorizer.keySet())
-              "$property": "$context.authorizer.get($property)"
-              #if($foreach.hasNext),#end
-              #end
-            },
-            "httpMethod": "$context.httpMethod",
-            "identity": {
-              #foreach($property in $context.identity.keySet())
-              "$property": "$context.identity.get($property)"
-              #if($foreach.hasNext),#end
-              #end
-            },
-            "requestId": "$context.requestId",
-            "resourceId": "$context.resourceId",
-            "resourcePath": "$context.resourcePath",
-            "stage": "$context.stage"
-          },
-          "body": $input.json('$'),
-          "meta": {
-            "expectedResponseContentType": "${apigResponseContentType}"
-          },
-          "stageVariables" : {
-            #foreach($name in $stageVariables.keySet())
-            "$name" : "$util.base64Decode($stageVariables.get($name))"
-            #if($foreach.hasNext),#end
-            #end
-          }
-        }
-      `
+      'application/x-www-form-urlencoded': getMappingTemplate({ apigResponseContentType }),
+      'application/json': getMappingTemplate({ apigResponseContentType })
     },
     'Type': 'AWS',
     'Credentials': { 'Fn::GetAtt': ['APIGExecutionRole', 'Arn'] },
@@ -429,8 +422,7 @@ export function templateDeployment ({
 
 export function templateStage ({
   stageName,
-  deploymentUid,
-  stageVariables = {}
+  deploymentUid
 }) {
   return {
     [`${templateStageName({ stageName })}`]: {
@@ -441,9 +433,6 @@ export function templateStage ({
         'Description': `${stageName} Stage`,
         'RestApiId': { Ref: `${templateAPIID()}` },
         'StageName': `${stageName}`,
-        'Variables': {
-          ...stageVariables
-        },
         'MethodSettings': [{
           'HttpMethod': '*',
           'ResourcePath': '/*',
@@ -457,18 +446,19 @@ export function templateStage ({
 
 export function templateAccount () {
   return {
+    ...templateCloudWatchRole(),
     'APIGatewayAccount': {
       'Type': 'AWS::ApiGateway::Account',
       'Properties': {
-        'CloudWatchRoleArn': { 'Fn::GetAtt': [ templateCloudWatchRoleName(), 'Arn' ] }
+        'CloudWatchRoleArn': { 'Fn::Sub': '${RoleAPIGatewayAccount.Arn}' } // eslint-disable-line
       }
     }
   };
 }
 
-export function templateCloudWatchRole () {
+function templateCloudWatchRole () {
   return {
-    [templateCloudWatchRoleName()]: {
+    'RoleAPIGatewayAccount': {
       'Type': 'AWS::IAM::Role',
       'Properties': {
         'AssumeRolePolicyDocument': {

@@ -24,7 +24,7 @@ import { createProxyServer } from 'http-proxy';
 import { createServer } from 'http';
 import { oneLine, stripIndent } from 'common-tags';
 import { parse } from 'url';
-import { throttle } from 'lodash';
+import { throttle, flatten } from 'lodash';
 
 import createError from '../libs/error';
 import loadConfig, { AWS_REGION } from '../config';
@@ -86,9 +86,8 @@ async function processAPIRequest (req, res, {
   API_DEFINITIONS,
   PROJECT_ROOT
 }) {
-  const stageVariables = {};
-  outputs.forEach(output => {
-    stageVariables[output.OutputKey] = output.OutputValue;
+  const envVariables = outputs.map(output => {
+    return `DAWSON_${output.OutputKey}=${output.OutputValue}`;
   });
   try {
     var runner = findApi({ method: req.method, pathname, API_DEFINITIONS });
@@ -119,8 +118,7 @@ async function processAPIRequest (req, res, {
     body,
     meta: {
       expectedResponseContentType
-    },
-    stageVariables
+    }
   };
   debug('Event parameter:'.gray.bold, JSON.stringify(event, null, 2).gray);
 
@@ -195,7 +193,8 @@ async function processAPIRequest (req, res, {
           .concat(['--env', `NODE_ENV=${process.env.NODE_ENV || 'development'}`])
           .concat(['--env', `AWS_ACCESS_KEY_ID=${credentials.AccessKeyId}`])
           .concat(['--env', `AWS_SECRET_ACCESS_KEY=${credentials.SecretAccessKey}`])
-          .concat(['--env', `AWS_SESSION_TOKEN=${credentials.SessionToken}`]),
+          .concat(['--env', `AWS_SESSION_TOKEN=${credentials.SessionToken}`])
+          .concat(flatten(envVariables.map(v => (['--env', v])))),
         spawnOptions: {
           stdio: ['pipe', 'pipe', process.stdout]
         }
@@ -218,7 +217,7 @@ async function processAPIRequest (req, res, {
   if (!authorizer) {
     doCall();
   } else {
-    runAuthorizer({ authorizer, event, stageVariables, req, res, successCallback: doCall });
+    runAuthorizer({ authorizer, event, envVariables, req, res, successCallback: doCall });
   }
 }
 
@@ -254,7 +253,7 @@ async function assumeRole (stackResources, runner) {
   return assumedRole.Credentials;
 }
 
-function runAuthorizer ({ authorizer, event, stageVariables, req, res, successCallback }) {
+function runAuthorizer ({ authorizer, event, envVariables, req, res, successCallback }) {
   // https://docs.aws.amazon.com/apigateway/latest/developerguide/use-custom-authorizer.html
   // @TODO: correctly handle 401, 403, 500 response as described in the documentation
 
@@ -273,13 +272,20 @@ function runAuthorizer ({ authorizer, event, stageVariables, req, res, successCa
     return;
   }
 
+  envVariables.forEach(declaration => {
+    const [key, value] = declaration.split('=');
+    process.env[key] = value;
+  });
+
   authorizer({
     type: 'TOKEN',
     authorizationToken: token,
     methodArn: 'arn:fake'
   }, {
-    templateOutputs: stageVariables,
-    succeed: ({ policyDocument }, principalId) => {
+    succeed: ({ policyDocument, principalId, context }) => {
+      if (!Object.values(context).every(val => ['number', 'string', 'boolean'].includes(typeof val))) {
+        throw new Error('Authorizer Error: augmented context values can only be of type number, string or boolean.');
+      }
       if (!policyDocument || !Array.isArray(policyDocument.Statement)) {
         fail(403, '   🔒'.red, `Authorizer did not return a policy document`.red, policyDocument);
         return;
@@ -289,6 +295,7 @@ function runAuthorizer ({ authorizer, event, stageVariables, req, res, successCa
         return;
       }
       event.authorizer = {
+        ...context,
         principalId
       };
       console.log(`   🔓 Authorization succeeded`.yellow.dim);
@@ -376,9 +383,18 @@ export function run (argv) {
 
   const server = createServer((req, res) => {
     debug(` -> ${req.method} ${req.url}`);
+    debug(`    Content-Type: ${req.headers['content-type']}`);
 
     if (req.url === '/favicon.ico') {
       res.writeHead(404);
+      res.end();
+      return;
+    }
+
+    if (req.headers['content-type'] &&
+        !['application/json', 'application/x-www-form-urlencoded'].includes(req.headers['content-type'])) {
+      res.writeHead(415);
+      res.write('Unsupported media type');
       res.end();
       return;
     }
@@ -410,12 +426,21 @@ export function run (argv) {
       req.on('end', () => {
         rawBody = Buffer.concat([rawBody]);
         const rawUTFBody = rawBody.toString('utf8');
-        try {
-          jsonBody = JSON.parse(rawUTFBody);
-        } catch (err) {
-          error(`Could not parse JSON request body`.red.bold, rawUTFBody.red);
-          jsonBody = {};
+
+        if (req.headers['content-type'] === 'application/x-www-form-urlencoded') {
+          jsonBody = rawUTFBody;
+        } else if (req.headers['content-type'] === 'application/json') {
+          try {
+            jsonBody = JSON.parse(rawUTFBody);
+          } catch (err) {
+            error(`Could not parse JSON request body`.red.bold, rawUTFBody.red);
+            res.writeHead(400);
+            res.write('Request body is not a valid JSON string');
+            res.end();
+            return;
+          }
         }
+
         next();
       });
       req.resume();
@@ -495,7 +520,7 @@ export function run (argv) {
           title: 'checking IAM Roles',
           task: () => {
             Object.values(API_DEFINITIONS).every(runner => {
-              if (runner.name === 'processCFTemplate') {
+              if (runner.name === 'customTemplateFragment') {
                 return true;
               }
               try {
@@ -582,8 +607,8 @@ function setupWatcher ({ stage, stackName, ignore = [], PROJECT_ROOT }) {
   const onWatch = (fileName) => {
     const ignoreList = [
       ...ignore,
-      '**/node_modules',
-      '.dawson-dist/**',
+      '**/node_modules/**',
+      '**/.dawson-dist/**',
       '**/~*',
       '**/.*'
     ];
@@ -592,12 +617,12 @@ function setupWatcher ({ stage, stackName, ignore = [], PROJECT_ROOT }) {
       return;
     }
 
-    if (!ignoreList.every(pattern => !minimatch(fileName, `${PROJECT_ROOT}/${pattern}`))) {
-      log(`   Reload: [ignored] ${fileName}`.dim);
+    if (ignoreList.some(pattern => minimatch(fileName, pattern, { dot: true }))) {
+      debug(`   Reload: [ignored] ${fileName}`.dim);
       return;
     }
 
-    log(`   Reload: ${fileName}`.dim);
+    log(`   Reload: ${fileName}...`.dim);
     bundleInProgress = true;
     createBundle({ stage, stackName, onlyCompile: true }).run()
     .then(() => {

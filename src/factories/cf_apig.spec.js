@@ -4,8 +4,6 @@ import { test } from 'tap';
 import {
   templateAPIID,
   templateAccount,
-  templateCloudWatchRole,
-  templateCloudWatchRoleName,
   templateDeployment,
   templateDeploymentName,
   // templateLambdaIntegration,
@@ -214,9 +212,6 @@ test('templateStage', t => {
         'Description': 'prod Stage',
         'RestApiId': { Ref: 'API' },
         'StageName': 'prod',
-        'Variables': {
-          abc: '123'
-        },
         'MethodSettings': [{
           'HttpMethod': '*',
           'ResourcePath': '/*',
@@ -228,17 +223,9 @@ test('templateStage', t => {
   };
   const actual = templateStage({
     stageName: 'prod',
-    deploymentUid: '1234567',
-    stageVariables: { abc: '123' }
+    deploymentUid: '1234567'
   });
   t.deepEqual(actual, expected, 'should return the stage template');
-  t.end();
-});
-
-test('templateCloudWatchRoleName', t => {
-  const expected = 'APIGatewayCloudWatchIAMRole';
-  const actual = templateCloudWatchRoleName();
-  t.equal(actual, expected, 'should return the role name for CloudWatch');
   t.end();
 });
 
@@ -247,34 +234,34 @@ test('templateAccount', t => {
     'APIGatewayAccount': {
       'Type': 'AWS::ApiGateway::Account',
       'Properties': {
-        'CloudWatchRoleArn': { 'Fn::GetAtt': [ 'APIGatewayCloudWatchIAMRole', 'Arn' ] }
+        'CloudWatchRoleArn': { 'Fn::Sub': '${RoleAPIGatewayAccount.Arn}' } // eslint-disable-line
       }
+    },
+    'RoleAPIGatewayAccount': {
+      'Properties': {
+        'AssumeRolePolicyDocument': {
+          'Statement': [
+            {
+              'Action': 'sts:AssumeRole',
+              'Effect': 'Allow',
+              'Principal': {
+                'Service': [
+                  'apigateway.amazonaws.com'
+                ]
+              }
+            }
+          ],
+          'Version': '2012-10-17'
+        },
+        'ManagedPolicyArns': [
+          'arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs'
+        ],
+        'Path': '/'
+      },
+      'Type': 'AWS::IAM::Role'
     }
   };
   const actual = templateAccount();
-  t.deepEqual(actual, expected, 'should return the stage template');
-  t.end();
-});
-
-test('templateCloudWatchRole', t => {
-  const expected = {
-    'APIGatewayCloudWatchIAMRole': {
-      'Type': 'AWS::IAM::Role',
-      'Properties': {
-        'AssumeRolePolicyDocument': {
-          'Version': '2012-10-17',
-          'Statement': [{
-            'Effect': 'Allow',
-            'Principal': { 'Service': ['apigateway.amazonaws.com'] },
-            'Action': 'sts:AssumeRole'
-          }]
-        },
-        'Path': '/',
-        'ManagedPolicyArns': ['arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs']
-      }
-    }
-  };
-  const actual = templateCloudWatchRole();
   t.deepEqual(actual, expected, 'should return the stage template');
   t.end();
 });
