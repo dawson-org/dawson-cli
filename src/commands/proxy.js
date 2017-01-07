@@ -617,7 +617,7 @@ function setupWatcher ({ stage, stackName, ignore = [], PROJECT_ROOT }) {
       return;
     }
 
-    if (ignoreList.some(pattern => minimatch(fileName, pattern))) {
+    if (ignoreList.some(pattern => minimatch(fileName, pattern, { dot: true }))) {
       debug(`   Reload: [ignored] ${fileName}`.dim);
       return;
     }
