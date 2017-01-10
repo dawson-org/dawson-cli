@@ -157,7 +157,8 @@ test('templateLambda', t => {
         'Timeout': 30,
         'Environment': {
           'Variables': {
-            'DAWSON_myBar': 'baz'
+            'DAWSON_myBar': 'baz',
+            'NODE_ENV': 'development'
           }
         }
       }

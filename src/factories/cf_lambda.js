@@ -117,6 +117,7 @@ export function templateLambda ({
     const prefixedEnvKey = `DAWSON_${envKey}`;
     prefixedEnvironment[prefixedEnvKey] = environment[envKey];
   });
+  prefixedEnvironment.NODE_ENV = process.env.NODE_ENV || 'development';
 
   return {
     ...templateLambdaExecutionRole({
