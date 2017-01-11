@@ -50,8 +50,8 @@ const FUNCTION_CONFIGURATION_SCHEMA = {
       if (val === '') {
         return;
       }
-      if (!/^[^?#]+$/.test(val)) {
-        return new Error(`path should not contain ? #`);
+      if (!/^[a-zA-Z0-9/{}]+$/.test(val)) {
+        return new Error(`path should match regexp [a-zA-Z0-9/{}]+`);
       }
       if (val[0] === '/' || val[val.length - 1] === '/') {
         return new Error(`path should not begin or end with a '/'`);
