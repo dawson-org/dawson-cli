@@ -22,7 +22,8 @@ const FUNCTION_CONFIGURATION_PROPERTIES = [
   'method',
   'policyStatements',
   'redirects',
-  'responseContentType'
+  'responseContentType',
+  'excludeEnv'
 ];
 
 const APP_CONFIGURATION_PROPERTIES = [
@@ -82,7 +83,8 @@ const FUNCTION_CONFIGURATION_SCHEMA = {
       if (!/^\w+\/(\w|-|\.)+$/.test(props[propName])) {
         return new Error(`responseContentType should match regexp '\\w+/\\w+'`);
       }
-    }
+    },
+    excludeEnv: Type.arrayOf(Type.string)
   })
 };
 
