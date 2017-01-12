@@ -22,7 +22,8 @@ const FUNCTION_CONFIGURATION_PROPERTIES = [
   'method',
   'policyStatements',
   'redirects',
-  'responseContentType'
+  'responseContentType',
+  'excludeEnv'
 ];
 
 const APP_CONFIGURATION_PROPERTIES = [
@@ -50,8 +51,12 @@ const FUNCTION_CONFIGURATION_SCHEMA = {
       if (val === '') {
         return;
       }
-      if (!/^[^?#]+$/.test(val)) {
-        return new Error(`path should not contain ? #`);
+      if (!/^[a-zA-Z0-9/{}]+$/.test(val)) {
+        // we use paths to determine API Gateway's Resource names,
+        // which must match /[a-zA-Z0-9]+/. We may eventually
+        // change the way we determine resource names (e.g. stripping
+        // non matching chars).
+        return new Error(`path should match regexp [a-zA-Z0-9/{}]+`);
       }
       if (val[0] === '/' || val[val.length - 1] === '/') {
         return new Error(`path should not begin or end with a '/'`);
@@ -82,7 +87,8 @@ const FUNCTION_CONFIGURATION_SCHEMA = {
       if (!/^\w+\/(\w|-|\.)+$/.test(props[propName])) {
         return new Error(`responseContentType should match regexp '\\w+/\\w+'`);
       }
-    }
+    },
+    excludeEnv: Type.arrayOf(Type.string)
   })
 };
 
