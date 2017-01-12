@@ -372,9 +372,9 @@ export function run (argv) {
     assetsPath,
     verbose,
     skipChmod,
-    skipCleanup
+    fastStartup
   } = argv;
-  const onlyCompile = skipCleanup;
+  const onlyCompile = fastStartup;
   const port = argv.port || process.env.PORT || 3000;
 
   const stackName = templateStackName({ appName: APP_NAME, stage });
