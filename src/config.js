@@ -52,6 +52,10 @@ const FUNCTION_CONFIGURATION_SCHEMA = {
         return;
       }
       if (!/^[a-zA-Z0-9/{}]+$/.test(val)) {
+        // we use paths to determine API Gateway's Resource names,
+        // which must match /[a-zA-Z0-9]+/. We may eventually
+        // change the way we determine resource names (e.g. stripping
+        // non matching chars).
         return new Error(`path should match regexp [a-zA-Z0-9/{}]+`);
       }
       if (val[0] === '/' || val[val.length - 1] === '/') {
