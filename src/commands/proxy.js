@@ -294,8 +294,12 @@ function runAuthorizer ({ authorizer, event, envVariables, req, res, successCall
         fail(403, '   🔒'.red, `Authorizer did not return a valid policy document`.red, policyDocument);
         return;
       }
-      event.authorizer = {
-        ...context,
+      event.context = {
+        ...event.context,
+        authorizer: {
+          ...(event.context || {}).authorizer,
+          ...context
+        },
         principalId
       };
       console.log(`   🔓 Authorization succeeded`.yellow.dim);
