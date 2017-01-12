@@ -38,6 +38,7 @@ function getWrappingCode (apis, name) {
         } catch (_jsonError) {
           console.error('Unhandled error will be swallowed and reported as HTTP 500:');
           console.error(err);
+          console.error('Stack Trace:', err.message, err.stack);
           const opaqueError = {
             unhandled: true,
             message: 'Unhandled internal error',
