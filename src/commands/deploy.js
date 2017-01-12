@@ -224,7 +224,7 @@ async function taskCheckRoute53Prerequisites ({ route53Enabled, hostedZoneId, cl
     if (!`${cloudfrontCustomDomain}.`.includes(domainName) &&
          domainName !== `${cloudfrontCustomDomain}.`) {
       throw new Error(stripIndent`
-        Route53 Zone '${hostedZoneId}' (${domainName}) cannot 
+        Route53 Zone '${hostedZoneId}' (${domainName}) cannot
         contain this record: '${cloudfrontCustomDomain}.', please fix your package.json.
       `);
     }
@@ -422,7 +422,13 @@ export async function deploy ({
           if (RESERVED_FUCTION_NAMES.includes(def.name)) {
             continue;
           }
-          const { template, methodDefinition } = taskCreateFunctionTemplatePartial({ index, def, stackName, zipS3Location, environment });
+          const currentEnv = { ...environment };
+          if (Array.isArray(def.api.excludeEnv)) {
+            def.api.excludeEnv.forEach(key => {
+              delete currentEnv[key];
+            });
+          }
+          const { template, methodDefinition } = taskCreateFunctionTemplatePartial({ index, def, stackName, zipS3Location, environment: currentEnv });
           functionTemplatePartials = {
             ...functionTemplatePartials,
             ...template
