@@ -367,8 +367,10 @@ export function run (argv) {
     assetsProxy,
     assetsPath,
     verbose,
-    skipChmod
+    skipChmod,
+    skipCleanup
   } = argv;
+  const onlyCompile = skipCleanup;
   const port = argv.port || process.env.PORT || 3000;
 
   const stackName = templateStackName({ appName: APP_NAME, stage });
@@ -483,7 +485,7 @@ export function run (argv) {
   const startupTasks = new Listr([
     {
       title: 'creating first bundle',
-      task: () => createBundle({ stage, stackName, skipChmod })
+      task: () => createBundle({ stage, stackName, skipChmod, onlyCompile })
     },
     {
       title: 'validating AWS resources',
