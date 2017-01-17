@@ -173,36 +173,6 @@ export function templateMockIntegration () {
   };
 }
 
-export function templateInvokationRole () {
-  return {
-    'APIGExecutionRole': {
-      'Type': 'AWS::IAM::Role',
-      'Properties': {
-        'AssumeRolePolicyDocument': {
-          'Version': '2012-10-17',
-          'Statement': [{
-            'Effect': 'Allow',
-            'Principal': {'Service': ['apigateway.amazonaws.com']},
-            'Action': ['sts:AssumeRole']
-          }]
-        },
-        'Path': '/',
-        'Policies': [{
-          'PolicyName': 'invokeLambda',
-          'PolicyDocument': {
-            'Version': '2012-10-17',
-            'Statement': [{
-              'Effect': 'Allow',
-              'Action': ['lambda:InvokeFunction'],
-              'Resource': 'arn:aws:lambda:*:*:*'
-            }]
-          }
-        }]
-      }
-    }
-  };
-}
-
 export function templateLambdaIntegration ({
   lambdaName,
   responseContentType,
@@ -285,7 +255,6 @@ export function templateLambdaIntegration ({
       'application/json': getMappingTemplate({ apigResponseContentType })
     },
     'Type': 'AWS',
-    'Credentials': { 'Fn::GetAtt': ['APIGExecutionRole', 'Arn'] },
     'Uri': { 'Fn::Join': ['', [
       `arn:aws:apigateway:`,
       { 'Ref': 'AWS::Region' },
@@ -360,7 +329,6 @@ export function templateMethod ({
   }
 
   return {
-    ...templateInvokationRole({}),
     ...templateModel({ modelName: responseModelName, modelSchema: '{}' }),
     ...authorizerPartial,
     [`${templateMethodName({ resourceName, httpMethod })}`]: {
@@ -491,7 +459,6 @@ export function templateAuthorizer ({
     [`${authorizerName}`]: {
       'Type': 'AWS::ApiGateway::Authorizer',
       'Properties': {
-        'AuthorizerCredentials': { 'Fn::GetAtt': ['APIGExecutionRole', 'Arn'] },
         'AuthorizerResultTtlInSeconds': 0,
         'AuthorizerUri': { 'Fn::Sub': 'arn:aws:apigateway:${AWS::Region}:lambda:path//2015-03-31/functions/${' + lambdaLogicalName + '.Arn}/invocations' }, // eslint-disable-line
         'IdentitySource': 'method.request.header.token',

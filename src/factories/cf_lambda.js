@@ -88,6 +88,23 @@ export function templateLambdaExecutionRole ({
   };
 }
 
+function templateLambdaPermission ({ lambdaName }) {
+  const lambdaLogicalName = templateLambdaName({ lambdaName });
+  return {
+    [`PermissionFor${lambdaLogicalName}`]: {
+      'Type': 'AWS::Lambda::Permission',
+      'Properties': {
+        'Action': 'lambda:InvokeFunction',
+        'FunctionName': { 'Fn::Sub': `\x24{${lambdaLogicalName}.Arn}` },
+        'Principal': 'apigateway.amazonaws.com',
+        'SourceArn': {
+          'Fn::Sub': 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${API}/prod*' // eslint-disable-line no-template-curly-in-string
+        }
+      }
+    }
+  };
+}
+
 const LAMBDA_DEMO_INLINE_CODE = stripIndent`
 module.exports.handler = function (event, context, callback) {
   console.log('got event', event);
@@ -120,6 +137,7 @@ export function templateLambda ({
   prefixedEnvironment.NODE_ENV = process.env.NODE_ENV || 'development';
 
   return {
+    ...templateLambdaPermission({ lambdaName }),
     ...templateLambdaExecutionRole({
       lambdaName,
       policyStatements
