@@ -180,14 +180,17 @@ function validateSystem () {
       `install the yarn package manager using '$ npm install -g yarn'`
     ];
   }
+  return true;
+}
+
+export function validateDocker () {
   const dockerResult = execa.sync('docker', ['--help']);
   if (dockerResult.status !== 0) {
-    return [
-      `docker is a required dependency but the docker binary was not found: ${dockerResult.error.message}`,
-      `See https://docker.io for installation instructions`
-    ];
+    throw new Error(stripIndent`
+      docker is a required dependency but the docker binary was not found: ${dockerResult.error.message}.
+      See https://docker.io for installation instructions
+    `);
   }
-  return true;
 }
 
 function validatePackageJSON (source) {

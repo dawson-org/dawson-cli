@@ -27,7 +27,7 @@ import { parse } from 'url';
 import { throttle, flatten } from 'lodash';
 
 import createError from '../libs/error';
-import loadConfig, { AWS_REGION } from '../config';
+import loadConfig, { AWS_REGION, validateDocker } from '../config';
 import taskCreateBundle from '../libs/createBundle';
 import { debug, error, log, success, warning } from '../logger';
 import {
@@ -366,6 +366,7 @@ function createBundle ({ stage, stackName, onlyCompile = false, skipChmod }) {
 
 export function run (argv) {
   const { SETTINGS, API_DEFINITIONS, APP_NAME, PROJECT_ROOT } = loadConfig();
+  validateDocker();
   const {
     stage,
     assetsProxy,
