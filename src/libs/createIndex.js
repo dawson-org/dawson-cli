@@ -6,6 +6,9 @@ function getWrappingCode (apis, name) {
   const hasEndpoint = apiConfig.path !== false;
   const body = stripIndent`
     module.exports.${name} = function (event, context, callback) {
+      if (event.__ping) {
+        return callback(null, '"pong__"');
+      }
       context.dawsonDescribeOutputs = dawsonDescribeOutputs;
       const runner = require('./api').${name};
       Promise.resolve()
