@@ -14,7 +14,7 @@ import { stripIndent } from 'common-tags';
 import createError from './libs/error';
 
 export const AWS_REGION = AWS.config.region;
-export const RESERVED_FUCTION_NAMES = ['customTemplateFragment'];
+export const RESERVED_FUCTION_NAMES = ['customTemplateFragment', 'processCFTemplate'];
 
 const FUNCTION_CONFIGURATION_PROPERTIES = [
   'path',

@@ -530,6 +530,9 @@ export function run (argv) {
               if (runner.name === 'customTemplateFragment') {
                 return true;
               }
+              if (runner.name === 'processCFTemplate') {
+                return true;
+              }
               try {
                 const roleName = findRoleName(resources, runner);
                 debug(`Function '${runner.name}' will execute with IAM Role '${roleName}'`);

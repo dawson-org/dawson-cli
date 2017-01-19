@@ -284,6 +284,10 @@ function taskProcessTemplate ({
     ...templateAccount()
   };
 
+  if (typeof API_DEFINITIONS['processCFTemplate'] === 'function') {
+    cfTemplate = API_DEFINITIONS['processCFTemplate'](cfTemplate);
+  }
+
   const cfTemplateJSON = JSON.stringify(cfTemplate, null, 2);
   return { cfTemplateJSON };
 }
