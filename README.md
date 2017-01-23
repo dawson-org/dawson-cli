@@ -69,12 +69,12 @@ A changelog is maintained in the [Releases page](https://github.com/dawson-org/d
 Any contribution is very welcome! You may pick an Issue, fork and start working on that. Should you need any guidance or help please ask :)
 
 <!-- Contributors START
-Simone_Lusenti lusentis twitter.com/Lanzone31 code infra doc tests example
-Giacomo_Consonni giaco9 twitter.com/GiacomoConsonni code
-Luca_Casartelli lcasartelli twitter.com/LucaCasartelli code doc
+Simone_Lusenti lusentis https://twitter.com/Lanzone31 code infra doc tests example
+Giacomo_Consonni giaco9 https://twitter.com/GiacomoConsonni code
+Luca_Casartelli lcasartelli https://twitter.com/CasartelliLuca code doc
 Contributors END -->
 <!-- Contributors table START -->
-| [![Simone Lusenti](https://avatars.githubusercontent.com/lusentis?s=100)<br /><sub>Simone Lusenti</sub>](twitter.com/Lanzone31)<br />[💻](git@github.com:lusentis/dawson/commits?author=lusentis) 🚇 [📖](git@github.com:lusentis/dawson/commits?author=lusentis) [⚠️](git@github.com:lusentis/dawson/commits?author=lusentis) 💡 | [![Giacomo Consonni](https://avatars.githubusercontent.com/giaco9?s=100)<br /><sub>Giacomo Consonni</sub>](twitter.com/GiacomoConsonni)<br />[💻](git@github.com:lusentis/dawson/commits?author=giaco9) | [![Luca Casartelli](https://avatars.githubusercontent.com/lcasartelli?s=100)<br /><sub>Luca Casartelli</sub>](twitter.com/LucaCasartelli)<br />[💻](git@github.com:lusentis/dawson/commits?author=lcasartelli) [📖](git@github.com:lusentis/dawson/commits?author=lcasartelli) |
+| [![Simone Lusenti](https://avatars.githubusercontent.com/lusentis?s=100)<br /><sub>Simone Lusenti</sub>](https://twitter.com/Lanzone31)<br />[💻](git@github.com:lusentis/dawson/commits?author=lusentis) 🚇 [📖](git@github.com:lusentis/dawson/commits?author=lusentis) [⚠️](git@github.com:lusentis/dawson/commits?author=lusentis) 💡 | [![Giacomo Consonni](https://avatars.githubusercontent.com/giaco9?s=100)<br /><sub>Giacomo Consonni</sub>](https://twitter.com/GiacomoConsonni)<br />[💻](git@github.com:lusentis/dawson/commits?author=giaco9) | [![Luca Casartelli](https://avatars.githubusercontent.com/lcasartelli?s=100)<br /><sub>Luca Casartelli</sub>](https://twitter.com/CasartelliLuca)<br />[💻](git@github.com:lusentis/dawson/commits?author=lcasartelli) [📖](git@github.com:lusentis/dawson/commits?author=lcasartelli) |
 | :---: | :---: | :---: |
 <!-- Contributors table END -->
 
