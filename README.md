@@ -1,8 +1,8 @@
 ![dawson](https://raw.githubusercontent.com/dawson-org/dawson-cli/images/dawson-logo.png)
 
-[![npm version](https://img.shields.io/npm/v/dawson.svg?maxAge=3600)]() 
-[![Build Status](https://travis-ci.org/dawson-org/dawson-cli.svg?branch=master)](https://travis-ci.org/dawson-org/dawson-cli) 
-[![npm dependencies](https://david-dm.org/dawson-org/dawson-cli.svg?maxAge=3600)]() 
+[![npm version](https://img.shields.io/npm/v/dawson.svg?maxAge=3600)]()
+[![Build Status](https://travis-ci.org/dawson-org/dawson-cli.svg?branch=master)](https://travis-ci.org/dawson-org/dawson-cli)
+[![npm dependencies](https://david-dm.org/dawson-org/dawson-cli.svg?maxAge=3600)]()
 
 dawson is a [serverless](https://auth0.com/blog/what-is-serverless/) web framework for Node.js on AWS ([CloudFormation](https://aws.amazon.com/cloudformation/), [CloudFront](https://aws.amazon.com/cloudfront/), [API Gateway](https://aws.amazon.com/apigateway/), [Lambda](https://aws.amazon.com/lambda/)).  
 You can use `dawson` to build and deploy backend code and infrastructure for single-page apps + API, pure APIs or server-rendered pages.
@@ -68,10 +68,15 @@ A changelog is maintained in the [Releases page](https://github.com/dawson-org/d
 [![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=plastic)](https://github.com/Flet/semistandard)  
 Any contribution is very welcome! You may pick an Issue, fork and start working on that. Should you need any guidance or help please ask :)
 
-#### Contributors
-* Simone Lusenti [@Lanzone31](https://twitter.com/Lanzone31)
-* Giacomo Consonni [@GiacomoConsonni](https://twitter.com/GiacomoConsonni)
-* Luca Casartelli [@CasartelliLuca](https://twitter.com/CasartelliLuca)
+<!-- Contributors START
+Simone_Lusenti lusentis https://twitter.com/Lanzone31 code infra doc tests example
+Giacomo_Consonni giaco9 https://twitter.com/GiacomoConsonni code
+Luca_Casartelli lcasartelli https://twitter.com/CasartelliLuca code doc
+Contributors END -->
+<!-- Contributors table START -->
+| [![Simone Lusenti](https://avatars.githubusercontent.com/lusentis?s=100)<br /><sub>Simone Lusenti</sub>](https://twitter.com/Lanzone31)<br />[💻](git@github.com:lusentis/dawson/commits?author=lusentis) 🚇 [📖](git@github.com:lusentis/dawson/commits?author=lusentis) [⚠️](git@github.com:lusentis/dawson/commits?author=lusentis) 💡 | [![Giacomo Consonni](https://avatars.githubusercontent.com/giaco9?s=100)<br /><sub>Giacomo Consonni</sub>](https://twitter.com/GiacomoConsonni)<br />[💻](git@github.com:lusentis/dawson/commits?author=giaco9) | [![Luca Casartelli](https://avatars.githubusercontent.com/lcasartelli?s=100)<br /><sub>Luca Casartelli</sub>](https://twitter.com/CasartelliLuca)<br />[💻](git@github.com:lusentis/dawson/commits?author=lcasartelli) [📖](git@github.com:lusentis/dawson/commits?author=lcasartelli) |
+| :---: | :---: | :---: |
+<!-- Contributors table END -->
 
 ## Support
 In case you have an issue, make sure you have updated to the latest version (e.g.: `npm i dawson@latest`), then:
@@ -93,16 +98,16 @@ In case you have an issue, make sure you have updated to the latest version (e.g
 ## License
 
     Copyright (C) 2016  Simone Lusenti
-    
+
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-    
+
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-    
+
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
