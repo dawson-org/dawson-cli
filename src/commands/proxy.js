@@ -602,17 +602,6 @@ export function run (argv) {
 }
 
 function setupWatcher ({ stage, stackName, ignore = [], PROJECT_ROOT }) {
-  log(indent(stripIndent`
-    Reload: watching ${PROJECT_ROOT}/** for changes.
-            The proxy will auto reload on file changes.
-            You must manually restart the proxy when
-              * adding or updating npm dependencies
-              * adding a Lambda function or updating its configuration
-              * updating Lambda policyStatements
-              * updating CloudFormation resources
-  `.dim, 3));
-  log('');
-
   const ignoreList = [
     ...ignore,
     '**/node_modules/**',
@@ -645,8 +634,21 @@ function setupWatcher ({ stage, stackName, ignore = [], PROJECT_ROOT }) {
   };
   const watchEE = chokidar.watch(PROJECT_ROOT, {
     ignored: ignoreList,
+    ignoreInitial: true,
     persistent: true,
     atomic: true
+  });
+  watchEE.on('ready', () => {
+    log(indent(stripIndent`
+      Reload: watching ${PROJECT_ROOT}/** for changes.
+              The proxy will auto reload on file changes.
+              You must manually restart the proxy when
+                * adding or updating npm dependencies
+                * adding a Lambda function or updating its configuration
+                * updating Lambda policyStatements
+                * updating CloudFormation resources
+    `.dim, 3));
+    log('');
   });
   watchEE.on('change', onWatch);
   watchEE.on('add', onWatch);
