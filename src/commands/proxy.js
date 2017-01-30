@@ -18,13 +18,13 @@ import qs from 'querystring';
 import send from 'send';
 import util from 'util';
 import verboseRenderer from 'listr-verbose-renderer';
-import watch from 'node-watch';
+import watch from 'glob-watcher';
 import { compare } from 'pathmatch';
 import { createProxyServer } from 'http-proxy';
 import { createServer } from 'http';
 import { oneLine, stripIndent } from 'common-tags';
 import { parse } from 'url';
-import { throttle, flatten } from 'lodash';
+import { flatten } from 'lodash';
 
 import createError from '../libs/error';
 import loadConfig, { AWS_REGION, validateDocker } from '../config';
@@ -644,6 +644,7 @@ function setupWatcher ({ stage, stackName, ignore = [], PROJECT_ROOT }) {
       throw err;
     });
   };
-  const watchEE = watch(PROJECT_ROOT, { recursive: true });
-  watchEE.on('change', throttle(onWatch, 500, { 'options.trailing': true }));
+  const watchEE = watch([`${PROJECT_ROOT}/**/*.js`, `!${PROJECT_ROOT}/node_modules/**`], {});
+  watchEE.on('change', onWatch);
+  watchEE.on('add', onWatch);
 }
