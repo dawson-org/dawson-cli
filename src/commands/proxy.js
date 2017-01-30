@@ -18,7 +18,7 @@ import qs from 'querystring';
 import send from 'send';
 import util from 'util';
 import verboseRenderer from 'listr-verbose-renderer';
-import watch from 'glob-watcher';
+import chokidar from 'chokidar';
 import { compare } from 'pathmatch';
 import { createProxyServer } from 'http-proxy';
 import { createServer } from 'http';
@@ -613,16 +613,15 @@ function setupWatcher ({ stage, stackName, ignore = [], PROJECT_ROOT }) {
   `.dim, 3));
   log('');
 
+  const ignoreList = [
+    ...ignore,
+    '**/node_modules/**',
+    '**/.dawson-dist/**',
+    '**/~*',
+    '**/.*'
+  ];
   let bundleInProgress = false;
   const onWatch = (fileName) => {
-    const ignoreList = [
-      ...ignore,
-      '**/node_modules/**',
-      '**/.dawson-dist/**',
-      '**/~*',
-      '**/.*'
-    ];
-
     if (bundleInProgress) {
       return;
     }
@@ -644,7 +643,11 @@ function setupWatcher ({ stage, stackName, ignore = [], PROJECT_ROOT }) {
       throw err;
     });
   };
-  const watchEE = watch([`${PROJECT_ROOT}/**/*.js`, `!${PROJECT_ROOT}/node_modules/**`], {});
+  const watchEE = chokidar.watch(PROJECT_ROOT, {
+    ignored: ignoreList,
+    persistent: true,
+    atomic: true
+  });
   watchEE.on('change', onWatch);
   watchEE.on('add', onWatch);
 }
