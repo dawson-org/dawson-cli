@@ -2,7 +2,7 @@
 import { stripIndent } from 'common-tags';
 
 function getWrappingCode (apis, name) {
-  const apiConfig = apis[name].api || {};
+  const apiConfig = apis[name].api;
   const hasEndpoint = apiConfig.path !== false;
   const body = stripIndent`
     module.exports.${name} = function (event, context, callback) {
@@ -75,7 +75,7 @@ export default function createIndex (apis, stackName) {
           const outputs = result.Stacks[0].Outputs;
           const ret = {};
           outputs.forEach(output => {
-            ret[output.OutputKey] = output.OutputValue; 
+            ret[output.OutputKey] = output.OutputValue;
           });
           stackOutputs = ret;
           return ret;
