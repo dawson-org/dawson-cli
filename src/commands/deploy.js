@@ -257,7 +257,8 @@ function taskProcessTemplate ({
       ...functionTemplatePartials,
       ...templateDeployment({
         deploymentUid,
-        dependsOnMethods: methodsInTemplate
+        dependsOnMethods: methodsInTemplate,
+        date: new Date().toISOString()
       }),
       ...cloudfrontPartial,
       ...route53Partial

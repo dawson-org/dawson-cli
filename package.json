@@ -9,14 +9,11 @@
     "compile": "babel -s true --source-maps inline -d dist/ src/ --ignore *.AppleDouble*",
     "coverage": "tap --nyc-arg=--require --nyc-arg=babel-register src/**/*.spec.js --cov --coverage-report=html",
     "link:watch": "nodemon -w src -x npm -- run lint-link",
-    "lint": "semistandard --fix | snazzy",
+    "lint": "eslint --fix src/**/*.js | snazzy",
     "lint-link": "npm run lint && npm link",
     "lint:watch": "nodemon -w src -x npm -- run lint",
     "prepublish": "npm run clean && npm run compile",
     "test": "npm run lint && tap --nyc-arg=--require --nyc-arg=babel-register src/**/*.spec.js --check-coverage --lines 0"
-  },
-  "semistandard": {
-    "parser": "babel-eslint"
   },
   "engines": {
     "node": ">=6"
@@ -60,11 +57,14 @@
   "bin": "dist/index.js",
   "devDependencies": {
     "babel-cli": "^6.14.0",
-    "babel-eslint": "^7.0.0",
     "babel-plugin-transform-object-rest-spread": "^6.20.2",
     "babel-preset-env": "^1.1.4",
+    "eslint": "^3.14.1",
+    "eslint-config-semistandard": "^7.0.0",
+    "eslint-config-standard": "^6.2.1",
+    "eslint-plugin-promise": "^3.4.0",
+    "eslint-plugin-standard": "^2.0.1",
     "pre-commit": "^1.2.2",
-    "semistandard": "^9.0.0",
     "snazzy": "^6.0.0"
   }
 }

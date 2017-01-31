@@ -1,10 +1,7 @@
-
 import assert from 'assert';
 import { stripIndent } from 'common-tags';
 
-import {
-  templateLambdaName
-} from './cf_lambda';
+import { templateLambdaName } from './cf_lambda';
 
 const getMappingTemplate = ({ apigResponseContentType }) => stripIndent`
 #set($allParams = $input.params())
@@ -75,18 +72,16 @@ export function templateModelName ({ modelName }) {
 export function templateRest ({ appStage }) {
   return {
     [`${templateAPIID()}`]: {
-      'Type': 'AWS::ApiGateway::RestApi',
-      'Properties': {
-        'Description': `REST API for dawson app`,
-        'Name': `AppAPI${appStage[0].toUpperCase()}${appStage.slice(1)}`
+      Type: 'AWS::ApiGateway::RestApi',
+      Properties: {
+        Description: `REST API for dawson app`,
+        Name: `AppAPI${appStage[0].toUpperCase()}${appStage.slice(1)}`
       }
     }
   };
 }
 
-export function templateResourceHelper ({
-  resourcePath
-}) {
+export function templateResourceHelper ({ resourcePath }) {
   const resourcePathTokens = resourcePath.split('/');
   let lastResourceName;
   let templateResourcePartials = {};
@@ -102,82 +97,49 @@ export function templateResourceHelper ({
       resourceName = pathToken[0].toUpperCase() + pathToken.substring(1);
     }
     assert(!pathToken || pathToken[0] !== '/', '`path` should not begin with a /');
-    const templateResourcePartial = (pathToken)
-      ? templateResource({
-        resourceName, // @FIXME prepend to resourceName the parent resources names
-        resourcePath: pathToken,
-        parentResourceName: lastResourceName
-      })
-      : {};
+    const templateResourcePartial = pathToken ? templateResource({
+      resourceName,
+        // @FIXME prepend to resourceName the parent resources names
+      resourcePath: pathToken,
+      parentResourceName: lastResourceName
+    }) : {};
     lastResourceName = resourceName;
-    templateResourcePartials = {
-      ...templateResourcePartials,
-      ...templateResourcePartial
-    };
+    templateResourcePartials = { ...templateResourcePartials, ...templateResourcePartial };
   });
-  return {
-    resourceName: lastResourceName,
-    templateResourcePartial: templateResourcePartials
-  };
+  return { resourceName: lastResourceName, templateResourcePartial: templateResourcePartials };
 }
 
-export function templateResource ({
-  resourceName,
-  resourcePath,
-  parentResourceName = null
-}) {
+export function templateResource ({ resourceName, resourcePath, parentResourceName = null }) {
   const parentId = !parentResourceName
-    ? { 'Fn::GetAtt': [`${templateAPIID()}`, 'RootResourceId'] }
-    : { 'Ref': `${templateResourceName({ resourceName: parentResourceName })}` };
+    ? { 'Fn::GetAtt': [ `${templateAPIID()}`, 'RootResourceId' ] }
+    : { Ref: `${templateResourceName({ resourceName: parentResourceName })}` };
   return {
     [`${templateResourceName({ resourceName })}`]: {
-      'Type': 'AWS::ApiGateway::Resource',
-      'Properties': {
-        'RestApiId': { 'Ref': `${templateAPIID()}` },
-        'ParentId': parentId,
-        'PathPart': resourcePath
+      Type: 'AWS::ApiGateway::Resource',
+      Properties: {
+        RestApiId: { Ref: `${templateAPIID()}` },
+        ParentId: parentId,
+        PathPart: resourcePath
       }
     }
   };
 }
 
-export function templateModel ({
-  modelName,
-  modelSchema
-}) {
+export function templateModel ({ modelName, modelSchema }) {
   return {
     [`${templateModelName({ modelName })}`]: {
-      'Type': 'AWS::ApiGateway::Model',
-      'Properties': {
-        'ContentType': 'application/json',
-        'Description': `Model ${modelName}`,
-        'RestApiId': { 'Ref': `${templateAPIID()}` },
-        'Schema': modelSchema
+      Type: 'AWS::ApiGateway::Model',
+      Properties: {
+        ContentType: 'application/json',
+        Description: `Model ${modelName}`,
+        RestApiId: { Ref: `${templateAPIID()}` },
+        Schema: modelSchema
       }
     }
   };
 }
 
-export function templateMockIntegration () {
-  return {
-    'IntegrationResponses': [{
-      'ResponseTemplates': {
-        'text/html': 'Hello World from ApiGateway'
-      },
-      'StatusCode': 200
-    }],
-    'RequestTemplates': {
-      'application/json': `{ "statusCode": 200 }`
-    },
-    'Type': 'MOCK'
-  };
-}
-
-export function templateLambdaIntegration ({
-  lambdaName,
-  responseContentType,
-  redirects
-}) {
+export function templateLambdaIntegration ({ lambdaName, responseContentType, redirects }) {
   let responseTemplate = {
     [responseContentType]: stripIndent`
       #set($inputRoot = $input.path('$'))
@@ -220,96 +182,87 @@ export function templateLambdaIntegration ({
     };
   }
   return {
-    'IntegrationHttpMethod': 'POST',
-    'IntegrationResponses': [{
-      'ResponseParameters': responseParameters,
-      'ResponseTemplates': { ...responseTemplate },
-      'StatusCode': defaultStatusCode
-    }, {
-      'ResponseParameters': responseParameters,
-      'ResponseTemplates': { ...errorResponseTemplate },
-      'SelectionPattern': `.*"httpStatus":500.*`,
-      'StatusCode': 500
-    }, {
-      'ResponseParameters': responseParameters,
-      'ResponseTemplates': { ...errorResponseTemplate },
-      'SelectionPattern': `.*"httpStatus":400.*`,
-      'StatusCode': 400
-    }, {
-      'ResponseParameters': responseParameters,
-      'ResponseTemplates': { ...errorResponseTemplate },
-      'SelectionPattern': `.*"httpStatus":403.*`,
-      'StatusCode': 403
-    }, {
-      'ResponseParameters': responseParameters,
-      'ResponseTemplates': { ...errorResponseTemplate },
-      'SelectionPattern': `.*"httpStatus":404.*`,
-      'StatusCode': 404
-    }],
+    IntegrationHttpMethod: 'POST',
+    IntegrationResponses: [
+      {
+        ResponseParameters: responseParameters,
+        ResponseTemplates: { ...responseTemplate },
+        StatusCode: defaultStatusCode
+      },
+      {
+        ResponseParameters: responseParameters,
+        ResponseTemplates: { ...errorResponseTemplate },
+        SelectionPattern: `.*"httpStatus":500.*`,
+        StatusCode: 500
+      },
+      {
+        ResponseParameters: responseParameters,
+        ResponseTemplates: { ...errorResponseTemplate },
+        SelectionPattern: `.*"httpStatus":400.*`,
+        StatusCode: 400
+      },
+      {
+        ResponseParameters: responseParameters,
+        ResponseTemplates: { ...errorResponseTemplate },
+        SelectionPattern: `.*"httpStatus":403.*`,
+        StatusCode: 403
+      },
+      {
+        ResponseParameters: responseParameters,
+        ResponseTemplates: { ...errorResponseTemplate },
+        SelectionPattern: `.*"httpStatus":404.*`,
+        StatusCode: 404
+      }
+    ],
     // "RequestParameters" : { String:String, ... },
-    'PassthroughBehavior': 'NEVER',
-    'RequestTemplates': {
+    PassthroughBehavior: 'NEVER',
+    RequestTemplates: {
       // https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-mapping-template-reference.html#util-template-reference
       // § "Param Mapping Template Example" and above
       'application/x-www-form-urlencoded': getMappingTemplate({ apigResponseContentType }),
       'application/json': getMappingTemplate({ apigResponseContentType })
     },
-    'Type': 'AWS',
-    'Uri': { 'Fn::Join': ['', [
-      `arn:aws:apigateway:`,
-      { 'Ref': 'AWS::Region' },
-      `:lambda:path/2015-03-31/functions/`,
-      { 'Fn::GetAtt': [`${templateLambdaName({ lambdaName })}`, 'Arn'] },
-      '/invocations'
-    ]]
+    Type: 'AWS',
+    Uri: {
+      'Fn::Join': [
+        '',
+        [
+          `arn:aws:apigateway:`,
+          { Ref: 'AWS::Region' },
+          `:lambda:path/2015-03-31/functions/`,
+          { 'Fn::GetAtt': [ `${templateLambdaName({ lambdaName })}`, 'Arn' ] },
+          '/invocations'
+        ]
+      ]
     }
   };
 }
-
-export function templateMethod ({
-  resourceName,
-  httpMethod = 'GET',
-  lambdaName = null,
-  responseContentType,
-  authorizerFunctionName,
-  redirects
-}) {
+export function templateMethod (
+  {
+    resourceName,
+    httpMethod = 'GET',
+    lambdaName,
+    responseContentType,
+    authorizerFunctionName,
+    redirects
+  }
+) {
   const responseModelName = 'HelloWorldModel';
   const resourceId = !resourceName
-    ? { 'Fn::GetAtt': [`${templateAPIID()}`, 'RootResourceId'] }
-    : { 'Ref': `${templateResourceName({ resourceName })}` };
-  const integrationConfig = lambdaName
-    ? templateLambdaIntegration({ lambdaName, responseContentType, redirects })
-    : templateMockIntegration({});
+    ? { 'Fn::GetAtt': [ `${templateAPIID()}`, 'RootResourceId' ] }
+    : { Ref: `${templateResourceName({ resourceName })}` };
+  const integrationConfig = templateLambdaIntegration({ lambdaName, responseContentType, redirects });
   let responseModel;
   if (responseContentType.includes('application/json')) {
     responseModel = {
-      'application/json': {
-        'Ref': templateModelName({ modelName: responseModelName })
-      }
-    };
-  } else if (responseContentType.includes('text/plain')) {
-    responseModel = {
-      'text/plain': {
-        'Ref': templateModelName({ modelName: responseModelName })
-      }
-    };
-  } else if (responseContentType.includes('text/html')) {
-    responseModel = {
-      'text/html': {
-        'Ref': templateModelName({ modelName: responseModelName })
-      }
+      'application/json': { Ref: templateModelName({ modelName: responseModelName }) }
     };
   } else {
     responseModel = {
-      [responseContentType]: {
-        'Ref': templateModelName({ modelName: responseModelName })
-      }
+      [responseContentType]: { Ref: templateModelName({ modelName: responseModelName }) }
     };
   }
-  let authorizerConfig = {
-    'AuthorizationType': 'NONE'
-  };
+  let authorizerConfig = { AuthorizationType: 'NONE' };
   if (authorizerFunctionName) {
     authorizerConfig = {
       ...authorizerConfig,
@@ -323,148 +276,131 @@ export function templateMethod ({
   }
   let dependsOn;
   if (authorizerFunctionName) {
-    dependsOn = {
-      DependsOn: [`${templateAuthorizerName({ authorizerFunctionName })}`]
-    };
+    dependsOn = { DependsOn: [ `${templateAuthorizerName({ authorizerFunctionName })}` ] };
   }
-
   return {
     ...templateModel({ modelName: responseModelName, modelSchema: '{}' }),
     ...authorizerPartial,
     [`${templateMethodName({ resourceName, httpMethod })}`]: {
-      'Type': 'AWS::ApiGateway::Method',
+      Type: 'AWS::ApiGateway::Method',
       ...dependsOn,
-      'Properties': {
-        'RestApiId': { 'Ref': `${templateAPIID()}` },
-        'ResourceId': resourceId,
-        'HttpMethod': httpMethod,
-        'Integration': integrationConfig,
-        'MethodResponses': [{
-          'ResponseModels': { ...responseModel },
-          'StatusCode': 200
-        }, {
-          'ResponseModels': { ...responseModel },
-          'StatusCode': 400
-        }, {
-          'ResponseModels': { ...responseModel },
-          'StatusCode': 403
-        }, {
-          'ResponseModels': { ...responseModel },
-          'StatusCode': 404
-        }, {
-          'ResponseModels': { ...responseModel },
-          'StatusCode': 500
-        }, {
-          'ResponseModels': { ...responseModel },
-          'StatusCode': 307,
-          'ResponseParameters': {
-            'method.response.header.Location': false
+      Properties: {
+        RestApiId: { Ref: `${templateAPIID()}` },
+        ResourceId: resourceId,
+        HttpMethod: httpMethod,
+        Integration: integrationConfig,
+        MethodResponses: [
+          { ResponseModels: { ...responseModel }, StatusCode: 200 },
+          { ResponseModels: { ...responseModel }, StatusCode: 400 },
+          { ResponseModels: { ...responseModel }, StatusCode: 403 },
+          { ResponseModels: { ...responseModel }, StatusCode: 404 },
+          { ResponseModels: { ...responseModel }, StatusCode: 500 },
+          {
+            ResponseModels: { ...responseModel },
+            StatusCode: 307,
+            ResponseParameters: { 'method.response.header.Location': false }
           }
-        }],
+        ],
         ...authorizerConfig
       }
     }
   };
 }
-
-export function templateDeployment ({
-  deploymentUid,
-  dependsOnMethods,
-  date = new Date().toISOString()
-}) {
+export function templateDeployment (
+  { deploymentUid, dependsOnMethods, date }
+) {
   const dependsOn = dependsOnMethods.map(methodInfo => {
     const { resourceName, httpMethod } = methodInfo;
     return templateMethodName({ resourceName, httpMethod });
   });
   return {
     [`${templateDeploymentName({ deploymentUid })}`]: {
-      'DependsOn': dependsOn,
-      'Type': 'AWS::ApiGateway::Deployment',
-      'Properties': {
-        'RestApiId': { 'Ref': `${templateAPIID()}` },
-        'Description': `Automated deployment by dawson on ${date}`
+      DependsOn: dependsOn,
+      Type: 'AWS::ApiGateway::Deployment',
+      Properties: {
+        RestApiId: { Ref: `${templateAPIID()}` },
+        Description: `Automated deployment by dawson on ${date}`
       }
     }
   };
 }
-
-export function templateStage ({
-  stageName,
-  deploymentUid
-}) {
+export function templateStage ({ stageName, deploymentUid }) {
   return {
     [`${templateStageName({ stageName })}`]: {
-      'Type': 'AWS::ApiGateway::Stage',
-      'Properties': {
-        'CacheClusterEnabled': false,
-        'DeploymentId': { 'Ref': `${templateDeploymentName({ deploymentUid })}` },
-        'Description': `${stageName} Stage`,
-        'RestApiId': { Ref: `${templateAPIID()}` },
-        'StageName': `${stageName}`,
-        'MethodSettings': [{
-          'HttpMethod': '*',
-          'ResourcePath': '/*',
-          'LoggingLevel': 'INFO',
-          'DataTraceEnabled': 'true'
-        }]
+      Type: 'AWS::ApiGateway::Stage',
+      Properties: {
+        CacheClusterEnabled: false,
+        DeploymentId: { Ref: `${templateDeploymentName({ deploymentUid })}` },
+        Description: `${stageName} Stage`,
+        RestApiId: { Ref: `${templateAPIID()}` },
+        StageName: `${stageName}`,
+        MethodSettings: [
+          { HttpMethod: '*', ResourcePath: '/*', LoggingLevel: 'INFO', DataTraceEnabled: 'true' }
+        ]
       }
     }
   };
 }
-
 export function templateAccount () {
   return {
     ...templateCloudWatchRole(),
-    'APIGatewayAccount': {
-      'Type': 'AWS::ApiGateway::Account',
-      'Properties': {
-        'CloudWatchRoleArn': { 'Fn::Sub': '${RoleAPIGatewayAccount.Arn}' } // eslint-disable-line
+    APIGatewayAccount: {
+      Type: 'AWS::ApiGateway::Account',
+      Properties: {
+        // eslint-disable-line
+        CloudWatchRoleArn: { 'Fn::Sub': '${RoleAPIGatewayAccount.Arn}' }
       }
     }
   };
 }
-
-function templateCloudWatchRole () {
+export function templateCloudWatchRole () {
   return {
-    'RoleAPIGatewayAccount': {
-      'Type': 'AWS::IAM::Role',
-      'Properties': {
-        'AssumeRolePolicyDocument': {
-          'Version': '2012-10-17',
-          'Statement': [{
-            'Effect': 'Allow',
-            'Principal': { 'Service': ['apigateway.amazonaws.com'] },
-            'Action': 'sts:AssumeRole'
-          }]
+    RoleAPIGatewayAccount: {
+      Type: 'AWS::IAM::Role',
+      Properties: {
+        AssumeRolePolicyDocument: {
+          Version: '2012-10-17',
+          Statement: [
+            {
+              Effect: 'Allow',
+              Principal: { Service: [ 'apigateway.amazonaws.com' ] },
+              Action: 'sts:AssumeRole'
+            }
+          ]
         },
-        'Path': '/',
-        'ManagedPolicyArns': ['arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs']
+        Path: '/',
+        ManagedPolicyArns: [
+          'arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs'
+        ]
       }
     }
   };
 }
-
-function templateAuthorizerName ({
-  authorizerFunctionName
-}) {
-  return `APIGAuthorizer${authorizerFunctionName[0].toUpperCase()}${authorizerFunctionName.slice(1)}`;
+function templateAuthorizerName ({ authorizerFunctionName }) {
+  return `APIGAuthorizer${authorizerFunctionName[0].toUpperCase()}${authorizerFunctionName.slice(
+    1
+  )}`;
 }
-
-export function templateAuthorizer ({
-  authorizerFunctionName
-}) {
-  const lambdaLogicalName = templateLambdaName({ lambdaName: `${authorizerFunctionName[0].toUpperCase()}${authorizerFunctionName.slice(1)}` });
+export function templateAuthorizer ({ authorizerFunctionName }) {
+  const lambdaLogicalName = templateLambdaName({
+    lambdaName: `${authorizerFunctionName[0].toUpperCase()}${authorizerFunctionName.slice(1)}`
+  });
   const authorizerName = templateAuthorizerName({ authorizerFunctionName });
   return {
     [`${authorizerName}`]: {
-      'Type': 'AWS::ApiGateway::Authorizer',
-      'Properties': {
-        'AuthorizerResultTtlInSeconds': 0,
-        'AuthorizerUri': { 'Fn::Sub': 'arn:aws:apigateway:${AWS::Region}:lambda:path//2015-03-31/functions/${' + lambdaLogicalName + '.Arn}/invocations' }, // eslint-disable-line
-        'IdentitySource': 'method.request.header.token',
-        'Name': `${authorizerName}`,
-        'RestApiId': { Ref: templateAPIID() },
-        'Type': 'TOKEN'
+      Type: 'AWS::ApiGateway::Authorizer',
+      Properties: {
+        AuthorizerResultTtlInSeconds: 0,
+        // eslint-disable-line
+        AuthorizerUri: {
+          'Fn::Sub': 'arn:aws:apigateway:${AWS::Region}:lambda:path//2015-03-31/functions/${' +
+            lambdaLogicalName +
+            '.Arn}/invocations'
+        },
+        IdentitySource: 'method.request.header.token',
+        Name: `${authorizerName}`,
+        RestApiId: { Ref: templateAPIID() },
+        Type: 'TOKEN'
       }
     }
   };
