@@ -184,6 +184,7 @@ async function processAPIRequest (req, res, {
   const doCall = () => {
     try {
       log(`\n============= Log Fragment Begin =============`.dim);
+      log(`Function name: `.bold, runner.name);
       const invokeResult = dockerLambda({
         event,
         taskDir: `${PROJECT_ROOT}/.dawson-dist`,
