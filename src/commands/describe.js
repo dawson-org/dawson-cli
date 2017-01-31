@@ -8,7 +8,7 @@ import {
   getStackOutputs,
   getStackResources,
   templateStackName
-} from '../libs/cloudfront';
+} from '../libs/cloudformation';
 
 export function run (argv) {
   const { APP_NAME } = loadConfig();

@@ -21,7 +21,7 @@ import {
   removeStackPolicy,
   restoreStackPolicy,
   templateStackName
-} from '../libs/cloudfront';
+} from '../libs/cloudformation';
 import {
   templateAccount,
   templateDeployment,

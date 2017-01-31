@@ -34,7 +34,7 @@ import {
   getStackOutputs,
   getStackResources,
   templateStackName
-} from '../libs/cloudfront';
+} from '../libs/cloudformation';
 import { templateLambdaRoleName } from '../factories/cf_lambda';
 
 const sts = new AWS.STS({});
@@ -247,7 +247,8 @@ async function assumeRole (stackResources, runner) {
   debug('   [AWS STS] Assuming Role ARN', roleArn);
   const assumeRoleParams = {
     RoleArn: roleArn,
-    RoleSessionName: 'dawson-dev-proxy'
+    RoleSessionName: 'dawson-dev-proxy',
+    DurationSeconds: 900
   };
   const assumedRole = await sts.assumeRole(assumeRoleParams).promise();
   debug('   [AWS STS] Assumed Credentials', assumedRole.Credentials.AccessKeyId);

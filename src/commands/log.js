@@ -16,7 +16,7 @@ import {
 import {
   getStackResources,
   templateStackName
-} from '../libs/cloudfront';
+} from '../libs/cloudformation';
 
 const stripNewLines = str => str.replace(/\n$/, ' ');
 
