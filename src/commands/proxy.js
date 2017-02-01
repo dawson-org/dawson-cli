@@ -180,7 +180,9 @@ async function processAPIRequest (
   };
 
   if (!credentialsCache.has(runner)) {
-    log(`   [STS] requesting AWS Temporary Credentials for Lambda '${runner.name}' (this will take a few seconds)`);
+    log(
+      `   [STS] requesting AWS Temporary Credentials for Lambda '${runner.name}' (this will take a few seconds)`
+    );
     credentialsCache.set(runner, await assumeRole(resources, runner));
   }
   const credentials = credentialsCache.get(runner);
