@@ -18,13 +18,13 @@ import qs from 'querystring';
 import send from 'send';
 import util from 'util';
 import verboseRenderer from 'listr-verbose-renderer';
-import watch from 'node-watch';
+import chokidar from 'chokidar';
 import { compare } from 'pathmatch';
 import { createProxyServer } from 'http-proxy';
 import { createServer } from 'http';
 import { oneLine, stripIndent } from 'common-tags';
 import { parse } from 'url';
-import { throttle, flatten } from 'lodash';
+import { flatten } from 'lodash';
 
 import createError from '../libs/error';
 import loadConfig, { AWS_REGION, validateDocker } from '../config';
@@ -602,27 +602,15 @@ export function run (argv) {
 }
 
 function setupWatcher ({ stage, stackName, ignore = [], PROJECT_ROOT }) {
-  log(indent(stripIndent`
-    Reload: watching ${PROJECT_ROOT}/** for changes.
-            The proxy will auto reload on file changes.
-            You must manually restart the proxy when
-              * adding or updating npm dependencies
-              * adding a Lambda function or updating its configuration
-              * updating Lambda policyStatements
-              * updating CloudFormation resources
-  `.dim, 3));
-  log('');
-
+  const ignoreList = [
+    ...ignore,
+    '**/node_modules/**',
+    '**/.dawson-dist/**',
+    '**/~*',
+    '**/.*'
+  ];
   let bundleInProgress = false;
   const onWatch = (fileName) => {
-    const ignoreList = [
-      ...ignore,
-      '**/node_modules/**',
-      '**/.dawson-dist/**',
-      '**/~*',
-      '**/.*'
-    ];
-
     if (bundleInProgress) {
       return;
     }
@@ -644,6 +632,24 @@ function setupWatcher ({ stage, stackName, ignore = [], PROJECT_ROOT }) {
       throw err;
     });
   };
-  const watchEE = watch(PROJECT_ROOT, { recursive: true });
-  watchEE.on('change', throttle(onWatch, 500, { 'options.trailing': true }));
+  const watchEE = chokidar.watch(PROJECT_ROOT, {
+    ignored: ignoreList,
+    ignoreInitial: true,
+    persistent: true,
+    atomic: true
+  });
+  watchEE.on('ready', () => {
+    log(indent(stripIndent`
+      Reload: watching ${PROJECT_ROOT}/** for changes.
+              The proxy will auto reload on file changes.
+              You must manually restart the proxy when
+                * adding or updating npm dependencies
+                * adding a Lambda function or updating its configuration
+                * updating Lambda policyStatements
+                * updating CloudFormation resources
+    `.dim, 3));
+    log('');
+  });
+  watchEE.on('change', onWatch);
+  watchEE.on('add', onWatch);
 }
