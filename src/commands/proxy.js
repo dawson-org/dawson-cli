@@ -1,4 +1,3 @@
-
 // DAWSON local development proxy (preview)
 // ========================================
 //
@@ -64,10 +63,12 @@ function findApi ({ method, pathname, API_DEFINITIONS }) {
     }
   });
   if (!found) {
-    error(stripIndent`
+    error(
+      stripIndent`
       Error: dawson couldn't find any function to handle your request.
       If you have just added this method, have you restarted the proxy?
-    `);
+    `
+    );
     throw new Error(`API not found at path ${pathname}`);
   }
   return found;
@@ -77,15 +78,19 @@ function getContentType (fn) {
   return fn.api.responseContentType || 'text/html';
 }
 
-async function processAPIRequest (req, res, {
-  body,
-  outputs,
-  resources,
-  pathname,
-  querystring,
-  API_DEFINITIONS,
-  PROJECT_ROOT
-}) {
+async function processAPIRequest (
+  req,
+  res,
+  {
+    body,
+    outputs,
+    resources,
+    pathname,
+    querystring,
+    API_DEFINITIONS,
+    PROJECT_ROOT
+  }
+) {
   const envVariables = outputs.map(output => {
     return `DAWSON_${output.OutputKey}=${output.OutputValue}`;
   });
@@ -103,22 +108,19 @@ async function processAPIRequest (req, res, {
       throw e;
     }
   }
-  let expectedResponseContentType = runner.api.responseContentType || 'text/html';
+  let expectedResponseContentType = runner.api.responseContentType ||
+    'text/html';
   if (runner.api.redirects) {
     expectedResponseContentType = 'text/plain';
   }
   const event = {
     params: {
-      path: {
-        ...(runner.pathParams || {})
-      },
+      path: { ...(runner.pathParams || {}) },
       querystring,
       header: req.headers
     },
     body,
-    meta: {
-      expectedResponseContentType
-    }
+    meta: { expectedResponseContentType }
   };
   debug('Event parameter:'.gray.bold, JSON.stringify(event, null, 2).gray);
 
@@ -127,11 +129,14 @@ async function processAPIRequest (req, res, {
     if (err) {
       const errorResponse = JSON.parse(err.errorMessage);
       if (errorResponse.unhandled === true) {
-        warning('Unhandled Error:'.bold, oneLine`
+        warning(
+          'Unhandled Error:'.bold,
+          oneLine`
           Your lambda function returned an invalid error. Error messages must be valid JSON.stringfy-ed strings and
           should contain an httpStatus (int) and a response (string|object) property. This error will be swallowed and a generic HTTP 500 response will be returned to the client.
           Please refer to the documentation for instruction on how to deliver proper error responses.
-        `);
+        `
+        );
       }
       if (typeof errorResponse.response !== 'string') {
         errorResponse.response = 'unhandled error (check the console for details)';
@@ -149,16 +154,15 @@ async function processAPIRequest (req, res, {
     }
     if (runner.api.redirects && data.response && data.response.Location) {
       const location = data.response.Location;
-      res.writeHead(307, {
-        'Content-Type': 'text/plain',
-        'Location': location
-      });
+      res.writeHead(307, { 'Content-Type': 'text/plain', Location: location });
       res.write(`You are being redirected to ${location}`);
       res.end();
       return;
     }
     if (typeof data.response !== 'string') {
-      error(`Your function must return a string (or an Object if 'responseContentType' is 'application/json')`);
+      error(
+        `Your function must return a string (or an Object if 'responseContentType' is 'application/json')`
+      );
       res.writeHead(500, { 'Content-Type': 'text/plain' });
       res.write('dawson message: function returned an invalid body');
       res.end();
@@ -191,14 +195,18 @@ async function processAPIRequest (req, res, {
         handler: `dawsonindex.${runner.name}`,
         dockerArgs: []
           .concat(['-m', '512M'])
-          .concat(['--env', `NODE_ENV=${process.env.NODE_ENV || 'development'}`])
+          .concat([
+            '--env',
+            `NODE_ENV=${process.env.NODE_ENV || 'development'}`
+          ])
           .concat(['--env', `AWS_ACCESS_KEY_ID=${credentials.AccessKeyId}`])
-          .concat(['--env', `AWS_SECRET_ACCESS_KEY=${credentials.SecretAccessKey}`])
+          .concat([
+            '--env',
+            `AWS_SECRET_ACCESS_KEY=${credentials.SecretAccessKey}`
+          ])
           .concat(['--env', `AWS_SESSION_TOKEN=${credentials.SessionToken}`])
-          .concat(flatten(envVariables.map(v => (['--env', v])))),
-        spawnOptions: {
-          stdio: ['pipe', 'pipe', process.stdout]
-        }
+          .concat(flatten(envVariables.map(v => ['--env', v]))),
+        spawnOptions: { stdio: ['pipe', 'pipe', process.stdout] }
       });
       callback(null, invokeResult);
     } catch (invokeError) {
@@ -207,8 +215,15 @@ async function processAPIRequest (req, res, {
         console.dir(invokeError);
         return;
       }
-      const parsedError = JSON.parse(invokeError.stdout.toString('utf8'), null, 2);
-      error('Lambda terminated with error:\n', util.inspect(parsedError, { depth: 10, color: true }));
+      const parsedError = JSON.parse(
+        invokeError.stdout.toString('utf8'),
+        null,
+        2
+      );
+      error(
+        'Lambda terminated with error:\n',
+        util.inspect(parsedError, { depth: 10, color: true })
+      );
       callback(parsedError, null);
     }
   };
@@ -218,7 +233,14 @@ async function processAPIRequest (req, res, {
   if (!authorizer) {
     doCall();
   } else {
-    runAuthorizer({ authorizer, event, envVariables, req, res, successCallback: doCall });
+    runAuthorizer({
+      authorizer,
+      event,
+      envVariables,
+      req,
+      res,
+      successCallback: doCall
+    });
   }
 }
 
@@ -240,9 +262,7 @@ function findRoleName (stackResources, runner) {
 
 async function assumeRole (stackResources, runner) {
   const roleName = findRoleName(stackResources, runner);
-  const getRoleResult = await iam.getRole({
-    RoleName: roleName
-  }).promise();
+  const getRoleResult = await iam.getRole({ RoleName: roleName }).promise();
   const roleArn = getRoleResult.Role.Arn;
   debug('   [AWS STS] Assuming Role ARN', roleArn);
   const assumeRoleParams = {
@@ -251,11 +271,16 @@ async function assumeRole (stackResources, runner) {
     DurationSeconds: 900
   };
   const assumedRole = await sts.assumeRole(assumeRoleParams).promise();
-  debug('   [AWS STS] Assumed Credentials', assumedRole.Credentials.AccessKeyId);
+  debug(
+    '   [AWS STS] Assumed Credentials',
+    assumedRole.Credentials.AccessKeyId
+  );
   return assumedRole.Credentials;
 }
 
-function runAuthorizer ({ authorizer, event, envVariables, req, res, successCallback }) {
+function runAuthorizer (
+  { authorizer, event, envVariables, req, res, successCallback }
+) {
   // https://docs.aws.amazon.com/apigateway/latest/developerguide/use-custom-authorizer.html
   // @TODO: correctly handle 401, 403, 500 response as described in the documentation
 
@@ -270,7 +295,11 @@ function runAuthorizer ({ authorizer, event, envVariables, req, res, successCall
   };
 
   if (!token) {
-    fail(401, '   🔒'.red, `No authorization header found. You must specify a 'token' header with your request.`.red);
+    fail(
+      401,
+      '   🔒'.red,
+      `No authorization header found. You must specify a 'token' header with your request.`.red
+    );
     return;
   }
 
@@ -279,38 +308,61 @@ function runAuthorizer ({ authorizer, event, envVariables, req, res, successCall
     process.env[key] = value;
   });
 
-  authorizer({
-    type: 'TOKEN',
-    authorizationToken: token,
-    methodArn: 'arn:fake'
-  }, {
-    succeed: ({ policyDocument, principalId, context }) => {
-      if (!Object.values(context).every(val => ['number', 'string', 'boolean'].includes(typeof val))) {
-        throw new Error('Authorizer Error: augmented context values can only be of type number, string or boolean.');
+  authorizer(
+    { type: 'TOKEN', authorizationToken: token, methodArn: 'arn:fake' },
+    {
+      succeed: ({ policyDocument, principalId, context }) => {
+        if (
+          !Object
+            .values(context)
+            .every(val => ['number', 'string', 'boolean'].includes(typeof val))
+        ) {
+          throw new Error(
+            'Authorizer Error: augmented context values can only be of type number, string or boolean.'
+          );
+        }
+        if (!policyDocument || !Array.isArray(policyDocument.Statement)) {
+          fail(
+            403,
+            '   🔒'.red,
+            `Authorizer did not return a policy document`.red,
+            policyDocument
+          );
+          return;
+        }
+        if (
+          !policyDocument.Statement.find(
+            item =>
+              item.Effect === 'Allow' &&
+                item.Action === 'execute-api:Invoke' &&
+                item.Resource === 'arn:fake'
+          )
+        ) {
+          fail(
+            403,
+            '   🔒'.red,
+            `Authorizer did not return a valid policy document`.red,
+            policyDocument
+          );
+          return;
+        }
+        event.context = {
+          ...event.context,
+          authorizer: { ...(event.context || {}).authorizer, ...context },
+          principalId
+        };
+        console.log(`   🔓 Authorization succeeded`.yellow.dim);
+        successCallback();
+      },
+      fail: message => {
+        fail(
+          403,
+          '   🔒'.red,
+          `Authorizer failed with message: '${message}'`.red
+        );
       }
-      if (!policyDocument || !Array.isArray(policyDocument.Statement)) {
-        fail(403, '   🔒'.red, `Authorizer did not return a policy document`.red, policyDocument);
-        return;
-      }
-      if (!policyDocument.Statement.find(item => item.Effect === 'Allow' && item.Action === 'execute-api:Invoke' && item.Resource === 'arn:fake')) {
-        fail(403, '   🔒'.red, `Authorizer did not return a valid policy document`.red, policyDocument);
-        return;
-      }
-      event.context = {
-        ...event.context,
-        authorizer: {
-          ...(event.context || {}).authorizer,
-          ...context
-        },
-        principalId
-      };
-      console.log(`   🔓 Authorization succeeded`.yellow.dim);
-      successCallback();
-    },
-    fail: message => {
-      fail(403, '   🔒'.red, `Authorizer failed with message: '${message}'`.red);
     }
-  });
+  );
 }
 
 function requestForAPI (req, SETTINGS) {
@@ -400,8 +452,12 @@ export function run (argv) {
       return;
     }
 
-    if (req.headers['content-type'] &&
-        !['application/json', 'application/x-www-form-urlencoded'].includes(req.headers['content-type'])) {
+    if (
+      req.headers['content-type'] &&
+        !['application/json', 'application/x-www-form-urlencoded'].includes(
+          req.headers['content-type']
+        )
+    ) {
       res.writeHead(415);
       res.write('Unsupported media type');
       res.end();
@@ -425,7 +481,11 @@ export function run (argv) {
           PROJECT_ROOT
         });
       };
-      if (req.method === 'GET' || req.method === 'OPTIONS' || req.method === 'HEAD') {
+      if (
+        req.method === 'GET' ||
+          req.method === 'OPTIONS' ||
+          req.method === 'HEAD'
+      ) {
         next();
         return;
       }
@@ -436,7 +496,9 @@ export function run (argv) {
         rawBody = Buffer.concat([rawBody]);
         const rawUTFBody = rawBody.toString('utf8');
 
-        if (req.headers['content-type'] === 'application/x-www-form-urlencoded') {
+        if (
+          req.headers['content-type'] === 'application/x-www-form-urlencoded'
+        ) {
           jsonBody = rawUTFBody;
         } else if (req.headers['content-type'] === 'application/json') {
           try {
@@ -460,24 +522,28 @@ export function run (argv) {
           cacheControl: false,
           root: pathModule.join(PROJECT_ROOT, assetsPath)
         })
-        .on('error', error => {
-          res.writeHead(error.status || 500);
-          const message = `Resource not found (root: ${pathModule.join(PROJECT_ROOT, assetsPath)}) at path '${path}'`;
-          warning(message);
-          res.write(message);
-          res.end();
-        })
-        .pipe(res);
+          .on('error', error => {
+            res.writeHead(error.status || 500);
+            const message = `Resource not found (root: ${pathModule.join(
+              PROJECT_ROOT,
+              assetsPath
+            )}) at path '${path}'`;
+            warning(message);
+            res.write(message);
+            res.end();
+          })
+          .pipe(res);
       } else {
         if (assetsProxy) {
-          proxy.web(req, res, {
-            target: assetsProxy
-          });
+          proxy.web(req, res, { target: assetsProxy });
         } else {
-          warning('\n', oneLine`
+          warning(
+            '\n',
+            oneLine`
             Proxy doesn't know how to handle request for '${req.url}',
             because your did not provide --assets-url nor --assets-path
-          `);
+          `
+          );
           res.writeHead(500);
           res.end();
         }
@@ -489,118 +555,146 @@ export function run (argv) {
     error('Server error', err);
   });
 
-  const startupTasks = new Listr([
-    {
-      title: 'creating first bundle',
-      task: () => createBundle({ stage, stackName, skipChmod, onlyCompile })
-    },
-    {
-      title: 'validating AWS resources',
-      task: () => new Listr([
-        {
-          title: 'getting stack details from CloudFormation',
-          task: () => {
-            return getOutputsAndResources({ stackName })
-              .catch(e => {
-                throw createError({
-                  kind: 'Failed to describe CloudFormation Stack',
-                  reason: `dawson could not find a CloudFormation stack for your app.`,
-                  detailedReason: stripIndent`
+  const startupTasks = new Listr(
+    [
+      {
+        title: 'creating first bundle',
+        task: () => createBundle({ stage, stackName, skipChmod, onlyCompile })
+      },
+      {
+        title: 'validating AWS resources',
+        task: () => new Listr([
+          {
+            title: 'getting stack details from CloudFormation',
+            task: () => {
+              return getOutputsAndResources({ stackName })
+                .catch(e => {
+                  throw createError({
+                    kind: 'Failed to describe CloudFormation Stack',
+                    reason: (
+                      `dawson could not find a CloudFormation stack for your app.`
+                    ),
+                    detailedReason: (
+                      stripIndent`
                     The stack named '${stackName}' (stage: ${stage}, region: ${AWS_REGION})
                     cannot be described.
                     AWS Error: "${e.message}"
                     If this is the first time you are using this app,
                     you just need to run $ dawson deploy
-                  `,
-                  solution: stripIndent`
+                  `
+                    ),
+                    solution: (
+                      stripIndent`
                     * deploy this app / stage (check AWS_STAGE or --stage)
                     * use the correct AWS Account (check AWS_PROFILE, AWS_ACCESS_KEY_ID)
                     * use the correct region (check AWS_REGION)
                     * check the 'name' property in your package.json
                   `
+                    )
+                  });
+                })
+                .then(([_outputs, _resources]) => {
+                  [outputs, resources] = [_outputs, _resources];
                 });
-              })
-              .then(([ _outputs, _resources ]) => {
-                [ outputs, resources ] = [ _outputs, _resources ];
-              });
-          }
-        },
-        {
-          title: 'checking IAM Roles',
-          task: () => {
-            Object.values(API_DEFINITIONS).every(runner => {
-              if (runner.name === 'customTemplateFragment') {
-                return true;
-              }
-              if (runner.name === 'processCFTemplate') {
-                return true;
-              }
-              try {
-                const roleName = findRoleName(resources, runner);
-                debug(`Function '${runner.name}' will execute with IAM Role '${roleName}'`);
-                return true;
-              } catch (e) {
-                throw createError({
-                  kind: 'Missing resources',
-                  reason: `Function '${runner.name}' has not yet been deployed.`,
-                  detailedReason: stripIndent`
+            }
+          },
+          {
+            title: 'checking IAM Roles',
+            task: () => {
+              Object.values(API_DEFINITIONS).every(runner => {
+                if (runner.name === 'customTemplateFragment') {
+                  return true;
+                }
+                if (runner.name === 'processCFTemplate') {
+                  return true;
+                }
+                try {
+                  const roleName = findRoleName(resources, runner);
+                  debug(
+                    `Function '${runner.name}' will execute with IAM Role '${roleName}'`
+                  );
+                  return true;
+                } catch (e) {
+                  throw createError({
+                    kind: 'Missing resources',
+                    reason: (
+                      `Function '${runner.name}' has not yet been deployed.`
+                    ),
+                    detailedReason: (
+                      stripIndent`
                     dawson couldn't find any role to use when executing this function.
                     This happens when you're invoking a function that has never been deployed before.
                     Before a function can be executed, it must have been deployed at least once.
-                  `,
-                  solution: 'execute $ dawson deploy, wait for the deploy to complete and then run this command again.'
-                });
-              }
-            });
+                  `
+                    ),
+                    solution: 'execute $ dawson deploy, wait for the deploy to complete and then run this command again.'
+                  });
+                }
+              });
+            }
           }
-        }
-      ])
-    }
-  ], {
-    concurrent: true,
-    renderer: verbose ? verboseRenderer : undefined
-  });
+        ])
+      }
+    ],
+    { concurrent: true, renderer: verbose ? verboseRenderer : undefined }
+  );
 
-  startupTasks.run()
-  .then(() => {
-    server.listen(port);
-    success('\n' + indent(stripIndent`
+  startupTasks
+    .run()
+    .then(() => {
+      server.listen(port);
+      success(
+        '\n' +
+          indent(
+            stripIndent`
       Development proxy started
       http://0.0.0.0:${port}
-    `, 3));
+    `,
+            3
+          )
+      );
 
-    // startup banner:
-    //  / ⇒ <ASSETS LOCATION>
-    //  ⤷ /prod ⇒ <api>
-    //  ⤷ /assets ⇒ <ASSETS LOCATION>
+      // startup banner:
+      //  / ⇒ <ASSETS LOCATION>
+      //  ⤷ /prod ⇒ <api>
+      //  ⤷ /assets ⇒ <ASSETS LOCATION>
 
-    const rootIsAPI = requestForAPI({ url: '/' }, SETTINGS);
-    let assetsLocation = '(assets location not configured)';
-    if (assetsPath) { assetsLocation = `${PROJECT_ROOT}/assets/`; }
-    if (assetsProxy) { assetsLocation = `${assetsProxy}`; }
-    log('\n', indent(stripIndent`
+      const rootIsAPI = requestForAPI({ url: '/' }, SETTINGS);
+      let assetsLocation = '(assets location not configured)';
+      if (assetsPath) {
+        assetsLocation = `${PROJECT_ROOT}/assets/`;
+      }
+      if (assetsProxy) {
+        assetsLocation = `${assetsProxy}`;
+      }
+      log(
+        '\n',
+        indent(
+          stripIndent`
       / ⇒ ${rootIsAPI ? '<api>' : `${assetsLocation}`}
-       ${rootIsAPI
-         ? `⤷ /assets ⇒ ${assetsLocation}`
-         : `⤷ /prod ⇒ <api>`}
-    `, 3));
-    log('');
+       ${rootIsAPI ? `⤷ /assets ⇒ ${assetsLocation}` : `⤷ /prod ⇒ <api>`}
+    `,
+          3
+        )
+      );
+      log('');
 
-    setupWatcher({ stage, stackName, ignore: SETTINGS.ignore, PROJECT_ROOT });
-  })
-  .catch(err => {
-    if (err.isDawsonError) {
-      console.error(err.toFormattedString());
+      setupWatcher({ stage, stackName, ignore: SETTINGS.ignore, PROJECT_ROOT });
+    })
+    .catch(err => {
+      if (err.isDawsonError) {
+        console.error(err.toFormattedString());
+        process.exit(1);
+      }
+      console.error(chalk.red.bold('dawson internal error:'), err.message);
+      console.error(err.stack);
+      console.error(
+        chalk.red(
+          `Please report this bug: https://github.com/dawson-org/dawson-cli/issues`
+        )
+      );
       process.exit(1);
-    }
-    console.error(
-      chalk.red.bold('dawson internal error:'),
-      err.message
-    );
-    console.error(err.stack);
-    console.error(chalk.red(`Please report this bug: https://github.com/dawson-org/dawson-cli/issues`));
-    process.exit(1);
-  });
+    });
 }
 
 function setupWatcher ({ stage, stackName, ignore = [], PROJECT_ROOT }) {
@@ -612,7 +706,7 @@ function setupWatcher ({ stage, stackName, ignore = [], PROJECT_ROOT }) {
     '**/.*'
   ];
   let bundleInProgress = false;
-  const onWatch = (fileName) => {
+  const onWatch = fileName => {
     if (bundleInProgress) {
       return;
     }
@@ -624,15 +718,19 @@ function setupWatcher ({ stage, stackName, ignore = [], PROJECT_ROOT }) {
 
     log(`   Reload: ${fileName}...`.dim);
     bundleInProgress = true;
-    createBundle({ stage, stackName, onlyCompile: true }).run()
-    .then(() => {
-      bundleInProgress = false;
-      log(`   Reload:`.dim, `reloaded at ${new Date().toLocaleTimeString()}`.yellow);
-    })
-    .catch(err => {
-      bundleInProgress = false;
-      throw err;
-    });
+    createBundle({ stage, stackName, onlyCompile: true })
+      .run()
+      .then(() => {
+        bundleInProgress = false;
+        log(
+          `   Reload:`.dim,
+          `reloaded at ${new Date().toLocaleTimeString()}`.yellow
+        );
+      })
+      .catch(err => {
+        bundleInProgress = false;
+        throw err;
+      });
   };
   const watchEE = chokidar.watch(PROJECT_ROOT, {
     ignored: ignoreList,
@@ -641,7 +739,9 @@ function setupWatcher ({ stage, stackName, ignore = [], PROJECT_ROOT }) {
     atomic: true
   });
   watchEE.on('ready', () => {
-    log(indent(stripIndent`
+    log(
+      indent(
+        stripIndent`
       Reload: watching ${PROJECT_ROOT}/** for changes.
               The proxy will auto reload on file changes.
               You must manually restart the proxy when
@@ -649,7 +749,10 @@ function setupWatcher ({ stage, stackName, ignore = [], PROJECT_ROOT }) {
                 * adding a Lambda function or updating its configuration
                 * updating Lambda policyStatements
                 * updating CloudFormation resources
-    `.dim, 3));
+    `.dim,
+        3
+      )
+    );
     log('');
   });
   watchEE.on('change', onWatch);

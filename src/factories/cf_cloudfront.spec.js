@@ -2,39 +2,30 @@
 
 import { test } from 'tap';
 
-import {
-  templateCloudfrontDistribution
-} from './cf_cloudfront';
+import { templateCloudfrontDistribution } from './cf_cloudfront';
 
 test('templateCloudfrontDistribution without WebACL', t => {
   const expected = {
-    'WWWDistribution': {
-      'DependsOn': [
-        'API',
-        'BucketAssets'
-      ],
-      'Properties': {
-        'DistributionConfig': {
-          'Aliases': [
-            'dawson.sh'
-          ],
-          'CacheBehaviors': [
+    WWWDistribution: {
+      DependsOn: ['API', 'BucketAssets'],
+      Properties: {
+        DistributionConfig: {
+          Aliases: ['dawson.sh'],
+          CacheBehaviors: [
             {
-              'DefaultTTL': '0',
-              'ForwardedValues': {
-                'QueryString': 'true'
-              },
-              'MaxTTL': '0',
-              'MinTTL': '0',
-              'PathPattern': 'assets/*',
-              'SmoothStreaming': 'false',
-              'TargetOriginId': 's3www',
-              'ViewerProtocolPolicy': 'allow-all'
+              DefaultTTL: '0',
+              ForwardedValues: { QueryString: 'true' },
+              MaxTTL: '0',
+              MinTTL: '0',
+              PathPattern: 'assets/*',
+              SmoothStreaming: 'false',
+              TargetOriginId: 's3www',
+              ViewerProtocolPolicy: 'allow-all'
             }
           ],
-          'Comment': '',
-          'DefaultCacheBehavior': {
-            'AllowedMethods': [
+          Comment: '',
+          DefaultCacheBehavior: {
+            AllowedMethods: [
               'DELETE',
               'GET',
               'HEAD',
@@ -43,9 +34,9 @@ test('templateCloudfrontDistribution without WebACL', t => {
               'POST',
               'PUT'
             ],
-            'DefaultTTL': '0',
-            'ForwardedValues': {
-              'Headers': [
+            DefaultTTL: '0',
+            ForwardedValues: {
+              Headers: [
                 'Authorization',
                 'Accept',
                 'Content-Type',
@@ -54,72 +45,64 @@ test('templateCloudfrontDistribution without WebACL', t => {
                 'Access-Control-Request-Headers',
                 'Access-Control-Request-Method'
               ],
-              'QueryString': 'true'
+              QueryString: 'true'
             },
-            'MaxTTL': '0',
-            'MinTTL': '0',
-            'TargetOriginId': 'api',
-            'ViewerProtocolPolicy': 'allow-all'
+            MaxTTL: '0',
+            MinTTL: '0',
+            TargetOriginId: 'api',
+            ViewerProtocolPolicy: 'allow-all'
           },
-          'DefaultRootObject': '',
-          'Enabled': 'true',
-          'Origins': [
+          DefaultRootObject: '',
+          Enabled: 'true',
+          Origins: [
             {
-              'CustomOriginConfig': {
-                'HTTPPort': '80',
-                'HTTPSPort': '443',
-                'OriginProtocolPolicy': 'http-only'
+              CustomOriginConfig: {
+                HTTPPort: '80',
+                HTTPSPort: '443',
+                OriginProtocolPolicy: 'http-only'
               },
-              'DomainName': {
+              DomainName: {
                 'Fn::Join': [
                   '',
                   [
-                    {
-                      'Ref': 'BucketAssets'
-                    },
+                    { Ref: 'BucketAssets' },
                     '.s3-website-',
-                    {
-                      'Ref': 'AWS::Region'
-                    },
+                    { Ref: 'AWS::Region' },
                     '.amazonaws.com'
                   ]
                 ]
               },
-              'Id': 's3www'
+              Id: 's3www'
             },
             {
-              'CustomOriginConfig': {
-                'HTTPPort': '80',
-                'HTTPSPort': '443',
-                'OriginProtocolPolicy': 'https-only'
+              CustomOriginConfig: {
+                HTTPPort: '80',
+                HTTPSPort: '443',
+                OriginProtocolPolicy: 'https-only'
               },
-              'DomainName': {
+              DomainName: {
                 'Fn::Join': [
                   '',
                   [
-                    {
-                      'Ref': 'API'
-                    },
+                    { Ref: 'API' },
                     '.execute-api.',
-                    {
-                      'Ref': 'AWS::Region'
-                    },
+                    { Ref: 'AWS::Region' },
                     '.amazonaws.com'
                   ]
                 ]
               },
-              'Id': 'api',
-              'OriginPath': '/prod'
+              Id: 'api',
+              OriginPath: '/prod'
             }
           ],
-          'PriceClass': 'PriceClass_200',
-          'ViewerCertificate': {
-            'AcmCertificateArn': 'arn:aws:acm:fake',
-            'SslSupportMethod': 'sni-only'
+          PriceClass: 'PriceClass_200',
+          ViewerCertificate: {
+            AcmCertificateArn: 'arn:aws:acm:fake',
+            SslSupportMethod: 'sni-only'
           }
         }
       },
-      'Type': 'AWS::CloudFront::Distribution'
+      Type: 'AWS::CloudFront::Distribution'
     }
   };
   const actual = templateCloudfrontDistribution({
@@ -135,30 +118,25 @@ test('templateCloudfrontDistribution without WebACL', t => {
 
 test('templateCloudfrontDistribution without aliases', t => {
   const expected = {
-    'WWWDistribution': {
-      'DependsOn': [
-        'API',
-        'BucketAssets'
-      ],
-      'Properties': {
-        'DistributionConfig': {
-          'CacheBehaviors': [
+    WWWDistribution: {
+      DependsOn: ['API', 'BucketAssets'],
+      Properties: {
+        DistributionConfig: {
+          CacheBehaviors: [
             {
-              'DefaultTTL': '0',
-              'ForwardedValues': {
-                'QueryString': 'true'
-              },
-              'MaxTTL': '0',
-              'MinTTL': '0',
-              'PathPattern': 'assets/*',
-              'SmoothStreaming': 'false',
-              'TargetOriginId': 's3www',
-              'ViewerProtocolPolicy': 'allow-all'
+              DefaultTTL: '0',
+              ForwardedValues: { QueryString: 'true' },
+              MaxTTL: '0',
+              MinTTL: '0',
+              PathPattern: 'assets/*',
+              SmoothStreaming: 'false',
+              TargetOriginId: 's3www',
+              ViewerProtocolPolicy: 'allow-all'
             }
           ],
-          'Comment': '',
-          'DefaultCacheBehavior': {
-            'AllowedMethods': [
+          Comment: '',
+          DefaultCacheBehavior: {
+            AllowedMethods: [
               'DELETE',
               'GET',
               'HEAD',
@@ -167,9 +145,9 @@ test('templateCloudfrontDistribution without aliases', t => {
               'POST',
               'PUT'
             ],
-            'DefaultTTL': '0',
-            'ForwardedValues': {
-              'Headers': [
+            DefaultTTL: '0',
+            ForwardedValues: {
+              Headers: [
                 'Authorization',
                 'Accept',
                 'Content-Type',
@@ -178,71 +156,61 @@ test('templateCloudfrontDistribution without aliases', t => {
                 'Access-Control-Request-Headers',
                 'Access-Control-Request-Method'
               ],
-              'QueryString': 'true'
+              QueryString: 'true'
             },
-            'MaxTTL': '0',
-            'MinTTL': '0',
-            'TargetOriginId': 'api',
-            'ViewerProtocolPolicy': 'allow-all'
+            MaxTTL: '0',
+            MinTTL: '0',
+            TargetOriginId: 'api',
+            ViewerProtocolPolicy: 'allow-all'
           },
-          'DefaultRootObject': '',
-          'Enabled': 'true',
-          'Origins': [
+          DefaultRootObject: '',
+          Enabled: 'true',
+          Origins: [
             {
-              'CustomOriginConfig': {
-                'HTTPPort': '80',
-                'HTTPSPort': '443',
-                'OriginProtocolPolicy': 'http-only'
+              CustomOriginConfig: {
+                HTTPPort: '80',
+                HTTPSPort: '443',
+                OriginProtocolPolicy: 'http-only'
               },
-              'DomainName': {
+              DomainName: {
                 'Fn::Join': [
                   '',
                   [
-                    {
-                      'Ref': 'BucketAssets'
-                    },
+                    { Ref: 'BucketAssets' },
                     '.s3-website-',
-                    {
-                      'Ref': 'AWS::Region'
-                    },
+                    { Ref: 'AWS::Region' },
                     '.amazonaws.com'
                   ]
                 ]
               },
-              'Id': 's3www'
+              Id: 's3www'
             },
             {
-              'CustomOriginConfig': {
-                'HTTPPort': '80',
-                'HTTPSPort': '443',
-                'OriginProtocolPolicy': 'https-only'
+              CustomOriginConfig: {
+                HTTPPort: '80',
+                HTTPSPort: '443',
+                OriginProtocolPolicy: 'https-only'
               },
-              'DomainName': {
+              DomainName: {
                 'Fn::Join': [
                   '',
                   [
-                    {
-                      'Ref': 'API'
-                    },
+                    { Ref: 'API' },
                     '.execute-api.',
-                    {
-                      'Ref': 'AWS::Region'
-                    },
+                    { Ref: 'AWS::Region' },
                     '.amazonaws.com'
                   ]
                 ]
               },
-              'Id': 'api',
-              'OriginPath': '/prod'
+              Id: 'api',
+              OriginPath: '/prod'
             }
           ],
-          'PriceClass': 'PriceClass_200',
-          'ViewerCertificate': {
-            'CloudFrontDefaultCertificate': 'true'
-          }
+          PriceClass: 'PriceClass_200',
+          ViewerCertificate: { CloudFrontDefaultCertificate: 'true' }
         }
       },
-      'Type': 'AWS::CloudFront::Distribution'
+      Type: 'AWS::CloudFront::Distribution'
     }
   };
   const actual = templateCloudfrontDistribution({
@@ -255,16 +223,13 @@ test('templateCloudfrontDistribution without aliases', t => {
 
 test('templateCloudfrontDistribution with root origin set to assets', t => {
   const expected = {
-    'WWWDistribution': {
-      'DependsOn': [
-        'API',
-        'BucketAssets'
-      ],
-      'Properties': {
-        'DistributionConfig': {
-          'CacheBehaviors': [
+    WWWDistribution: {
+      DependsOn: ['API', 'BucketAssets'],
+      Properties: {
+        DistributionConfig: {
+          CacheBehaviors: [
             {
-              'AllowedMethods': [
+              AllowedMethods: [
                 'DELETE',
                 'GET',
                 'HEAD',
@@ -273,9 +238,9 @@ test('templateCloudfrontDistribution with root origin set to assets', t => {
                 'POST',
                 'PUT'
               ],
-              'DefaultTTL': '0',
-              'ForwardedValues': {
-                'Headers': [
+              DefaultTTL: '0',
+              ForwardedValues: {
+                Headers: [
                   'Authorization',
                   'Accept',
                   'Content-Type',
@@ -284,98 +249,86 @@ test('templateCloudfrontDistribution with root origin set to assets', t => {
                   'Access-Control-Request-Headers',
                   'Access-Control-Request-Method'
                 ],
-                'QueryString': 'true'
+                QueryString: 'true'
               },
-              'MaxTTL': '0',
-              'MinTTL': '0',
-              'PathPattern': 'prod/*',
-              'TargetOriginId': 'api',
-              'ViewerProtocolPolicy': 'allow-all'
+              MaxTTL: '0',
+              MinTTL: '0',
+              PathPattern: 'prod/*',
+              TargetOriginId: 'api',
+              ViewerProtocolPolicy: 'allow-all'
             }
           ],
-          'Comment': '',
-          'CustomErrorResponses': [
+          Comment: '',
+          CustomErrorResponses: [
             {
-              'ErrorCachingMinTTL': '30',
-              'ErrorCode': '404',
-              'ResponseCode': '200',
-              'ResponsePagePath': '/index.html'
+              ErrorCachingMinTTL: '30',
+              ErrorCode: '404',
+              ResponseCode: '200',
+              ResponsePagePath: '/index.html'
             },
             {
-              'ErrorCachingMinTTL': '30',
-              'ErrorCode': '403',
-              'ResponseCode': '200',
-              'ResponsePagePath': '/index.html'
+              ErrorCachingMinTTL: '30',
+              ErrorCode: '403',
+              ResponseCode: '200',
+              ResponsePagePath: '/index.html'
             }
           ],
-          'DefaultCacheBehavior': {
-            'DefaultTTL': '0',
-            'ForwardedValues': {
-              'QueryString': 'true'
-            },
-            'MaxTTL': '0',
-            'MinTTL': '0',
-            'SmoothStreaming': 'false',
-            'TargetOriginId': 's3www',
-            'ViewerProtocolPolicy': 'allow-all'
+          DefaultCacheBehavior: {
+            DefaultTTL: '0',
+            ForwardedValues: { QueryString: 'true' },
+            MaxTTL: '0',
+            MinTTL: '0',
+            SmoothStreaming: 'false',
+            TargetOriginId: 's3www',
+            ViewerProtocolPolicy: 'allow-all'
           },
-          'DefaultRootObject': 'index.html',
-          'Enabled': 'true',
-          'Origins': [
+          DefaultRootObject: 'index.html',
+          Enabled: 'true',
+          Origins: [
             {
-              'CustomOriginConfig': {
-                'HTTPPort': '80',
-                'HTTPSPort': '443',
-                'OriginProtocolPolicy': 'http-only'
+              CustomOriginConfig: {
+                HTTPPort: '80',
+                HTTPSPort: '443',
+                OriginProtocolPolicy: 'http-only'
               },
-              'DomainName': {
+              DomainName: {
                 'Fn::Join': [
                   '',
                   [
-                    {
-                      'Ref': 'BucketAssets'
-                    },
+                    { Ref: 'BucketAssets' },
                     '.s3-website-',
-                    {
-                      'Ref': 'AWS::Region'
-                    },
+                    { Ref: 'AWS::Region' },
                     '.amazonaws.com'
                   ]
                 ]
               },
-              'Id': 's3www'
+              Id: 's3www'
             },
             {
-              'CustomOriginConfig': {
-                'HTTPPort': '80',
-                'HTTPSPort': '443',
-                'OriginProtocolPolicy': 'https-only'
+              CustomOriginConfig: {
+                HTTPPort: '80',
+                HTTPSPort: '443',
+                OriginProtocolPolicy: 'https-only'
               },
-              'DomainName': {
+              DomainName: {
                 'Fn::Join': [
                   '',
                   [
-                    {
-                      'Ref': 'API'
-                    },
+                    { Ref: 'API' },
                     '.execute-api.',
-                    {
-                      'Ref': 'AWS::Region'
-                    },
+                    { Ref: 'AWS::Region' },
                     '.amazonaws.com'
                   ]
                 ]
               },
-              'Id': 'api'
+              Id: 'api'
             }
           ],
-          'PriceClass': 'PriceClass_200',
-          'ViewerCertificate': {
-            'CloudFrontDefaultCertificate': 'true'
-          }
+          PriceClass: 'PriceClass_200',
+          ViewerCertificate: { CloudFrontDefaultCertificate: 'true' }
         }
       },
-      'Type': 'AWS::CloudFront::Distribution'
+      Type: 'AWS::CloudFront::Distribution'
     }
   };
   const actual = templateCloudfrontDistribution({
@@ -388,33 +341,26 @@ test('templateCloudfrontDistribution with root origin set to assets', t => {
 
 test('templateCloudfrontDistribution with WebACL', t => {
   const expected = {
-    'WWWDistribution': {
-      'DependsOn': [
-        'API',
-        'BucketAssets'
-      ],
-      'Properties': {
-        'DistributionConfig': {
-          'Aliases': [
-            'dawson.sh'
-          ],
-          'CacheBehaviors': [
+    WWWDistribution: {
+      DependsOn: ['API', 'BucketAssets'],
+      Properties: {
+        DistributionConfig: {
+          Aliases: ['dawson.sh'],
+          CacheBehaviors: [
             {
-              'DefaultTTL': '0',
-              'ForwardedValues': {
-                'QueryString': 'true'
-              },
-              'MaxTTL': '0',
-              'MinTTL': '0',
-              'PathPattern': 'assets/*',
-              'SmoothStreaming': 'false',
-              'TargetOriginId': 's3www',
-              'ViewerProtocolPolicy': 'allow-all'
+              DefaultTTL: '0',
+              ForwardedValues: { QueryString: 'true' },
+              MaxTTL: '0',
+              MinTTL: '0',
+              PathPattern: 'assets/*',
+              SmoothStreaming: 'false',
+              TargetOriginId: 's3www',
+              ViewerProtocolPolicy: 'allow-all'
             }
           ],
-          'Comment': '',
-          'DefaultCacheBehavior': {
-            'AllowedMethods': [
+          Comment: '',
+          DefaultCacheBehavior: {
+            AllowedMethods: [
               'DELETE',
               'GET',
               'HEAD',
@@ -423,9 +369,9 @@ test('templateCloudfrontDistribution with WebACL', t => {
               'POST',
               'PUT'
             ],
-            'DefaultTTL': '0',
-            'ForwardedValues': {
-              'Headers': [
+            DefaultTTL: '0',
+            ForwardedValues: {
+              Headers: [
                 'Authorization',
                 'Accept',
                 'Content-Type',
@@ -434,83 +380,73 @@ test('templateCloudfrontDistribution with WebACL', t => {
                 'Access-Control-Request-Headers',
                 'Access-Control-Request-Method'
               ],
-              'QueryString': 'true'
+              QueryString: 'true'
             },
-            'MaxTTL': '0',
-            'MinTTL': '0',
-            'TargetOriginId': 'api',
-            'ViewerProtocolPolicy': 'allow-all'
+            MaxTTL: '0',
+            MinTTL: '0',
+            TargetOriginId: 'api',
+            ViewerProtocolPolicy: 'allow-all'
           },
-          'DefaultRootObject': '',
-          'Enabled': 'true',
-          'Origins': [
+          DefaultRootObject: '',
+          Enabled: 'true',
+          Origins: [
             {
-              'CustomOriginConfig': {
-                'HTTPPort': '80',
-                'HTTPSPort': '443',
-                'OriginProtocolPolicy': 'http-only'
+              CustomOriginConfig: {
+                HTTPPort: '80',
+                HTTPSPort: '443',
+                OriginProtocolPolicy: 'http-only'
               },
-              'DomainName': {
+              DomainName: {
                 'Fn::Join': [
                   '',
                   [
-                    {
-                      'Ref': 'BucketAssets'
-                    },
+                    { Ref: 'BucketAssets' },
                     '.s3-website-',
-                    {
-                      'Ref': 'AWS::Region'
-                    },
+                    { Ref: 'AWS::Region' },
                     '.amazonaws.com'
                   ]
                 ]
               },
-              'Id': 's3www'
+              Id: 's3www'
             },
             {
-              'CustomOriginConfig': {
-                'HTTPPort': '80',
-                'HTTPSPort': '443',
-                'OriginProtocolPolicy': 'https-only'
+              CustomOriginConfig: {
+                HTTPPort: '80',
+                HTTPSPort: '443',
+                OriginProtocolPolicy: 'https-only'
               },
-              'DomainName': {
+              DomainName: {
                 'Fn::Join': [
                   '',
                   [
-                    {
-                      'Ref': 'API'
-                    },
+                    { Ref: 'API' },
                     '.execute-api.',
-                    {
-                      'Ref': 'AWS::Region'
-                    },
+                    { Ref: 'AWS::Region' },
                     '.amazonaws.com'
                   ]
                 ]
               },
-              'Id': 'api',
-              'OriginPath': '/prod'
+              Id: 'api',
+              OriginPath: '/prod'
             }
           ],
-          'PriceClass': 'PriceClass_200',
-          'ViewerCertificate': {
-            'AcmCertificateArn': 'arn:aws:acm:fake',
-            'SslSupportMethod': 'sni-only'
+          PriceClass: 'PriceClass_200',
+          ViewerCertificate: {
+            AcmCertificateArn: 'arn:aws:acm:fake',
+            SslSupportMethod: 'sni-only'
           },
-          'WebACLId': { 'Ref': 'WebACLWWWACL' }
+          WebACLId: { Ref: 'WebACLWWWACL' }
         }
       },
-      'Type': 'AWS::CloudFront::Distribution'
+      Type: 'AWS::CloudFront::Distribution'
     },
-    'WebACLWWWACL': {
-      'Properties': {
-        'DefaultAction': {
-          'Type': 'ALLOW'
-        },
-        'MetricName': 'WWWACL',
-        'Name': 'WWWACL'
+    WebACLWWWACL: {
+      Properties: {
+        DefaultAction: { Type: 'ALLOW' },
+        MetricName: 'WWWACL',
+        Name: 'WWWACL'
       },
-      'Type': 'AWS::WAF::WebACL'
+      Type: 'AWS::WAF::WebACL'
     }
   };
   const oldEnv = `${process.env.NODE_ENV || ''}`;

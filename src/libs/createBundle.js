@@ -1,4 +1,3 @@
-
 import AWS from 'aws-sdk';
 import del from 'del';
 import execa from 'execa';
@@ -27,7 +26,8 @@ const tempPath = prefix => {
 const cleanupTemp = () => TEMP_FILES.forEach(path => {
   try {
     fs.unlinkSync(path);
-  } catch (e) {}
+  } catch (e) {
+  }
 });
 process.on('exit', cleanupTemp);
 // --- / ---
@@ -39,45 +39,52 @@ async function createTempFiles () {
 }
 
 function compile ({ ignore = [] }) {
-  return execa('babel', ['.', '--out-dir', '.dawson-dist/', '--ignore', `node_modules,${ignore.join(',')}`, '--copy-files']);
+  return execa('babel', [
+    '.',
+    '--out-dir',
+    '.dawson-dist/',
+    '--ignore',
+    `node_modules,${ignore.join(',')}`,
+    '--copy-files'
+  ]);
 }
 
 function install ({ skipChmod }) {
-  return execa.shell(`cd .dawson-dist && yarn add babel-polyfill && yarn ${skipChmod ? '' : '&& chmod -Rf a+rX .'}`);
+  return execa.shell(
+    `cd .dawson-dist && yarn add babel-polyfill && yarn ${skipChmod
+      ? ''
+      : '&& chmod -Rf a+rX .'}`
+  );
 }
 
 function writeIndex ({ indexFileContents }) {
   return writeFile(
     process.cwd() + '/.dawson-dist/dawsonindex.js',
     indexFileContents,
-    { encoding: 'utf8' });
+    { encoding: 'utf8' }
+  );
 }
 
 async function zipRoot ({ tempZipFile, excludeList, PROJECT_ROOT }) {
-  const excludeArg = '--exclude ' + [...excludeList, '.git', '.AppleDouble'].map(i => `\\*${i}\\*`).join(' ');
-  await execa.shell(`cd .dawson-dist && zip -r ${tempZipFile} . ${excludeArg}`, {
-    cwd: PROJECT_ROOT,
-    maxBuffer: EXEC_MAX_OUTERR_BUFFER_SIZE
-  });
+  const excludeArg = '--exclude ' +
+    [...excludeList, '.git', '.AppleDouble'].map(i => `\\*${i}\\*`).join(' ');
+  await execa.shell(
+    `cd .dawson-dist && zip -r ${tempZipFile} . ${excludeArg}`,
+    { cwd: PROJECT_ROOT, maxBuffer: EXEC_MAX_OUTERR_BUFFER_SIZE }
+  );
   const { size } = await stat(tempZipFile);
   const sizeMB = `${Math.floor(size / 1000000.0)}MB`;
   return { tempZipFileSize: sizeMB };
 }
 
 export async function listZipVersions ({ bucketName }) {
-  const response = await s3.listObjectVersions({
-    Bucket: bucketName,
-    Prefix: S3_ZIP_PREFIX
-  }).promise();
+  const response = await s3
+    .listObjectVersions({ Bucket: bucketName, Prefix: S3_ZIP_PREFIX })
+    .promise();
   return response.Versions;
 }
 
-async function uploadS3 ({
-    bucketName,
-    uuid,
-    tempZipFile,
-    tempZipFileSize
-  }) {
+async function uploadS3 ({ bucketName, uuid, tempZipFile, tempZipFileSize }) {
   const s3Key = `${S3_ZIP_PREFIX}/${uuid}.zip`;
   const s3Params = {
     Bucket: bucketName,
@@ -94,15 +101,18 @@ async function uploadS3 ({
   return { zipS3Location };
 }
 
-export default function taskCreateBundle ({
-  bucketName,
-  appStageName,
-  excludeList = [],
-  stackName,
-  noUpload = false,
-  onlyCompile = false,
-  skipChmod = false
-}, result) {
+export default function taskCreateBundle (
+  {
+    bucketName,
+    appStageName,
+    excludeList = [],
+    stackName,
+    noUpload = false,
+    onlyCompile = false,
+    skipChmod = false
+  },
+  result
+) {
   const { PROJECT_ROOT, API_DEFINITIONS, SETTINGS } = loadConfig();
   return new Listr([
     {
@@ -123,15 +133,12 @@ export default function taskCreateBundle ({
     {
       title: 'cleaning up',
       skip: ctx => ctx.onlyCompile,
-      task: async (ctx) => {
+      task: async ctx => {
         const { tempZipFile } = await createTempFiles();
         Object.assign(ctx, { tempZipFile });
       }
     },
-    {
-      title: 'compiling',
-      task: compile
-    },
+    { title: 'compiling', task: compile },
     {
       title: 'installing dependencies',
       skip: ctx => ctx.onlyCompile,
@@ -139,7 +146,7 @@ export default function taskCreateBundle ({
     },
     {
       title: 'creating index file',
-      task: async (ctx) => {
+      task: async ctx => {
         const { stackName } = ctx;
         const indexFileContents = await createIndex(API_DEFINITIONS, stackName);
         await writeIndex({ indexFileContents });
@@ -148,18 +155,27 @@ export default function taskCreateBundle ({
     {
       title: 'creating zip archive',
       skip: ctx => ctx.noUpload || ctx.onlyCompile,
-      task: async (ctx) => {
+      task: async ctx => {
         const { tempZipFile, excludeList } = ctx;
-        const { tempZipFileSize } = await zipRoot({ tempZipFile, excludeList, PROJECT_ROOT });
+        const { tempZipFileSize } = await zipRoot({
+          tempZipFile,
+          excludeList,
+          PROJECT_ROOT
+        });
         Object.assign(ctx, { tempZipFileSize });
       }
     },
     {
       title: 'uploading to s3',
       skip: ctx => ctx.noUpload || ctx.onlyCompile,
-      task: async (ctx) => {
+      task: async ctx => {
         const { bucketName, uuid, tempZipFile, tempZipFileSize } = ctx;
-        const { zipS3Location } = await uploadS3({ bucketName, uuid, tempZipFile, tempZipFileSize });
+        const { zipS3Location } = await uploadS3({
+          bucketName,
+          uuid,
+          tempZipFile,
+          tempZipFileSize
+        });
         Object.assign(ctx, { zipS3Location });
         Object.assign(result, { zipS3Location });
       }

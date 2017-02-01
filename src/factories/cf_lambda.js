@@ -1,4 +1,3 @@
-
 import { stripIndent } from 'common-tags';
 
 export function templateLambdaRoleName ({ lambdaName }) {
@@ -18,40 +17,43 @@ function extraTrustPrincipals () {
   // for testing with the development proxy
   // https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html#Principal
   return {
-    'AWS': [{ 'Fn::Sub': 'arn:aws:iam::${AWS::AccountId}:root' }] // eslint-disable-line
+    AWS: [{'Fn::Sub': 'arn:aws:iam::${AWS::AccountId}:root'}] // eslint-disable-line
   };
 }
 
-export function templatePolicyDocument ({
-  policyStatements
-}) {
+export function templatePolicyDocument ({ policyStatements }) {
   return {
-    'PolicyName': 'dawson-policy',
-    'PolicyDocument': {
-      'Version': '2012-10-17',
-      'Statement': [
+    PolicyName: 'dawson-policy',
+    PolicyDocument: {
+      Version: '2012-10-17',
+      Statement: [
         {
-          'Effect': 'Allow',
-          'Action': [
+          Effect: 'Allow',
+          Action: [
             'logs:CreateLogGroup',
             'logs:CreateLogStream',
             'logs:PutLogEvents'
           ],
-          'Resource': { 'Fn::Sub': 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*' } // eslint-disable-line
+          Resource: {
+            'Fn::Sub': 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+          } // eslint-disable-line
         },
         {
-          'Effect': 'Allow',
-          'Action': ['cloudformation:DescribeStacks'],
-          'Resource': {
-            'Fn::Join': ['', [
-              'arn:aws:cloudformation:',
-              { 'Ref': 'AWS::Region' },
-              ':',
-              { 'Ref': 'AWS::AccountId' },
-              ':stack/',
-              { 'Ref': 'AWS::StackName' },
-              '/*'
-            ]]
+          Effect: 'Allow',
+          Action: ['cloudformation:DescribeStacks'],
+          Resource: {
+            'Fn::Join': [
+              '',
+              [
+                'arn:aws:cloudformation:',
+                { Ref: 'AWS::Region' },
+                ':',
+                { Ref: 'AWS::AccountId' },
+                ':stack/',
+                { Ref: 'AWS::StackName' },
+                '/*'
+              ]
+            ]
           }
         },
         ...policyStatements
@@ -60,29 +62,28 @@ export function templatePolicyDocument ({
   };
 }
 
-export function templateLambdaExecutionRole ({
-  lambdaName,
-  policyStatements = []
-}) {
+export function templateLambdaExecutionRole (
+  { lambdaName, policyStatements = [] }
+) {
   return {
     [`${templateLambdaRoleName({ lambdaName })}`]: {
-      'Type': 'AWS::IAM::Role',
-      'Properties': {
-        'AssumeRolePolicyDocument': {
-          'Version': '2012-10-17',
-          'Statement': [{
-            'Effect': 'Allow',
-            'Principal': {
-              'Service': ['lambda.amazonaws.com'],
-              ...extraTrustPrincipals()
-            },
-            'Action': ['sts:AssumeRole']
-          }]
+      Type: 'AWS::IAM::Role',
+      Properties: {
+        AssumeRolePolicyDocument: {
+          Version: '2012-10-17',
+          Statement: [
+            {
+              Effect: 'Allow',
+              Principal: {
+                Service: ['lambda.amazonaws.com'],
+                ...extraTrustPrincipals()
+              },
+              Action: ['sts:AssumeRole']
+            }
+          ]
         },
-        'Path': '/',
-        'Policies': [
-          templatePolicyDocument({ policyStatements })
-        ]
+        Path: '/',
+        Policies: [templatePolicyDocument({ policyStatements })]
       }
     }
   };
@@ -92,12 +93,12 @@ function templateLambdaPermission ({ lambdaName }) {
   const lambdaLogicalName = templateLambdaName({ lambdaName });
   return {
     [`PermissionFor${lambdaLogicalName}`]: {
-      'Type': 'AWS::Lambda::Permission',
-      'Properties': {
-        'Action': 'lambda:InvokeFunction',
-        'FunctionName': { 'Fn::Sub': `\x24{${lambdaLogicalName}.Arn}` },
-        'Principal': 'apigateway.amazonaws.com',
-        'SourceArn': {
+      Type: 'AWS::Lambda::Permission',
+      Properties: {
+        Action: 'lambda:InvokeFunction',
+        FunctionName: { 'Fn::Sub': `\x24{${lambdaLogicalName}.Arn}` },
+        Principal: 'apigateway.amazonaws.com',
+        SourceArn: {
           'Fn::Sub': 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${API}/prod*' // eslint-disable-line no-template-curly-in-string
         }
       }
@@ -112,16 +113,18 @@ module.exports.handler = function (event, context, callback) {
 }
 `;
 
-export function templateLambda ({
-  lambdaName,
-  handlerFunctionName,
-  inlineCode = LAMBDA_DEMO_INLINE_CODE,
-  zipS3Location = null,
-  policyStatements,
-  runtime = 'nodejs4.3',
-  environment = {}
-}) {
-  const code = (zipS3Location)
+export function templateLambda (
+  {
+    lambdaName,
+    handlerFunctionName,
+    inlineCode = LAMBDA_DEMO_INLINE_CODE,
+    zipS3Location = null,
+    policyStatements,
+    runtime = 'nodejs4.3',
+    environment = {}
+  }
+) {
+  const code = zipS3Location
     ? {
       S3Bucket: zipS3Location.Bucket,
       S3Key: zipS3Location.Key,
@@ -138,24 +141,19 @@ export function templateLambda ({
 
   return {
     ...templateLambdaPermission({ lambdaName }),
-    ...templateLambdaExecutionRole({
-      lambdaName,
-      policyStatements
-    }),
+    ...templateLambdaExecutionRole({ lambdaName, policyStatements }),
     [`${templateLambdaName({ lambdaName })}`]: {
-      'Type': 'AWS::Lambda::Function',
-      'Properties': {
-        'Handler': `dawsonindex.${handlerFunctionName}`,
-        'Role': { 'Fn::GetAtt': [`${templateLambdaRoleName({ lambdaName })}`, 'Arn'] },
-        'Code': code,
-        'Runtime': runtime,
-        'MemorySize': 1024,
-        'Timeout': 30,
-        'Environment': {
-          'Variables': {
-            ...prefixedEnvironment
-          }
-        }
+      Type: 'AWS::Lambda::Function',
+      Properties: {
+        Handler: `dawsonindex.${handlerFunctionName}`,
+        Role: {
+          'Fn::GetAtt': [`${templateLambdaRoleName({ lambdaName })}`, 'Arn']
+        },
+        Code: code,
+        Runtime: runtime,
+        MemorySize: 1024,
+        Timeout: 30,
+        Environment: { Variables: { ...prefixedEnvironment } }
       }
     }
   };
