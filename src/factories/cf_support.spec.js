@@ -29,6 +29,6 @@ test('templateSupportStack', t => {
     Outputs: { SupportBucket: { Value: { Ref: 'BucketSupport' } } }
   };
   const actual = templateSupportStack();
-  t.equal(actual, expected);
+  t.deepEqual(actual, expected);
   t.end();
 });

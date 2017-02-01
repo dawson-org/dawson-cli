@@ -1,6 +1,7 @@
 /* eslint unused: 0 */
 
 import { test } from 'tap';
+import sortObject from 'deep-sort-object';
 
 import {
   templateAccount,
@@ -16,6 +17,48 @@ import {
   templateAuthorizer
 } from './cf_apig';
 
+const requestTemplatePartial = contentType => {
+  return `#set($allParams = $input.params())
+{
+  "params" : {
+    #foreach($type in $allParams.keySet())
+    #set($params = $allParams.get($type))
+    "$type" : {
+      #foreach($paramName in $params.keySet())
+      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
+      #if($foreach.hasNext),#end
+      #end
+    }
+    #if($foreach.hasNext),#end
+    #end
+  },
+  "context" : {
+    "apiId": "$context.apiId",
+    "authorizer": {
+      #foreach($property in $context.authorizer.keySet())
+      "$property": "$context.authorizer.get($property)"
+      #if($foreach.hasNext),#end
+      #end
+    },
+    "httpMethod": "$context.httpMethod",
+    "identity": {
+      #foreach($property in $context.identity.keySet())
+      "$property": "$context.identity.get($property)"
+      #if($foreach.hasNext),#end
+      #end
+    },
+    "requestId": "$context.requestId",
+    "resourceId": "$context.resourceId",
+    "resourcePath": "$context.resourcePath",
+    "stage": "$context.stage"
+  },
+  "body": $input.json('$'),
+  "meta": {
+    "expectedResponseContentType": "${contentType}"
+  }
+}`;
+};
+
 test('templateRest', t => {
   const expected = {
     API: {
@@ -24,7 +67,11 @@ test('templateRest', t => {
     }
   };
   const actual = templateRest({ appStage: 'stage' });
-  t.deepEqual(expected, actual, 'should return a rest api template');
+  t.deepEqual(
+    sortObject(expected),
+    sortObject(actual),
+    'should return a rest api template'
+  );
   t.end();
 });
 
@@ -87,7 +134,7 @@ test('templateResourceHelper', t => {
     }
   };
   const actual = templateResourceHelper({ resourcePath: 'foo/bar' });
-  t.deepEqual(expected, actual);
+  t.deepEqual(sortObject(expected), sortObject(actual));
   t.end();
 });
 
@@ -114,7 +161,7 @@ test('templateResourceHelper with named params', t => {
     }
   };
   const actual = templateResourceHelper({ resourcePath: 'foo/{bar}' });
-  t.deepEqual(expected, actual);
+  t.deepEqual(sortObject(expected), sortObject(actual));
   t.end();
 });
 
@@ -124,7 +171,7 @@ test('templateResourceHelper with empty path', t => {
     templateResourcePartial: {}
   };
   const actual = templateResourceHelper({ resourcePath: '' });
-  t.deepEqual(expected, actual);
+  t.deepEqual(sortObject(expected), sortObject(actual));
   t.end();
 });
 
@@ -141,7 +188,7 @@ test('templateModel', t => {
     }
   };
   const actual = templateModel({ modelName: 'CustomResponse', modelSchema: {} });
-  t.deepEqual(expected, actual, 'should return');
+  t.deepEqual(sortObject(expected), sortObject(actual), 'should return');
   t.end();
 });
 
@@ -206,88 +253,8 @@ $errorMessageObj.response`
     ],
     PassthroughBehavior: 'NEVER',
     RequestTemplates: {
-      'application/json': (
-        `#set($allParams = $input.params())
-{
-  "params" : {
-    #foreach($type in $allParams.keySet())
-    #set($params = $allParams.get($type))
-    "$type" : {
-      #foreach($paramName in $params.keySet())
-      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    #if($foreach.hasNext),#end
-    #end
-  }
-  "context" : {
-    "apiId": "$context.apiId"
-    "authorizer": {
-      #foreach($property in $context.authorizer.keySet())
-      "$property": "$context.authorizer.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "httpMethod": "$context.httpMethod"
-    "identity": {
-      #foreach($property in $context.identity.keySet())
-      "$property": "$context.identity.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "requestId": "$context.requestId"
-    "resourceId": "$context.resourceId"
-    "resourcePath": "$context.resourcePath"
-    "stage": "$context.stage"
-  }
-  "body": $input.json('$')
-  "meta": {
-    "expectedResponseContentType": "text/x-beer"
-  }
-}`
-      ),
-      'application/x-www-form-urlencoded': (
-        `#set($allParams = $input.params())
-{
-  "params" : {
-    #foreach($type in $allParams.keySet())
-    #set($params = $allParams.get($type))
-    "$type" : {
-      #foreach($paramName in $params.keySet())
-      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    #if($foreach.hasNext),#end
-    #end
-  }
-  "context" : {
-    "apiId": "$context.apiId"
-    "authorizer": {
-      #foreach($property in $context.authorizer.keySet())
-      "$property": "$context.authorizer.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "httpMethod": "$context.httpMethod"
-    "identity": {
-      #foreach($property in $context.identity.keySet())
-      "$property": "$context.identity.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "requestId": "$context.requestId"
-    "resourceId": "$context.resourceId"
-    "resourcePath": "$context.resourcePath"
-    "stage": "$context.stage"
-  }
-  "body": $input.json('$')
-  "meta": {
-    "expectedResponseContentType": "text/x-beer"
-  }
-}`
-      )
+      'application/json': requestTemplatePartial('text/x-beer'),
+      'application/x-www-form-urlencoded': requestTemplatePartial('text/x-beer')
     },
     Type: 'AWS',
     Uri: {
@@ -308,7 +275,7 @@ $errorMessageObj.response`
     responseContentType: 'text/x-beer',
     redirects: false
   });
-  t.deepEqual(expected, actual, 'should return');
+  t.deepEqual(sortObject(expected), sortObject(actual), 'should return');
   t.end();
 });
 
@@ -361,87 +328,9 @@ $inputRoot.response`
     ],
     PassthroughBehavior: 'NEVER',
     RequestTemplates: {
-      'application/json': (
-        `#set($allParams = $input.params())
-{
-  "params" : {
-    #foreach($type in $allParams.keySet())
-    #set($params = $allParams.get($type))
-    "$type" : {
-      #foreach($paramName in $params.keySet())
-      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    #if($foreach.hasNext),#end
-    #end
-  }
-  "context" : {
-    "apiId": "$context.apiId"
-    "authorizer": {
-      #foreach($property in $context.authorizer.keySet())
-      "$property": "$context.authorizer.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "httpMethod": "$context.httpMethod"
-    "identity": {
-      #foreach($property in $context.identity.keySet())
-      "$property": "$context.identity.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "requestId": "$context.requestId"
-    "resourceId": "$context.resourceId"
-    "resourcePath": "$context.resourcePath"
-    "stage": "$context.stage"
-  }
-  "body": $input.json('$')
-  "meta": {
-    "expectedResponseContentType": "application/json"
-  }
-}`
-      ),
-      'application/x-www-form-urlencoded': (
-        `#set($allParams = $input.params())
-{
-  "params" : {
-    #foreach($type in $allParams.keySet())
-    #set($params = $allParams.get($type))
-    "$type" : {
-      #foreach($paramName in $params.keySet())
-      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    #if($foreach.hasNext),#end
-    #end
-  }
-  "context" : {
-    "apiId": "$context.apiId"
-    "authorizer": {
-      #foreach($property in $context.authorizer.keySet())
-      "$property": "$context.authorizer.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "httpMethod": "$context.httpMethod"
-    "identity": {
-      #foreach($property in $context.identity.keySet())
-      "$property": "$context.identity.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "requestId": "$context.requestId"
-    "resourceId": "$context.resourceId"
-    "resourcePath": "$context.resourcePath"
-    "stage": "$context.stage"
-  }
-  "body": $input.json('$')
-  "meta": {
-    "expectedResponseContentType": "application/json"
-  }
-}`
+      'application/json': requestTemplatePartial('application/json'),
+      'application/x-www-form-urlencoded': requestTemplatePartial(
+        'application/json'
       )
     },
     Type: 'AWS',
@@ -463,7 +352,7 @@ $inputRoot.response`
     responseContentType: 'application/json',
     redirects: false
   });
-  t.deepEqual(expected, actual, 'should return');
+  t.deepEqual(sortObject(expected), sortObject(actual), 'should return');
   t.end();
 });
 
@@ -526,88 +415,8 @@ You are being redirected to $inputRoot.response.Location`
     ],
     PassthroughBehavior: 'NEVER',
     RequestTemplates: {
-      'application/json': (
-        `#set($allParams = $input.params())
-{
-  "params" : {
-    #foreach($type in $allParams.keySet())
-    #set($params = $allParams.get($type))
-    "$type" : {
-      #foreach($paramName in $params.keySet())
-      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    #if($foreach.hasNext),#end
-    #end
-  }
-  "context" : {
-    "apiId": "$context.apiId"
-    "authorizer": {
-      #foreach($property in $context.authorizer.keySet())
-      "$property": "$context.authorizer.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "httpMethod": "$context.httpMethod"
-    "identity": {
-      #foreach($property in $context.identity.keySet())
-      "$property": "$context.identity.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "requestId": "$context.requestId"
-    "resourceId": "$context.resourceId"
-    "resourcePath": "$context.resourcePath"
-    "stage": "$context.stage"
-  }
-  "body": $input.json('$')
-  "meta": {
-    "expectedResponseContentType": "text/plain"
-  }
-}`
-      ),
-      'application/x-www-form-urlencoded': (
-        `#set($allParams = $input.params())
-{
-  "params" : {
-    #foreach($type in $allParams.keySet())
-    #set($params = $allParams.get($type))
-    "$type" : {
-      #foreach($paramName in $params.keySet())
-      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    #if($foreach.hasNext),#end
-    #end
-  }
-  "context" : {
-    "apiId": "$context.apiId"
-    "authorizer": {
-      #foreach($property in $context.authorizer.keySet())
-      "$property": "$context.authorizer.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "httpMethod": "$context.httpMethod"
-    "identity": {
-      #foreach($property in $context.identity.keySet())
-      "$property": "$context.identity.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "requestId": "$context.requestId"
-    "resourceId": "$context.resourceId"
-    "resourcePath": "$context.resourcePath"
-    "stage": "$context.stage"
-  }
-  "body": $input.json('$')
-  "meta": {
-    "expectedResponseContentType": "text/plain"
-  }
-}`
-      )
+      'application/json': requestTemplatePartial('text/plain'),
+      'application/x-www-form-urlencoded': requestTemplatePartial('text/plain')
     },
     Type: 'AWS',
     Uri: {
@@ -628,7 +437,7 @@ You are being redirected to $inputRoot.response.Location`
     responseContentType: 'application/json',
     redirects: true
   });
-  t.deepEqual(expected, actual, 'should return');
+  t.deepEqual(sortObject(expected), sortObject(actual), 'should return');
   t.end();
 });
 
@@ -713,89 +522,9 @@ $errorMessageObj.response`
           ],
           PassthroughBehavior: 'NEVER',
           RequestTemplates: {
-            'application/json': (
-              `#set($allParams = $input.params())
-{
-  "params" : {
-    #foreach($type in $allParams.keySet())
-    #set($params = $allParams.get($type))
-    "$type" : {
-      #foreach($paramName in $params.keySet())
-      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    #if($foreach.hasNext),#end
-    #end
-  }
-  "context" : {
-    "apiId": "$context.apiId"
-    "authorizer": {
-      #foreach($property in $context.authorizer.keySet())
-      "$property": "$context.authorizer.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "httpMethod": "$context.httpMethod"
-    "identity": {
-      #foreach($property in $context.identity.keySet())
-      "$property": "$context.identity.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "requestId": "$context.requestId"
-    "resourceId": "$context.resourceId"
-    "resourcePath": "$context.resourcePath"
-    "stage": "$context.stage"
-  }
-  "body": $input.json('$')
-  "meta": {
-    "expectedResponseContentType": "text/x-bar"
-  }
-}
-          `
-            ),
-            'application/x-www-form-urlencoded': (
-              `#set($allParams = $input.params())
-{
-  "params" : {
-    #foreach($type in $allParams.keySet())
-    #set($params = $allParams.get($type))
-    "$type" : {
-      #foreach($paramName in $params.keySet())
-      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    #if($foreach.hasNext),#end
-    #end
-  }
-  "context" : {
-    "apiId": "$context.apiId"
-    "authorizer": {
-      #foreach($property in $context.authorizer.keySet())
-      "$property": "$context.authorizer.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "httpMethod": "$context.httpMethod"
-    "identity": {
-      #foreach($property in $context.identity.keySet())
-      "$property": "$context.identity.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "requestId": "$context.requestId"
-    "resourceId": "$context.resourceId"
-    "resourcePath": "$context.resourcePath"
-    "stage": "$context.stage"
-  }
-  "body": $input.json('$')
-  "meta": {
-    "expectedResponseContentType": "text/x-bar"
-  }
-}
-          `
+            'application/json': requestTemplatePartial('text/x-bar'),
+            'application/x-www-form-urlencoded': requestTemplatePartial(
+              'text/x-bar'
             )
           },
           Type: 'AWS',
@@ -860,7 +589,7 @@ $errorMessageObj.response`
     authorizerFunctionName: 'demoBarAuthorizer',
     redirects: false
   });
-  t.deepEqual(expected, actual, 'should return');
+  t.deepEqual(sortObject(expected), sortObject(actual), 'should return');
   t.end();
 });
 
@@ -918,89 +647,9 @@ $inputRoot.response`
           ],
           PassthroughBehavior: 'NEVER',
           RequestTemplates: {
-            'application/json': (
-              `#set($allParams = $input.params())
-{
-  "params" : {
-    #foreach($type in $allParams.keySet())
-    #set($params = $allParams.get($type))
-    "$type" : {
-      #foreach($paramName in $params.keySet())
-      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    #if($foreach.hasNext),#end
-    #end
-  }
-  "context" : {
-    "apiId": "$context.apiId"
-    "authorizer": {
-      #foreach($property in $context.authorizer.keySet())
-      "$property": "$context.authorizer.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "httpMethod": "$context.httpMethod"
-    "identity": {
-      #foreach($property in $context.identity.keySet())
-      "$property": "$context.identity.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "requestId": "$context.requestId"
-    "resourceId": "$context.resourceId"
-    "resourcePath": "$context.resourcePath"
-    "stage": "$context.stage"
-  }
-  "body": $input.json('$')
-  "meta": {
-    "expectedResponseContentType": "application/json"
-  }
-}
-          `
-            ),
-            'application/x-www-form-urlencoded': (
-              `#set($allParams = $input.params())
-{
-  "params" : {
-    #foreach($type in $allParams.keySet())
-    #set($params = $allParams.get($type))
-    "$type" : {
-      #foreach($paramName in $params.keySet())
-      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    #if($foreach.hasNext),#end
-    #end
-  }
-  "context" : {
-    "apiId": "$context.apiId"
-    "authorizer": {
-      #foreach($property in $context.authorizer.keySet())
-      "$property": "$context.authorizer.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "httpMethod": "$context.httpMethod"
-    "identity": {
-      #foreach($property in $context.identity.keySet())
-      "$property": "$context.identity.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "requestId": "$context.requestId"
-    "resourceId": "$context.resourceId"
-    "resourcePath": "$context.resourcePath"
-    "stage": "$context.stage"
-  }
-  "body": $input.json('$')
-  "meta": {
-    "expectedResponseContentType": "application/json"
-  }
-}
-          `
+            'application/json': requestTemplatePartial('application/json'),
+            'application/x-www-form-urlencoded': requestTemplatePartial(
+              'application/json'
             )
           },
           Type: 'AWS',
@@ -1065,7 +714,7 @@ $inputRoot.response`
     resourceName: 'barpath',
     redirects: false
   });
-  t.deepEqual(expected, actual, 'should return');
+  t.deepEqual(sortObject(expected), sortObject(actual), 'should return');
   t.end();
 });
 
@@ -1086,7 +735,11 @@ test('templateDeployment', t => {
     dependsOnMethods: [{ resourceName: 'Users', httpMethod: 'GET' }],
     date
   });
-  t.deepEqual(expected, actual, 'should return the deployment template');
+  t.deepEqual(
+    sortObject(expected),
+    sortObject(actual),
+    'should return the deployment template'
+  );
   t.end();
 });
 
@@ -1112,7 +765,11 @@ test('templateStage', t => {
     }
   };
   const actual = templateStage({ stageName: 'prod', deploymentUid: '1234567' });
-  t.deepEqual(expected, actual, 'should return the stage template');
+  t.deepEqual(
+    sortObject(expected),
+    sortObject(actual),
+    'should return the stage template'
+  );
   t.end();
 });
 
@@ -1145,7 +802,11 @@ test('templateAccount', t => {
     }
   };
   const actual = templateAccount();
-  t.deepEqual(expected, actual, 'should return the stage template');
+  t.deepEqual(
+    sortObject(expected),
+    sortObject(actual),
+    'should return the stage template'
+  );
   t.end();
 });
 
