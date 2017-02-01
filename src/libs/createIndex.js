@@ -2,6 +2,9 @@ import { stripIndent } from 'common-tags';
 
 function getWrappingCode (apis, name) {
   const apiConfig = apis[name].api;
+  if (!apiConfig) {
+    return;
+  }
   const hasEndpoint = apiConfig.path !== false;
   const body = stripIndent`
     module.exports.${name} = function (event, context, callback) {

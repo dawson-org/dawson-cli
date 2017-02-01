@@ -111,7 +111,7 @@ return callback(null, data);
         }
       });
     };`;
-  const config = { helloWorld: {}, myEventHandler: {} };
+  const config = { helloWorld: {}, myEventHandler: {}, processCFTemplate: {} };
   config.helloWorld.api = {
     path: 'hello',
     responseContentType: 'application/json'
