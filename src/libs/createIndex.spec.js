@@ -111,17 +111,12 @@ return callback(null, data);
         }
       });
     };`;
-  const config = {
-    helloWorld: {},
-    myEventHandler: {}
-  };
+  const config = { helloWorld: {}, myEventHandler: {} };
   config.helloWorld.api = {
     path: 'hello',
     responseContentType: 'application/json'
   };
-  config.myEventHandler.api = {
-    path: false
-  };
+  config.myEventHandler.api = { path: false };
   const actual = createIndex(config, 'barapp');
   t.deepEqual(expected, actual);
   t.end();

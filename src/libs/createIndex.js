@@ -1,4 +1,3 @@
-
 import { stripIndent } from 'common-tags';
 
 function getWrappingCode (apis, name) {
@@ -17,17 +16,16 @@ function getWrappingCode (apis, name) {
       })
       .then(function (data) {
         ${hasEndpoint
-          ? stripIndent`
+    ? stripIndent`
             if (event.meta && event.meta.expectedResponseContentType.indexOf('application/json') !== -1) {
               return callback(null, { response: JSON.stringify(data) });
             }
             callback(null, { response: data });
           `
-          : stripIndent`
+    : stripIndent`
             // this function has not been called via API Gateway, we return the value as-is
             return callback(null, data);
-          `
-        }
+          `}
       })
       .catch(function (err) {
         try {
@@ -56,7 +54,9 @@ function getWrappingCode (apis, name) {
 }
 
 export default function createIndex (apis, stackName) {
-  const exportedFunctions = Object.keys(apis).map(name => getWrappingCode(apis, name));
+  const exportedFunctions = Object
+    .keys(apis)
+    .map(name => getWrappingCode(apis, name));
   return stripIndent`
     require('babel-polyfill');
 

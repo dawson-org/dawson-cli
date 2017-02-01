@@ -36,7 +36,7 @@ test('templateResource', t => {
         Type: 'AWS::ApiGateway::Resource',
         Properties: {
           RestApiId: { Ref: 'API' },
-          ParentId: { 'Fn::GetAtt': [ 'API', 'RootResourceId' ] },
+          ParentId: { 'Fn::GetAtt': ['API', 'RootResourceId'] },
           PathPart: 'users'
         }
       }
@@ -44,7 +44,11 @@ test('templateResource', t => {
     'should return a resource template, which references the root api as parent'
   );
   t.deepEqual(
-    templateResource({ resourceName: 'List', resourcePath: 'list', parentResourceName: 'Users' }),
+    templateResource({
+      resourceName: 'List',
+      resourcePath: 'list',
+      parentResourceName: 'Users'
+    }),
     {
       ResourceList: {
         Type: 'AWS::ApiGateway::Resource',
@@ -62,96 +66,65 @@ test('templateResource', t => {
 
 test('templateResourceHelper', t => {
   const expected = {
-    'resourceName': 'Bar',
-    'templateResourcePartial': {
-      'ResourceBar': {
-        'Properties': {
-          'ParentId': {
-            'Ref': 'ResourceFoo'
-          },
-          'PathPart': 'bar',
-          'RestApiId': {
-            'Ref': 'API'
-          }
+    resourceName: 'Bar',
+    templateResourcePartial: {
+      ResourceBar: {
+        Properties: {
+          ParentId: { Ref: 'ResourceFoo' },
+          PathPart: 'bar',
+          RestApiId: { Ref: 'API' }
         },
-        'Type': 'AWS::ApiGateway::Resource'
+        Type: 'AWS::ApiGateway::Resource'
       },
-      'ResourceFoo': {
-        'Properties': {
-          'ParentId': {
-            'Fn::GetAtt': [
-              'API',
-              'RootResourceId'
-            ]
-          },
-          'PathPart': 'foo',
-          'RestApiId': {
-            'Ref': 'API'
-          }
+      ResourceFoo: {
+        Properties: {
+          ParentId: { 'Fn::GetAtt': ['API', 'RootResourceId'] },
+          PathPart: 'foo',
+          RestApiId: { Ref: 'API' }
         },
-        'Type': 'AWS::ApiGateway::Resource'
+        Type: 'AWS::ApiGateway::Resource'
       }
     }
   };
   const actual = templateResourceHelper({ resourcePath: 'foo/bar' });
-  t.deepEqual(
-    expected,
-    actual
-  );
+  t.deepEqual(expected, actual);
   t.end();
 });
 
 test('templateResourceHelper with named params', t => {
   const expected = {
-    'resourceName': 'Bar',
-    'templateResourcePartial': {
-      'ResourceBar': {
-        'Properties': {
-          'ParentId': {
-            'Ref': 'ResourceFoo'
-          },
-          'PathPart': '{bar}',
-          'RestApiId': {
-            'Ref': 'API'
-          }
+    resourceName: 'Bar',
+    templateResourcePartial: {
+      ResourceBar: {
+        Properties: {
+          ParentId: { Ref: 'ResourceFoo' },
+          PathPart: '{bar}',
+          RestApiId: { Ref: 'API' }
         },
-        'Type': 'AWS::ApiGateway::Resource'
+        Type: 'AWS::ApiGateway::Resource'
       },
-      'ResourceFoo': {
-        'Properties': {
-          'ParentId': {
-            'Fn::GetAtt': [
-              'API',
-              'RootResourceId'
-            ]
-          },
-          'PathPart': 'foo',
-          'RestApiId': {
-            'Ref': 'API'
-          }
+      ResourceFoo: {
+        Properties: {
+          ParentId: { 'Fn::GetAtt': ['API', 'RootResourceId'] },
+          PathPart: 'foo',
+          RestApiId: { Ref: 'API' }
         },
-        'Type': 'AWS::ApiGateway::Resource'
+        Type: 'AWS::ApiGateway::Resource'
       }
     }
   };
   const actual = templateResourceHelper({ resourcePath: 'foo/{bar}' });
-  t.deepEqual(
-    expected,
-    actual
-  );
+  t.deepEqual(expected, actual);
   t.end();
 });
 
 test('templateResourceHelper with empty path', t => {
   const expected = {
-    'resourceName': null, // this will cause Resourcenull to be created
-    'templateResourcePartial': {}
+    resourceName: null, // this will cause Resourcenull to be created
+    templateResourcePartial: {}
   };
   const actual = templateResourceHelper({ resourcePath: '' });
-  t.deepEqual(
-    expected,
-    actual
-  );
+  t.deepEqual(expected, actual);
   t.end();
 });
 
@@ -179,16 +152,20 @@ test('templateLambdaIntegration with custom ContentType', t => {
       {
         ResponseParameters: {},
         ResponseTemplates: {
-          'text/x-beer': `#set($inputRoot = $input.path('$'))
+          'text/x-beer': (
+            `#set($inputRoot = $input.path('$'))
 $inputRoot.response`
+          )
         },
         StatusCode: 200
       },
       {
         ResponseParameters: {},
         ResponseTemplates: {
-          'text/x-beer': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+          'text/x-beer': (
+            `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
 $errorMessageObj.response`
+          )
         },
         SelectionPattern: '.*"httpStatus":500.*',
         StatusCode: 500
@@ -196,8 +173,10 @@ $errorMessageObj.response`
       {
         ResponseParameters: {},
         ResponseTemplates: {
-          'text/x-beer': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+          'text/x-beer': (
+            `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
 $errorMessageObj.response`
+          )
         },
         SelectionPattern: '.*"httpStatus":400.*',
         StatusCode: 400
@@ -205,8 +184,10 @@ $errorMessageObj.response`
       {
         ResponseParameters: {},
         ResponseTemplates: {
-          'text/x-beer': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+          'text/x-beer': (
+            `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
 $errorMessageObj.response`
+          )
         },
         SelectionPattern: '.*"httpStatus":403.*',
         StatusCode: 403
@@ -214,8 +195,10 @@ $errorMessageObj.response`
       {
         ResponseParameters: {},
         ResponseTemplates: {
-          'text/x-beer': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+          'text/x-beer': (
+            `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
 $errorMessageObj.response`
+          )
         },
         SelectionPattern: '.*"httpStatus":404.*',
         StatusCode: 404
@@ -223,46 +206,8 @@ $errorMessageObj.response`
     ],
     PassthroughBehavior: 'NEVER',
     RequestTemplates: {
-      'application/json': `#set($allParams = $input.params())
-{
-  "params" : {
-    #foreach($type in $allParams.keySet())
-    #set($params = $allParams.get($type))
-    "$type" : {
-      #foreach($paramName in $params.keySet())
-      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    #if($foreach.hasNext),#end
-    #end
-  }
-  "context" : {
-    "apiId": "$context.apiId"
-    "authorizer": {
-      #foreach($property in $context.authorizer.keySet())
-      "$property": "$context.authorizer.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "httpMethod": "$context.httpMethod"
-    "identity": {
-      #foreach($property in $context.identity.keySet())
-      "$property": "$context.identity.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "requestId": "$context.requestId"
-    "resourceId": "$context.resourceId"
-    "resourcePath": "$context.resourcePath"
-    "stage": "$context.stage"
-  }
-  "body": $input.json('$')
-  "meta": {
-    "expectedResponseContentType": "text/x-beer"
-  }
-}`,
-      'application/x-www-form-urlencoded': `#set($allParams = $input.params())
+      'application/json': (
+        `#set($allParams = $input.params())
 {
   "params" : {
     #foreach($type in $allParams.keySet())
@@ -301,6 +246,48 @@ $errorMessageObj.response`
     "expectedResponseContentType": "text/x-beer"
   }
 }`
+      ),
+      'application/x-www-form-urlencoded': (
+        `#set($allParams = $input.params())
+{
+  "params" : {
+    #foreach($type in $allParams.keySet())
+    #set($params = $allParams.get($type))
+    "$type" : {
+      #foreach($paramName in $params.keySet())
+      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
+      #if($foreach.hasNext),#end
+      #end
+    }
+    #if($foreach.hasNext),#end
+    #end
+  }
+  "context" : {
+    "apiId": "$context.apiId"
+    "authorizer": {
+      #foreach($property in $context.authorizer.keySet())
+      "$property": "$context.authorizer.get($property)"
+      #if($foreach.hasNext),#end
+      #end
+    }
+    "httpMethod": "$context.httpMethod"
+    "identity": {
+      #foreach($property in $context.identity.keySet())
+      "$property": "$context.identity.get($property)"
+      #if($foreach.hasNext),#end
+      #end
+    }
+    "requestId": "$context.requestId"
+    "resourceId": "$context.resourceId"
+    "resourcePath": "$context.resourcePath"
+    "stage": "$context.stage"
+  }
+  "body": $input.json('$')
+  "meta": {
+    "expectedResponseContentType": "text/x-beer"
+  }
+}`
+      )
     },
     Type: 'AWS',
     Uri: {
@@ -310,7 +297,7 @@ $errorMessageObj.response`
           'arn:aws:apigateway:',
           { Ref: 'AWS::Region' },
           ':lambda:path/2015-03-31/functions/',
-          { 'Fn::GetAtt': [ 'Lambdabarman', 'Arn' ] },
+          { 'Fn::GetAtt': ['Lambdabarman', 'Arn'] },
           '/invocations'
         ]
       ]
@@ -332,8 +319,10 @@ test('templateLambdaIntegration with ContentType = application/json', t => {
       {
         ResponseParameters: {},
         ResponseTemplates: {
-          'application/json': `#set($inputRoot = $input.path('$'))
+          'application/json': (
+            `#set($inputRoot = $input.path('$'))
 $inputRoot.response`
+          )
         },
         StatusCode: 200
       },
@@ -372,46 +361,8 @@ $inputRoot.response`
     ],
     PassthroughBehavior: 'NEVER',
     RequestTemplates: {
-      'application/json': `#set($allParams = $input.params())
-{
-  "params" : {
-    #foreach($type in $allParams.keySet())
-    #set($params = $allParams.get($type))
-    "$type" : {
-      #foreach($paramName in $params.keySet())
-      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    #if($foreach.hasNext),#end
-    #end
-  }
-  "context" : {
-    "apiId": "$context.apiId"
-    "authorizer": {
-      #foreach($property in $context.authorizer.keySet())
-      "$property": "$context.authorizer.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "httpMethod": "$context.httpMethod"
-    "identity": {
-      #foreach($property in $context.identity.keySet())
-      "$property": "$context.identity.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "requestId": "$context.requestId"
-    "resourceId": "$context.resourceId"
-    "resourcePath": "$context.resourcePath"
-    "stage": "$context.stage"
-  }
-  "body": $input.json('$')
-  "meta": {
-    "expectedResponseContentType": "application/json"
-  }
-}`,
-      'application/x-www-form-urlencoded': `#set($allParams = $input.params())
+      'application/json': (
+        `#set($allParams = $input.params())
 {
   "params" : {
     #foreach($type in $allParams.keySet())
@@ -450,6 +401,48 @@ $inputRoot.response`
     "expectedResponseContentType": "application/json"
   }
 }`
+      ),
+      'application/x-www-form-urlencoded': (
+        `#set($allParams = $input.params())
+{
+  "params" : {
+    #foreach($type in $allParams.keySet())
+    #set($params = $allParams.get($type))
+    "$type" : {
+      #foreach($paramName in $params.keySet())
+      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
+      #if($foreach.hasNext),#end
+      #end
+    }
+    #if($foreach.hasNext),#end
+    #end
+  }
+  "context" : {
+    "apiId": "$context.apiId"
+    "authorizer": {
+      #foreach($property in $context.authorizer.keySet())
+      "$property": "$context.authorizer.get($property)"
+      #if($foreach.hasNext),#end
+      #end
+    }
+    "httpMethod": "$context.httpMethod"
+    "identity": {
+      #foreach($property in $context.identity.keySet())
+      "$property": "$context.identity.get($property)"
+      #if($foreach.hasNext),#end
+      #end
+    }
+    "requestId": "$context.requestId"
+    "resourceId": "$context.resourceId"
+    "resourcePath": "$context.resourcePath"
+    "stage": "$context.stage"
+  }
+  "body": $input.json('$')
+  "meta": {
+    "expectedResponseContentType": "application/json"
+  }
+}`
+      )
     },
     Type: 'AWS',
     Uri: {
@@ -459,7 +452,7 @@ $inputRoot.response`
           'arn:aws:apigateway:',
           { Ref: 'AWS::Region' },
           ':lambda:path/2015-03-31/functions/',
-          { 'Fn::GetAtt': [ 'Lambdabarman', 'Arn' ] },
+          { 'Fn::GetAtt': ['Lambdabarman', 'Arn'] },
           '/invocations'
         ]
       ]
@@ -483,8 +476,10 @@ test('templateLambdaIntegration with redirect = true', t => {
           'method.response.header.Location': 'integration.response.body.response.Location'
         },
         ResponseTemplates: {
-          'text/plain': `#set($inputRoot = $input.path('$'))
+          'text/plain': (
+            `#set($inputRoot = $input.path('$'))
 You are being redirected to $inputRoot.response.Location`
+          )
         },
         StatusCode: 307
       },
@@ -531,46 +526,8 @@ You are being redirected to $inputRoot.response.Location`
     ],
     PassthroughBehavior: 'NEVER',
     RequestTemplates: {
-      'application/json': `#set($allParams = $input.params())
-{
-  "params" : {
-    #foreach($type in $allParams.keySet())
-    #set($params = $allParams.get($type))
-    "$type" : {
-      #foreach($paramName in $params.keySet())
-      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    #if($foreach.hasNext),#end
-    #end
-  }
-  "context" : {
-    "apiId": "$context.apiId"
-    "authorizer": {
-      #foreach($property in $context.authorizer.keySet())
-      "$property": "$context.authorizer.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "httpMethod": "$context.httpMethod"
-    "identity": {
-      #foreach($property in $context.identity.keySet())
-      "$property": "$context.identity.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "requestId": "$context.requestId"
-    "resourceId": "$context.resourceId"
-    "resourcePath": "$context.resourcePath"
-    "stage": "$context.stage"
-  }
-  "body": $input.json('$')
-  "meta": {
-    "expectedResponseContentType": "text/plain"
-  }
-}`,
-      'application/x-www-form-urlencoded': `#set($allParams = $input.params())
+      'application/json': (
+        `#set($allParams = $input.params())
 {
   "params" : {
     #foreach($type in $allParams.keySet())
@@ -609,102 +566,9 @@ You are being redirected to $inputRoot.response.Location`
     "expectedResponseContentType": "text/plain"
   }
 }`
-    },
-    Type: 'AWS',
-    Uri: {
-      'Fn::Join': [
-        '',
-        [
-          'arn:aws:apigateway:',
-          { Ref: 'AWS::Region' },
-          ':lambda:path/2015-03-31/functions/',
-          { 'Fn::GetAtt': [ 'Lambdabarman', 'Arn' ] },
-          '/invocations'
-        ]
-      ]
-    }
-  };
-  const actual = templateLambdaIntegration({
-    lambdaName: 'barman',
-    responseContentType: 'application/json',
-    redirects: true
-  });
-  t.deepEqual(expected, actual, 'should return');
-  t.end();
-});
-
-test('templateMethod with an authorizer', t => {
-  const expected = {
-    APIGAuthorizerDemoBarAuthorizer: {
-      Properties: {
-        AuthorizerResultTtlInSeconds: 0,
-        AuthorizerUri: {
-          'Fn::Sub': 'arn:aws:apigateway:\x24{AWS::Region}:lambda:path//2015-03-31/functions/\x24{LambdaDemoBarAuthorizer.Arn}/invocations'
-        },
-        IdentitySource: 'method.request.header.token',
-        Name: 'APIGAuthorizerDemoBarAuthorizer',
-        RestApiId: { Ref: 'API' },
-        Type: 'TOKEN'
-      },
-      Type: 'AWS::ApiGateway::Authorizer'
-    },
-    MethodRootGET: {
-      DependsOn: [ 'APIGAuthorizerDemoBarAuthorizer' ],
-      Properties: {
-        AuthorizationType: 'CUSTOM',
-        AuthorizerId: { Ref: 'APIGAuthorizerDemoBarAuthorizer' },
-        HttpMethod: 'GET',
-        Integration: {
-          IntegrationHttpMethod: 'POST',
-          IntegrationResponses: [
-            {
-              ResponseParameters: {},
-              ResponseTemplates: {
-                'text/x-bar': `#set($inputRoot = $input.path('$'))
-$inputRoot.response`
-              },
-              StatusCode: 200
-            },
-            {
-              ResponseParameters: {},
-              ResponseTemplates: {
-                'text/x-bar': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
-$errorMessageObj.response`
-              },
-              SelectionPattern: '.*"httpStatus":500.*',
-              StatusCode: 500
-            },
-            {
-              ResponseParameters: {},
-              ResponseTemplates: {
-                'text/x-bar': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
-$errorMessageObj.response`
-              },
-              SelectionPattern: '.*"httpStatus":400.*',
-              StatusCode: 400
-            },
-            {
-              ResponseParameters: {},
-              ResponseTemplates: {
-                'text/x-bar': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
-$errorMessageObj.response`
-              },
-              SelectionPattern: '.*"httpStatus":403.*',
-              StatusCode: 403
-            },
-            {
-              ResponseParameters: {},
-              ResponseTemplates: {
-                'text/x-bar': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
-$errorMessageObj.response`
-              },
-              SelectionPattern: '.*"httpStatus":404.*',
-              StatusCode: 404
-            }
-          ],
-          PassthroughBehavior: 'NEVER',
-          RequestTemplates: {
-            'application/json': `#set($allParams = $input.params())
+      ),
+      'application/x-www-form-urlencoded': (
+        `#set($allParams = $input.params())
 {
   "params" : {
     #foreach($type in $allParams.keySet())
@@ -740,11 +604,117 @@ $errorMessageObj.response`
   }
   "body": $input.json('$')
   "meta": {
-    "expectedResponseContentType": "text/x-bar"
+    "expectedResponseContentType": "text/plain"
   }
-}
-          `,
-            'application/x-www-form-urlencoded': `#set($allParams = $input.params())
+}`
+      )
+    },
+    Type: 'AWS',
+    Uri: {
+      'Fn::Join': [
+        '',
+        [
+          'arn:aws:apigateway:',
+          { Ref: 'AWS::Region' },
+          ':lambda:path/2015-03-31/functions/',
+          { 'Fn::GetAtt': ['Lambdabarman', 'Arn'] },
+          '/invocations'
+        ]
+      ]
+    }
+  };
+  const actual = templateLambdaIntegration({
+    lambdaName: 'barman',
+    responseContentType: 'application/json',
+    redirects: true
+  });
+  t.deepEqual(expected, actual, 'should return');
+  t.end();
+});
+
+test('templateMethod with an authorizer', t => {
+  const expected = {
+    APIGAuthorizerDemoBarAuthorizer: {
+      Properties: {
+        AuthorizerResultTtlInSeconds: 0,
+        AuthorizerUri: {
+          'Fn::Sub': 'arn:aws:apigateway:\x24{AWS::Region}:lambda:path//2015-03-31/functions/\x24{LambdaDemoBarAuthorizer.Arn}/invocations'
+        },
+        IdentitySource: 'method.request.header.token',
+        Name: 'APIGAuthorizerDemoBarAuthorizer',
+        RestApiId: { Ref: 'API' },
+        Type: 'TOKEN'
+      },
+      Type: 'AWS::ApiGateway::Authorizer'
+    },
+    MethodRootGET: {
+      DependsOn: ['APIGAuthorizerDemoBarAuthorizer'],
+      Properties: {
+        AuthorizationType: 'CUSTOM',
+        AuthorizerId: { Ref: 'APIGAuthorizerDemoBarAuthorizer' },
+        HttpMethod: 'GET',
+        Integration: {
+          IntegrationHttpMethod: 'POST',
+          IntegrationResponses: [
+            {
+              ResponseParameters: {},
+              ResponseTemplates: {
+                'text/x-bar': (
+                  `#set($inputRoot = $input.path('$'))
+$inputRoot.response`
+                )
+              },
+              StatusCode: 200
+            },
+            {
+              ResponseParameters: {},
+              ResponseTemplates: {
+                'text/x-bar': (
+                  `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+$errorMessageObj.response`
+                )
+              },
+              SelectionPattern: '.*"httpStatus":500.*',
+              StatusCode: 500
+            },
+            {
+              ResponseParameters: {},
+              ResponseTemplates: {
+                'text/x-bar': (
+                  `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+$errorMessageObj.response`
+                )
+              },
+              SelectionPattern: '.*"httpStatus":400.*',
+              StatusCode: 400
+            },
+            {
+              ResponseParameters: {},
+              ResponseTemplates: {
+                'text/x-bar': (
+                  `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+$errorMessageObj.response`
+                )
+              },
+              SelectionPattern: '.*"httpStatus":403.*',
+              StatusCode: 403
+            },
+            {
+              ResponseParameters: {},
+              ResponseTemplates: {
+                'text/x-bar': (
+                  `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+$errorMessageObj.response`
+                )
+              },
+              SelectionPattern: '.*"httpStatus":404.*',
+              StatusCode: 404
+            }
+          ],
+          PassthroughBehavior: 'NEVER',
+          RequestTemplates: {
+            'application/json': (
+              `#set($allParams = $input.params())
 {
   "params" : {
     #foreach($type in $allParams.keySet())
@@ -784,6 +754,49 @@ $errorMessageObj.response`
   }
 }
           `
+            ),
+            'application/x-www-form-urlencoded': (
+              `#set($allParams = $input.params())
+{
+  "params" : {
+    #foreach($type in $allParams.keySet())
+    #set($params = $allParams.get($type))
+    "$type" : {
+      #foreach($paramName in $params.keySet())
+      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
+      #if($foreach.hasNext),#end
+      #end
+    }
+    #if($foreach.hasNext),#end
+    #end
+  }
+  "context" : {
+    "apiId": "$context.apiId"
+    "authorizer": {
+      #foreach($property in $context.authorizer.keySet())
+      "$property": "$context.authorizer.get($property)"
+      #if($foreach.hasNext),#end
+      #end
+    }
+    "httpMethod": "$context.httpMethod"
+    "identity": {
+      #foreach($property in $context.identity.keySet())
+      "$property": "$context.identity.get($property)"
+      #if($foreach.hasNext),#end
+      #end
+    }
+    "requestId": "$context.requestId"
+    "resourceId": "$context.resourceId"
+    "resourcePath": "$context.resourcePath"
+    "stage": "$context.stage"
+  }
+  "body": $input.json('$')
+  "meta": {
+    "expectedResponseContentType": "text/x-bar"
+  }
+}
+          `
+            )
           },
           Type: 'AWS',
           Uri: {
@@ -793,18 +806,33 @@ $errorMessageObj.response`
                 'arn:aws:apigateway:',
                 { Ref: 'AWS::Region' },
                 ':lambda:path/2015-03-31/functions/',
-                { 'Fn::GetAtt': [ 'LambdafooBarGet', 'Arn' ] },
+                { 'Fn::GetAtt': ['LambdafooBarGet', 'Arn'] },
                 '/invocations'
               ]
             ]
           }
         },
         MethodResponses: [
-          { ResponseModels: { 'text/x-bar': { Ref: 'ModelHelloWorldModel' } }, StatusCode: 200 },
-          { ResponseModels: { 'text/x-bar': { Ref: 'ModelHelloWorldModel' } }, StatusCode: 400 },
-          { ResponseModels: { 'text/x-bar': { Ref: 'ModelHelloWorldModel' } }, StatusCode: 403 },
-          { ResponseModels: { 'text/x-bar': { Ref: 'ModelHelloWorldModel' } }, StatusCode: 404 },
-          { ResponseModels: { 'text/x-bar': { Ref: 'ModelHelloWorldModel' } }, StatusCode: 500 },
+          {
+            ResponseModels: { 'text/x-bar': { Ref: 'ModelHelloWorldModel' } },
+            StatusCode: 200
+          },
+          {
+            ResponseModels: { 'text/x-bar': { Ref: 'ModelHelloWorldModel' } },
+            StatusCode: 400
+          },
+          {
+            ResponseModels: { 'text/x-bar': { Ref: 'ModelHelloWorldModel' } },
+            StatusCode: 403
+          },
+          {
+            ResponseModels: { 'text/x-bar': { Ref: 'ModelHelloWorldModel' } },
+            StatusCode: 404
+          },
+          {
+            ResponseModels: { 'text/x-bar': { Ref: 'ModelHelloWorldModel' } },
+            StatusCode: 500
+          },
           {
             ResponseModels: { 'text/x-bar': { Ref: 'ModelHelloWorldModel' } },
             ResponseParameters: { 'method.response.header.Location': false },
@@ -848,8 +876,10 @@ test('templateMethod without an authorizer', t => {
             {
               ResponseParameters: {},
               ResponseTemplates: {
-                'application/json': `#set($inputRoot = $input.path('$'))
+                'application/json': (
+                  `#set($inputRoot = $input.path('$'))
 $inputRoot.response`
+                )
               },
               StatusCode: 200
             },
@@ -888,47 +918,8 @@ $inputRoot.response`
           ],
           PassthroughBehavior: 'NEVER',
           RequestTemplates: {
-            'application/json': `#set($allParams = $input.params())
-{
-  "params" : {
-    #foreach($type in $allParams.keySet())
-    #set($params = $allParams.get($type))
-    "$type" : {
-      #foreach($paramName in $params.keySet())
-      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    #if($foreach.hasNext),#end
-    #end
-  }
-  "context" : {
-    "apiId": "$context.apiId"
-    "authorizer": {
-      #foreach($property in $context.authorizer.keySet())
-      "$property": "$context.authorizer.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "httpMethod": "$context.httpMethod"
-    "identity": {
-      #foreach($property in $context.identity.keySet())
-      "$property": "$context.identity.get($property)"
-      #if($foreach.hasNext),#end
-      #end
-    }
-    "requestId": "$context.requestId"
-    "resourceId": "$context.resourceId"
-    "resourcePath": "$context.resourcePath"
-    "stage": "$context.stage"
-  }
-  "body": $input.json('$')
-  "meta": {
-    "expectedResponseContentType": "application/json"
-  }
-}
-          `,
-            'application/x-www-form-urlencoded': `#set($allParams = $input.params())
+            'application/json': (
+              `#set($allParams = $input.params())
 {
   "params" : {
     #foreach($type in $allParams.keySet())
@@ -968,6 +959,49 @@ $inputRoot.response`
   }
 }
           `
+            ),
+            'application/x-www-form-urlencoded': (
+              `#set($allParams = $input.params())
+{
+  "params" : {
+    #foreach($type in $allParams.keySet())
+    #set($params = $allParams.get($type))
+    "$type" : {
+      #foreach($paramName in $params.keySet())
+      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
+      #if($foreach.hasNext),#end
+      #end
+    }
+    #if($foreach.hasNext),#end
+    #end
+  }
+  "context" : {
+    "apiId": "$context.apiId"
+    "authorizer": {
+      #foreach($property in $context.authorizer.keySet())
+      "$property": "$context.authorizer.get($property)"
+      #if($foreach.hasNext),#end
+      #end
+    }
+    "httpMethod": "$context.httpMethod"
+    "identity": {
+      #foreach($property in $context.identity.keySet())
+      "$property": "$context.identity.get($property)"
+      #if($foreach.hasNext),#end
+      #end
+    }
+    "requestId": "$context.requestId"
+    "resourceId": "$context.resourceId"
+    "resourcePath": "$context.resourcePath"
+    "stage": "$context.stage"
+  }
+  "body": $input.json('$')
+  "meta": {
+    "expectedResponseContentType": "application/json"
+  }
+}
+          `
+            )
           },
           Type: 'AWS',
           Uri: {
@@ -977,25 +1011,40 @@ $inputRoot.response`
                 'arn:aws:apigateway:',
                 { Ref: 'AWS::Region' },
                 ':lambda:path/2015-03-31/functions/',
-                { 'Fn::GetAtt': [ 'LambdafooBarGet', 'Arn' ] },
+                { 'Fn::GetAtt': ['LambdafooBarGet', 'Arn'] },
                 '/invocations'
               ]
             ]
           }
         },
         MethodResponses: [
-          { ResponseModels: { 'application/json': { Ref: 'ModelHelloWorldModel' } }, StatusCode: 200 },
-          { ResponseModels: { 'application/json': { Ref: 'ModelHelloWorldModel' } }, StatusCode: 400 },
-          { ResponseModels: { 'application/json': { Ref: 'ModelHelloWorldModel' } }, StatusCode: 403 },
-          { ResponseModels: { 'application/json': { Ref: 'ModelHelloWorldModel' } }, StatusCode: 404 },
-          { ResponseModels: { 'application/json': { Ref: 'ModelHelloWorldModel' } }, StatusCode: 500 },
+          {
+            ResponseModels: { 'application/json': { Ref: 'ModelHelloWorldModel' } },
+            StatusCode: 200
+          },
+          {
+            ResponseModels: { 'application/json': { Ref: 'ModelHelloWorldModel' } },
+            StatusCode: 400
+          },
+          {
+            ResponseModels: { 'application/json': { Ref: 'ModelHelloWorldModel' } },
+            StatusCode: 403
+          },
+          {
+            ResponseModels: { 'application/json': { Ref: 'ModelHelloWorldModel' } },
+            StatusCode: 404
+          },
+          {
+            ResponseModels: { 'application/json': { Ref: 'ModelHelloWorldModel' } },
+            StatusCode: 500
+          },
           {
             ResponseModels: { 'application/json': { Ref: 'ModelHelloWorldModel' } },
             ResponseParameters: { 'method.response.header.Location': false },
             StatusCode: 307
           }
         ],
-        ResourceId: { 'Ref': 'Resourcebarpath' },
+        ResourceId: { Ref: 'Resourcebarpath' },
         RestApiId: { Ref: 'API' }
       },
       Type: 'AWS::ApiGateway::Method'
@@ -1024,7 +1073,7 @@ test('templateDeployment', t => {
   const date = new Date().toISOString();
   const expected = {
     Deployment1234ABC: {
-      DependsOn: [ 'MethodUsersGET' ],
+      DependsOn: ['MethodUsersGET'],
       Type: 'AWS::ApiGateway::Deployment',
       Properties: {
         RestApiId: { Ref: 'API' },
@@ -1034,7 +1083,7 @@ test('templateDeployment', t => {
   };
   const actual = templateDeployment({
     deploymentUid: '1234ABC',
-    dependsOnMethods: [ { resourceName: 'Users', httpMethod: 'GET' } ],
+    dependsOnMethods: [{ resourceName: 'Users', httpMethod: 'GET' }],
     date
   });
   t.deepEqual(expected, actual, 'should return the deployment template');
@@ -1052,7 +1101,12 @@ test('templateStage', t => {
         RestApiId: { Ref: 'API' },
         StageName: 'prod',
         MethodSettings: [
-          { HttpMethod: '*', ResourcePath: '/*', LoggingLevel: 'INFO', DataTraceEnabled: 'true' }
+          {
+            HttpMethod: '*',
+            ResourcePath: '/*',
+            LoggingLevel: 'INFO',
+            DataTraceEnabled: 'true'
+          }
         ]
       }
     }
@@ -1066,7 +1120,9 @@ test('templateAccount', t => {
   const expected = {
     APIGatewayAccount: {
       Type: 'AWS::ApiGateway::Account',
-      Properties: { CloudWatchRoleArn: { 'Fn::Sub': '\x24{RoleAPIGatewayAccount.Arn}' } }
+      Properties: {
+        CloudWatchRoleArn: { 'Fn::Sub': '\x24{RoleAPIGatewayAccount.Arn}' }
+      }
     },
     RoleAPIGatewayAccount: {
       Properties: {
@@ -1075,7 +1131,7 @@ test('templateAccount', t => {
             {
               Action: 'sts:AssumeRole',
               Effect: 'Allow',
-              Principal: { Service: [ 'apigateway.amazonaws.com' ] }
+              Principal: { Service: ['apigateway.amazonaws.com'] }
             }
           ],
           Version: '2012-10-17'
@@ -1102,7 +1158,7 @@ test('templateCloudWatchRole', t => {
             {
               Action: 'sts:AssumeRole',
               Effect: 'Allow',
-              Principal: { Service: [ 'apigateway.amazonaws.com' ] }
+              Principal: { Service: ['apigateway.amazonaws.com'] }
             }
           ],
           Version: '2012-10-17'
@@ -1141,6 +1197,10 @@ test('templateAuthorizer', t => {
     }
   };
   const actual = templateAuthorizer({ authorizerFunctionName: 'fooBar' });
-  t.deepEqual(expected, actual, 'should return an API Gateway Authorizer template');
+  t.deepEqual(
+    expected,
+    actual,
+    'should return an API Gateway Authorizer template'
+  );
   t.end();
 });

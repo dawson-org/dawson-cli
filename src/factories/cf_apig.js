@@ -92,26 +92,38 @@ export function templateResourceHelper ({ resourcePath }) {
       resourceName = null;
     } else if (pathToken[0] === '{') {
       let pathWithoutBrackets = /\{(.*)\}/.exec(pathToken)[1];
-      resourceName = pathWithoutBrackets[0].toUpperCase() + pathWithoutBrackets.substring(1);
+      resourceName = pathWithoutBrackets[0].toUpperCase() +
+        pathWithoutBrackets.substring(1);
     } else {
       resourceName = pathToken[0].toUpperCase() + pathToken.substring(1);
     }
-    assert(!pathToken || pathToken[0] !== '/', '`path` should not begin with a /');
+    assert(
+      !pathToken || pathToken[0] !== '/',
+      '`path` should not begin with a /'
+    );
     const templateResourcePartial = pathToken ? templateResource({
       resourceName,
-        // @FIXME prepend to resourceName the parent resources names
+          // @FIXME prepend to resourceName the parent resources names
       resourcePath: pathToken,
       parentResourceName: lastResourceName
     }) : {};
     lastResourceName = resourceName;
-    templateResourcePartials = { ...templateResourcePartials, ...templateResourcePartial };
+    templateResourcePartials = {
+      ...templateResourcePartials,
+      ...templateResourcePartial
+    };
   });
-  return { resourceName: lastResourceName, templateResourcePartial: templateResourcePartials };
+  return {
+    resourceName: lastResourceName,
+    templateResourcePartial: templateResourcePartials
+  };
 }
 
-export function templateResource ({ resourceName, resourcePath, parentResourceName = null }) {
+export function templateResource (
+  { resourceName, resourcePath, parentResourceName = null }
+) {
   const parentId = !parentResourceName
-    ? { 'Fn::GetAtt': [ `${templateAPIID()}`, 'RootResourceId' ] }
+    ? { 'Fn::GetAtt': [`${templateAPIID()}`, 'RootResourceId'] }
     : { Ref: `${templateResourceName({ resourceName: parentResourceName })}` };
   return {
     [`${templateResourceName({ resourceName })}`]: {
@@ -139,24 +151,32 @@ export function templateModel ({ modelName, modelSchema }) {
   };
 }
 
-export function templateLambdaIntegration ({ lambdaName, responseContentType, redirects }) {
+export function templateLambdaIntegration (
+  { lambdaName, responseContentType, redirects }
+) {
   let responseTemplate = {
-    [responseContentType]: stripIndent`
+    [responseContentType]: (
+      stripIndent`
       #set($inputRoot = $input.path('$'))
       $inputRoot.response
     `
+    )
   };
   let errorResponseTemplate = {
-    [responseContentType]: stripIndent`
+    [responseContentType]: (
+      stripIndent`
       #set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
       $errorMessageObj.response
     `
+    )
   };
   if (responseContentType.includes('application/json')) {
     errorResponseTemplate = {
-      'application/json': stripIndent`
+      'application/json': (
+        stripIndent`
         $input.path('$.errorMessage')
       `
+      )
     };
   }
   let apigResponseContentType = responseContentType;
@@ -170,15 +190,19 @@ export function templateLambdaIntegration ({ lambdaName, responseContentType, re
     };
     apigResponseContentType = 'text/plain';
     responseTemplate = {
-      'text/plain': stripIndent`
+      'text/plain': (
+        stripIndent`
         #set($inputRoot = $input.path('$'))
         You are being redirected to $inputRoot.response.Location
       `
+      )
     };
     errorResponseTemplate = {
-      'text/plain': stripIndent`
+      'text/plain': (
+        stripIndent`
         Cannot redirect because of an error
       `
+      )
     };
   }
   return {
@@ -219,7 +243,9 @@ export function templateLambdaIntegration ({ lambdaName, responseContentType, re
     RequestTemplates: {
       // https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-mapping-template-reference.html#util-template-reference
       // § "Param Mapping Template Example" and above
-      'application/x-www-form-urlencoded': getMappingTemplate({ apigResponseContentType }),
+      'application/x-www-form-urlencoded': getMappingTemplate({
+        apigResponseContentType
+      }),
       'application/json': getMappingTemplate({ apigResponseContentType })
     },
     Type: 'AWS',
@@ -230,7 +256,7 @@ export function templateLambdaIntegration ({ lambdaName, responseContentType, re
           `arn:aws:apigateway:`,
           { Ref: 'AWS::Region' },
           `:lambda:path/2015-03-31/functions/`,
-          { 'Fn::GetAtt': [ `${templateLambdaName({ lambdaName })}`, 'Arn' ] },
+          { 'Fn::GetAtt': [`${templateLambdaName({ lambdaName })}`, 'Arn'] },
           '/invocations'
         ]
       ]
@@ -249,17 +275,25 @@ export function templateMethod (
 ) {
   const responseModelName = 'HelloWorldModel';
   const resourceId = !resourceName
-    ? { 'Fn::GetAtt': [ `${templateAPIID()}`, 'RootResourceId' ] }
+    ? { 'Fn::GetAtt': [`${templateAPIID()}`, 'RootResourceId'] }
     : { Ref: `${templateResourceName({ resourceName })}` };
-  const integrationConfig = templateLambdaIntegration({ lambdaName, responseContentType, redirects });
+  const integrationConfig = templateLambdaIntegration({
+    lambdaName,
+    responseContentType,
+    redirects
+  });
   let responseModel;
   if (responseContentType.includes('application/json')) {
     responseModel = {
-      'application/json': { Ref: templateModelName({ modelName: responseModelName }) }
+      'application/json': {
+        Ref: templateModelName({ modelName: responseModelName })
+      }
     };
   } else {
     responseModel = {
-      [responseContentType]: { Ref: templateModelName({ modelName: responseModelName }) }
+      [responseContentType]: {
+        Ref: templateModelName({ modelName: responseModelName })
+      }
     };
   }
   let authorizerConfig = { AuthorizationType: 'NONE' };
@@ -276,7 +310,9 @@ export function templateMethod (
   }
   let dependsOn;
   if (authorizerFunctionName) {
-    dependsOn = { DependsOn: [ `${templateAuthorizerName({ authorizerFunctionName })}` ] };
+    dependsOn = {
+      DependsOn: [`${templateAuthorizerName({ authorizerFunctionName })}`]
+    };
   }
   return {
     ...templateModel({ modelName: responseModelName, modelSchema: '{}' }),
@@ -306,9 +342,7 @@ export function templateMethod (
     }
   };
 }
-export function templateDeployment (
-  { deploymentUid, dependsOnMethods, date }
-) {
+export function templateDeployment ({ deploymentUid, dependsOnMethods, date }) {
   const dependsOn = dependsOnMethods.map(methodInfo => {
     const { resourceName, httpMethod } = methodInfo;
     return templateMethodName({ resourceName, httpMethod });
@@ -335,7 +369,12 @@ export function templateStage ({ stageName, deploymentUid }) {
         RestApiId: { Ref: `${templateAPIID()}` },
         StageName: `${stageName}`,
         MethodSettings: [
-          { HttpMethod: '*', ResourcePath: '/*', LoggingLevel: 'INFO', DataTraceEnabled: 'true' }
+          {
+            HttpMethod: '*',
+            ResourcePath: '/*',
+            LoggingLevel: 'INFO',
+            DataTraceEnabled: 'true'
+          }
         ]
       }
     }
@@ -363,7 +402,7 @@ export function templateCloudWatchRole () {
           Statement: [
             {
               Effect: 'Allow',
-              Principal: { Service: [ 'apigateway.amazonaws.com' ] },
+              Principal: { Service: ['apigateway.amazonaws.com'] },
               Action: 'sts:AssumeRole'
             }
           ]
@@ -377,13 +416,17 @@ export function templateCloudWatchRole () {
   };
 }
 function templateAuthorizerName ({ authorizerFunctionName }) {
-  return `APIGAuthorizer${authorizerFunctionName[0].toUpperCase()}${authorizerFunctionName.slice(
-    1
-  )}`;
+  return `APIGAuthorizer${authorizerFunctionName[
+    0
+  ].toUpperCase()}${authorizerFunctionName.slice(1)}`;
 }
 export function templateAuthorizer ({ authorizerFunctionName }) {
   const lambdaLogicalName = templateLambdaName({
-    lambdaName: `${authorizerFunctionName[0].toUpperCase()}${authorizerFunctionName.slice(1)}`
+    lambdaName: (
+      `${authorizerFunctionName[0].toUpperCase()}${authorizerFunctionName.slice(
+        1
+      )}`
+    )
   });
   const authorizerName = templateAuthorizerName({ authorizerFunctionName });
   return {
@@ -393,9 +436,11 @@ export function templateAuthorizer ({ authorizerFunctionName }) {
         AuthorizerResultTtlInSeconds: 0,
         // eslint-disable-line
         AuthorizerUri: {
-          'Fn::Sub': 'arn:aws:apigateway:${AWS::Region}:lambda:path//2015-03-31/functions/${' +
-            lambdaLogicalName +
-            '.Arn}/invocations'
+          'Fn::Sub': (
+            'arn:aws:apigateway:${AWS::Region}:lambda:path//2015-03-31/functions/${' +
+              lambdaLogicalName +
+              '.Arn}/invocations'
+          )
         },
         IdentitySource: 'method.request.header.token',
         Name: `${authorizerName}`,
