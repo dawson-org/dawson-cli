@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/dawson.svg?maxAge=3600)](https://npm.im/dawson)
 [![Build Status](https://travis-ci.org/dawson-org/dawson-cli.svg?branch=master)](https://travis-ci.org/dawson-org/dawson-cli)
-[![npm dependencies](https://david-dm.org/dawson-org/dawson-cli.svg?maxAge=3600)](https://david-dm.org/dawson-org/dawson-cli) 
+[![npm dependencies](https://david-dm.org/dawson-org/dawson-cli.svg?maxAge=3600)](https://david-dm.org/dawson-org/dawson-cli)
 [![Coverage Status](https://coveralls.io/repos/github/dawson-org/dawson-cli/badge.svg)](https://coveralls.io/github/dawson-org/dawson-cli)
 
 dawson is a [serverless](https://auth0.com/blog/what-is-serverless/) web framework for Node.js on AWS ([CloudFormation](https://aws.amazon.com/cloudformation/), [CloudFront](https://aws.amazon.com/cloudfront/), [API Gateway](https://aws.amazon.com/apigateway/), [Lambda](https://aws.amazon.com/lambda/)).  
@@ -67,7 +67,9 @@ A changelog is maintained in the [Releases page](https://github.com/dawson-org/d
 
 ## Contributing
 [![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=plastic)](https://github.com/Flet/semistandard)  
-Any contribution is very welcome! You may pick an Issue, fork and start working on that. Should you need any guidance or help please ask :)
+Any contribution is very welcome! You may pick an Issue, fork and start working on that. Should you need any guidance or help please ask :)  
+
+We are currently testing only functions that are involved in the Template generation.  
 
 <!-- Contributors START
 Simone_Lusenti lusentis https://twitter.com/Lanzone31 code infra doc tests example

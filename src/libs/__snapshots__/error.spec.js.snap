@@ -1,0 +1,15 @@
+exports[`creates an error 1`] = `"\"\\n   Execution Error\\n   3452345\\n\\n   Possible cause\\n   53656564\\n\\n   2893475923847593\\n\\n   Possible solution\\n   985u4986\\n\\n   If you believe this is not an expected behaviour or that this error message should be improved, open an issue: https://github.com/dawson-org/dawson-cli/issues\""`;
+
+exports[`creates an error with default params 1`] = `"\"\\n   Execution Error\\n\\n   If you believe this is not an expected behaviour or that this error message should be improved, open an issue: https://github.com/dawson-org/dawson-cli/issues\""`;
+
+exports[`title 1`] = `""
+   Execution Error 
+   3452345
+
+
+   2893475923847593
+
+   Possible solution
+   985u4986
+
+   If you believe this is not an expected behaviour or that this error message should be improved, open an issue: https://github.com/dawson-org/dawson-cli/issues""`;

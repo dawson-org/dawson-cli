@@ -21,6 +21,19 @@ import {
   templateAssetsBucketName
 } from '../factories/cf_s3';
 
+const CFN_DAWSON_OUTPUTS = {
+  BucketAssets: () => ({ Ref: `${templateAssetsBucketName()}` }),
+  DistributionWWW: ({ cloudfrontSettings }) =>
+    cloudfrontSettings
+      ? {
+        'Fn::GetAtt': [
+          `${templateCloudfrontDistributionName()}`,
+          'DomainName'
+        ]
+      }
+      : 'CloudFront disabled from config'
+};
+
 function taskProcessTemplate (
   {
     customTemplateObjects,
@@ -52,18 +65,9 @@ function taskProcessTemplate (
     },
     Outputs: {
       ...customTemplateObjects.Outputs,
-      BucketAssets: { Value: { Ref: `${templateAssetsBucketName()}` } },
+      BucketAssets: { Value: CFN_DAWSON_OUTPUTS.BucketAssets() },
       DistributionWWW: {
-        Value: (
-          cloudfrontSettings
-            ? {
-              'Fn::GetAtt': [
-                `${templateCloudfrontDistributionName()}`,
-                'DomainName'
-              ]
-            }
-            : 'CloudFront disabled from config'
-        )
+        Value: CFN_DAWSON_OUTPUTS.DistributionWWW({ cloudfrontSettings })
       }
     }
   };
@@ -79,11 +83,11 @@ function taskProcessTemplate (
   }
 
   const cfTemplateJSON = JSON.stringify(cfTemplate, null, 2);
-  return { cfTemplateJSON };
+  return { cfTemplateJSON, cfTemplate };
 }
 
 function taskCreateFunctionTemplatePartial (
-  { index, def, stackName, zipS3Location, environment }
+  { index, def, stackName, zipS3Location, environment: originalEnvironment }
 ) {
   if (typeof def.api !== 'object') {
     throw new Error(
@@ -92,15 +96,24 @@ function taskCreateFunctionTemplatePartial (
   }
 
   const {
-    path: resourcePath = false,
+    path: resourcePath,
     method: httpMethod = 'GET',
     policyStatements: policyStatements = [],
     responseContentType = 'text/html',
     runtime,
     authorizer,
-    redirects = false
+    redirects = false,
+    excludeEnv
   } = def.api;
   const name = def.name;
+
+  // removes env variables excluded by .excludeEnv property
+  const environment = { ...originalEnvironment };
+  if (excludeEnv) {
+    excludeEnv.forEach(key => {
+      delete environment[key];
+    });
+  }
 
   debug(
     `=> #${index} Found function ${name.bold} at ${httpMethod.bold} /${resourcePath.bold}`
@@ -158,9 +171,6 @@ function taskCreateCloudFrontTemplate (
   const cloudfrontCustomDomain = typeof cloudfrontSettings === 'string'
     ? cloudfrontSettings
     : null;
-  if (skipAcmCertificate === true) {
-    debug(`Skipping ACM SSL/TLS Certificate validation`);
-  }
   debug(`cloudfrontSettings for this stage: ${cloudfrontSettings}`);
   const cloudfrontPartial = cloudfrontSettings !== false
     ? templateCloudfrontDistribution({
@@ -233,23 +243,24 @@ export default function generateTemplate (
   Object.keys(customTemplateObjects.Outputs || {}).forEach(outputName => {
     environment[outputName] = customTemplateObjects.Outputs[outputName].Value;
   });
+  Object.keys(CFN_DAWSON_OUTPUTS).forEach(outputName => {
+    environment[outputName] = CFN_DAWSON_OUTPUTS[outputName]({
+      // you should pass settings eventually required by output snippets,
+      // currently cloudfrontSettings is used only by DistributionWWW Output
+      cloudfrontSettings
+    });
+  });
 
   for (const [index, def] of Object.entries(API_DEFINITIONS)) {
     if (RESERVED_FUCTION_NAMES.includes(def.name)) {
       continue;
-    }
-    const currentEnv = { ...environment };
-    if (Array.isArray(def.api.excludeEnv)) {
-      def.api.excludeEnv.forEach(key => {
-        delete currentEnv[key];
-      });
     }
     const { template, methodDefinition } = taskCreateFunctionTemplatePartial({
       index,
       def,
       stackName,
       zipS3Location,
-      environment: currentEnv
+      environment
     });
     functionTemplatePartials = { ...functionTemplatePartials, ...template };
     if (methodDefinition) {
@@ -278,7 +289,7 @@ export default function generateTemplate (
   //   cloudfrontCustomDomain
   // });
 
-  const { cfTemplateJSON } = taskProcessTemplate({
+  const { cfTemplateJSON, cfTemplate } = taskProcessTemplate({
     customTemplateObjects,
     appStage,
     stageName,
@@ -291,5 +302,11 @@ export default function generateTemplate (
     deploymentUid
   });
 
-  return { supportBucketName, stackName, cfTemplateJSON, cloudfrontCustomDomain };
+  return {
+    supportBucketName,
+    stackName,
+    cfTemplateJSON,
+    cfTemplate,
+    cloudfrontCustomDomain
+  };
 }

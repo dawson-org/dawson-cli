@@ -14,7 +14,7 @@
     "lint:watch": "nodemon -w src -x npm -- run lint",
     "prepublish": "npm run clean && npm run compile",
     "pre-commit": "npm run lint",
-    "coverage-report": "nyc report --check-coverage --branches 100 --functions 100 --lines 100 --statements 100 --reporter=lcov",
+    "coverage-report": "nyc report --check-coverage --functions 100 --lines 100 --statements 100 --reporter=lcov",
     "test": "npm run lint && nyc ava src/**/*.spec.js && npm run coverage-report"
   },
   "engines": {
@@ -79,6 +79,11 @@
     ]
   },
   "nyc": {
+    "exclude": [
+      "**/*.spec.js",
+      "src/logger.js",
+      "src/config.js"
+    ],
     "require": [
       "babel-register"
     ],

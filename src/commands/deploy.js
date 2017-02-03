@@ -12,7 +12,7 @@ import { debug, danger, success } from '../logger';
 
 import updateSupportStack from '../libs/updateSupportStack';
 import taskRequestACMCert from '../libs/aws/acm-request-cert';
-import uploadFile from '../libs/aws/s3-upload-file';
+import uploadFile from '../libs/aws/s3-upload-template';
 import generateTemplate from '../factories/primaryTemplate';
 import createOrUpdateStack from '../libs/aws/cfn-create-or-update-stack';
 import { templateStackName, buildCreateStackParams } from '../factories/cloudformation';
@@ -64,6 +64,7 @@ export async function deploy ({
   skipChmod = false
 }) {
   const {
+    API_DEFINITIONS,
     SETTINGS,
     APP_NAME,
     getCloudFrontSettings,
@@ -88,6 +89,7 @@ export async function deploy ({
       title: 'validating configuration',
       task: ctx => {
         Object.assign(ctx, {
+          API_DEFINITIONS,
           cloudfrontSettings: getCloudFrontSettings({ appStage }),
           dangerDeleteResources,
           skipAcmCertificate,
