@@ -1,4 +1,4 @@
-import { test } from 'tap';
+import test from 'ava';
 
 import { templateLambda, templateLambdaExecutionRole } from './cf_lambda';
 
@@ -73,7 +73,6 @@ test('templateLambdaExecutionRole', t => {
     expected,
     'should return an execution role with the specified statements'
   );
-  t.end();
 });
 
 test('templateLambda', t => {
@@ -178,7 +177,6 @@ test('templateLambda', t => {
     environment: { myBar: 'baz' }
   });
   t.deepEqual(expected, actual, 'should return a lambda template');
-  t.end();
 });
 
 test('templateLambda in production', t => {
@@ -283,7 +281,6 @@ test('templateLambda in production', t => {
   });
   process.env.NODE_ENV = oldEnv;
   t.deepEqual(actual, expected, 'should return a lambda template');
-  t.end();
 });
 
 test('templateLambda with inline codes', t => {
@@ -380,5 +377,4 @@ test('templateLambda with inline codes', t => {
     )
   });
   t.deepEqual(expected, actual, 'should return a lambda template');
-  t.end();
 });

@@ -1,6 +1,6 @@
 /* eslint no-unused-vars: 0 */
 
-import { test } from 'tap';
+import test from 'ava';
 
 import { templateRoute53 } from './cf_route53';
 
@@ -24,6 +24,5 @@ test('templateRoute53', t => {
     hostedZoneId: 'XXX',
     cloudfrontCustomDomain: 'bar.com'
   });
-  t.assert(expected, actual);
-  t.end();
+  t.deepEqual(expected, actual);
 });

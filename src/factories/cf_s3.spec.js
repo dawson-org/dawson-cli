@@ -1,12 +1,11 @@
-import { test } from 'tap';
+import test from 'ava';
 
 import { templateAssetsBucket, templateAssetsBucketName } from './cf_s3';
 
 test('templateAssetsBucketName', t => {
   const expected = 'BucketAssets';
   const actual = templateAssetsBucketName();
-  t.equal(actual, expected, 'should return BucketAssets');
-  t.end();
+  t.deepEqual(actual, expected, 'should return BucketAssets');
 });
 
 test('templateAssetsBucket', t => {
@@ -23,5 +22,4 @@ test('templateAssetsBucket', t => {
   };
   const actual = templateAssetsBucket();
   t.deepEqual(actual, expected, 'should return an S3 Bucket template');
-  t.end();
 });

@@ -1,14 +1,13 @@
 /* eslint no-unused-vars: 0 */
 
-import { test } from 'tap';
+import test from 'ava';
 
 import { templateSupportBucketName, templateSupportStack } from './cf_support';
 
 test('templateSupportBucketName', t => {
   const expected = 'BucketSupport';
   const actual = templateSupportBucketName();
-  t.equal(actual, expected);
-  t.end();
+  t.deepEqual(actual, expected);
 });
 
 test('templateSupportStack', t => {
@@ -30,5 +29,4 @@ test('templateSupportStack', t => {
   };
   const actual = templateSupportStack();
   t.deepEqual(actual, expected);
-  t.end();
 });

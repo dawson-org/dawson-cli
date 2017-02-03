@@ -1,6 +1,6 @@
 /* eslint no-unused-vars: 0 */
 
-import { test } from 'tap';
+import test from 'ava';
 
 import { templateCloudfrontDistribution } from './cf_cloudfront';
 
@@ -113,7 +113,6 @@ test('templateCloudfrontDistribution without WebACL', t => {
     cloudfrontRootOrigin: 'api'
   });
   t.deepEqual(actual, expected);
-  t.end();
 });
 
 test('templateCloudfrontDistribution without aliases', t => {
@@ -218,7 +217,6 @@ test('templateCloudfrontDistribution without aliases', t => {
     cloudfrontRootOrigin: 'api'
   });
   t.deepEqual(expected, actual);
-  t.end();
 });
 
 test('templateCloudfrontDistribution with root origin set to assets', t => {
@@ -336,7 +334,6 @@ test('templateCloudfrontDistribution with root origin set to assets', t => {
     cloudfrontRootOrigin: 'assets'
   });
   t.deepEqual(expected, actual);
-  t.end();
 });
 
 test('templateCloudfrontDistribution with WebACL', t => {
@@ -460,5 +457,4 @@ test('templateCloudfrontDistribution with WebACL', t => {
   });
   process.env.NODE_ENV = oldEnv;
   t.deepEqual(actual, expected);
-  t.end();
 });

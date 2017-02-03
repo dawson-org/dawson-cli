@@ -1,6 +1,6 @@
 /* eslint no-unused-vars: 0 */
 
-import { test } from 'tap';
+import test from 'ava';
 
 import createIndex from './createIndex';
 
@@ -119,5 +119,4 @@ return callback(null, data);
   config.myEventHandler.api = { path: false };
   const actual = createIndex(config, 'barapp');
   t.deepEqual(expected, actual);
-  t.end();
 });

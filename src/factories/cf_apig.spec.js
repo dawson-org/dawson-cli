@@ -1,6 +1,6 @@
 /* eslint unused: 0 */
 
-import { test } from 'tap';
+import test from 'ava';
 import sortObject from 'deep-sort-object';
 
 import {
@@ -72,7 +72,6 @@ test('templateRest', t => {
     sortObject(actual),
     'should return a rest api template'
   );
-  t.end();
 });
 
 test('templateResource', t => {
@@ -108,7 +107,6 @@ test('templateResource', t => {
     },
     'should return a resource template, which references the given parentResourceName as parent'
   );
-  t.end();
 });
 
 test('templateResourceHelper', t => {
@@ -135,7 +133,6 @@ test('templateResourceHelper', t => {
   };
   const actual = templateResourceHelper({ resourcePath: 'foo/bar' });
   t.deepEqual(sortObject(expected), sortObject(actual));
-  t.end();
 });
 
 test('templateResourceHelper with named params', t => {
@@ -162,7 +159,6 @@ test('templateResourceHelper with named params', t => {
   };
   const actual = templateResourceHelper({ resourcePath: 'foo/{bar}' });
   t.deepEqual(sortObject(expected), sortObject(actual));
-  t.end();
 });
 
 test('templateResourceHelper with empty path', t => {
@@ -172,7 +168,6 @@ test('templateResourceHelper with empty path', t => {
   };
   const actual = templateResourceHelper({ resourcePath: '' });
   t.deepEqual(sortObject(expected), sortObject(actual));
-  t.end();
 });
 
 test('templateModel', t => {
@@ -189,7 +184,6 @@ test('templateModel', t => {
   };
   const actual = templateModel({ modelName: 'CustomResponse', modelSchema: {} });
   t.deepEqual(sortObject(expected), sortObject(actual), 'should return');
-  t.end();
 });
 
 test('templateLambdaIntegration with custom ContentType', t => {
@@ -276,7 +270,6 @@ $errorMessageObj.response`
     redirects: false
   });
   t.deepEqual(sortObject(expected), sortObject(actual), 'should return');
-  t.end();
 });
 
 test('templateLambdaIntegration with ContentType = application/json', t => {
@@ -353,7 +346,6 @@ $inputRoot.response`
     redirects: false
   });
   t.deepEqual(sortObject(expected), sortObject(actual), 'should return');
-  t.end();
 });
 
 test('templateLambdaIntegration with redirect = true', t => {
@@ -438,7 +430,6 @@ You are being redirected to $inputRoot.response.Location`
     redirects: true
   });
   t.deepEqual(sortObject(expected), sortObject(actual), 'should return');
-  t.end();
 });
 
 test('templateMethod with an authorizer', t => {
@@ -590,7 +581,6 @@ $errorMessageObj.response`
     redirects: false
   });
   t.deepEqual(sortObject(expected), sortObject(actual), 'should return');
-  t.end();
 });
 
 test('templateMethod without an authorizer', t => {
@@ -715,7 +705,6 @@ $inputRoot.response`
     redirects: false
   });
   t.deepEqual(sortObject(expected), sortObject(actual), 'should return');
-  t.end();
 });
 
 test('templateDeployment', t => {
@@ -740,7 +729,6 @@ test('templateDeployment', t => {
     sortObject(actual),
     'should return the deployment template'
   );
-  t.end();
 });
 
 test('templateStage', t => {
@@ -770,7 +758,6 @@ test('templateStage', t => {
     sortObject(actual),
     'should return the stage template'
   );
-  t.end();
 });
 
 test('templateAccount', t => {
@@ -807,7 +794,6 @@ test('templateAccount', t => {
     sortObject(actual),
     'should return the stage template'
   );
-  t.end();
 });
 
 test('templateCloudWatchRole', t => {
@@ -838,7 +824,6 @@ test('templateCloudWatchRole', t => {
     expected,
     'should return an API Gateway role with push access to CloudWatch Logs'
   );
-  t.end();
 });
 
 test('templateAuthorizer', t => {
@@ -863,5 +848,4 @@ test('templateAuthorizer', t => {
     actual,
     'should return an API Gateway Authorizer template'
   );
-  t.end();
 });
