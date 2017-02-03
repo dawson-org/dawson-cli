@@ -10,7 +10,8 @@ import loadConfig from '../config';
 
 import { templateLambdaName } from '../factories/cf_lambda';
 
-import { getStackResources, templateStackName } from '../libs/cloudformation';
+import { templateStackName } from '../factories/cloudformation';
+import { getStackResources } from '../libs/aws/cfn-get-stack-info-helpers';
 
 const stripNewLines = str => str.replace(/\n$/, ' ');
 
