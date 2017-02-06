@@ -150,8 +150,16 @@ function validateDawsonConfig (dawson) {
   return true;
 }
 
+function execIfExists (...args) {
+  try {
+    return execa.sync(...args);
+  } catch (e) {
+    return { status: -127 };
+  }
+}
+
 function validateSystem () {
-  const zipResult = execa.sync('zip', ['--help']);
+  const zipResult = execIfExists('zip', ['--help']);
   if (zipResult.status !== 0) {
     return [
       `zip is a required dependency but the zip binary was not found: ${zipResult.error.message}`,
@@ -173,7 +181,7 @@ function validateSystem () {
       `Please check the documentation: https://github.com/dawson-org/dawson-cli/wiki/`
     ];
   }
-  const yarnResult = execa.sync('yarn', ['help']);
+  const yarnResult = execIfExists('yarn', ['help']);
   if (yarnResult.status !== 0) {
     return [
       `yarn is a required dependency but the yarn binary was not found: ${yarnResult.error.message}`,
@@ -184,7 +192,7 @@ function validateSystem () {
 }
 
 export function validateDocker () {
-  const dockerResult = execa.sync('docker', ['--help']);
+  const dockerResult = execIfExists('docker', ['--help']);
   if (dockerResult.status !== 0) {
     throw new Error(stripIndent`
       docker is a required dependency but the docker binary was not found: ${dockerResult.error.message}.
