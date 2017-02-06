@@ -31,11 +31,11 @@ function taskUploadZip ({ supportBucketName, appStage, stackName, ignore, skipCh
 }
 
 async function taskCreateUploadStackTemplate ({ supportBucketName, stackName, cfTemplateJSON }) {
-  const stackURL = await uploadFile({
+  const templateURL = await uploadFile({
     bucketName: supportBucketName,
     stackBody: cfTemplateJSON
   });
-  const cfParams = buildCreateStackParams({ stackName, stackURL, inline: false });
+  const cfParams = buildCreateStackParams({ stackName, templateURL, inline: false });
   return { cfParams };
 }
 
@@ -149,6 +149,7 @@ export async function deploy ({
           stackName,
           cfTemplateJSON
         });
+        debug('Stack update parameters', cfParams);
         Object.assign(ctx, { cfParams, cloudfrontCustomDomain });
       }
     },
