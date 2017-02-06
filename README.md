@@ -24,6 +24,8 @@ $ dawson deploy
 ```
 
 ## Documentation
+
+[![Greenkeeper badge](https://badges.greenkeeper.io/dawson-org/dawson-cli.svg)](https://greenkeeper.io/)
 [Getting Started Guide, API & CLI Documentation](https://github.com/dawson-org/dawson-cli/wiki)
 
 
