@@ -47,7 +47,7 @@ export function buildCreateStackParams (
     : { TemplateURL: templateURL };
   var params = {
     StackName: stackName,
-    Capabilities: ['CAPABILITY_IAM'],
+    Capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
     Tags: [{ Key: 'createdBy', Value: 'dawson' }],
     ...templateSource,
     StackPolicyBody: JSON.stringify(SAFE_STACK_POLICY),
