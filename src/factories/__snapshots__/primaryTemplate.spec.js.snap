@@ -1,107 +1,107 @@
 module.exports[`primary template builder`] = {
-  supportBucketName: "support-bucket-test",
-  stackName: "",
-  cfTemplateJSON: "{
-  \"Parameters\": {
-    \"DawsonStage\": {
-      \"Type\": \"String\",
-      \"Default\": \"devel\"
+  supportBucketName: `support-bucket-test`,
+  stackName: ``,
+  cfTemplateJSON: `{
+  "Parameters": {
+    "DawsonStage": {
+      "Type": "String",
+      "Default": "devel"
     }
   },
-  \"Resources\": {
-    \"BucketAssets\": {
-      \"Type\": \"AWS::S3::Bucket\",
-      \"Properties\": {
-        \"WebsiteConfiguration\": {
-          \"ErrorDocument\": \"index.html\",
-          \"IndexDocument\": \"index.html\"
+  "Resources": {
+    "BucketAssets": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "WebsiteConfiguration": {
+          "ErrorDocument": "index.html",
+          "IndexDocument": "index.html"
         }
       }
     },
-    \"API\": {
-      \"Type\": \"AWS::ApiGateway::RestApi\",
-      \"Properties\": {
-        \"Description\": \"REST API for dawson app\",
-        \"Name\": \"AppAPIDevel\"
+    "API": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Description": "REST API for dawson app",
+        "Name": "AppAPIDevel"
       }
     },
-    \"PermissionForLambdaBarAPI\": {
-      \"Type\": \"AWS::Lambda::Permission\",
-      \"Properties\": {
-        \"Action\": \"lambda:InvokeFunction\",
-        \"FunctionName\": {
-          \"Fn::Sub\": \"${LambdaBarAPI.Arn}\"
+    "PermissionForLambdaBarAPI": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::Sub": "\x24{LambdaBarAPI.Arn}"
         },
-        \"Principal\": \"apigateway.amazonaws.com\",
-        \"SourceArn\": {
-          \"Fn::Sub\": \"arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${API}/prod*\"
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Sub": "arn:aws:execute-api:\x24{AWS::Region}:\x24{AWS::AccountId}:\x24{API}/prod*"
         }
       }
     },
-    \"ExecutionRoleForLambdaBarAPI\": {
-      \"Type\": \"AWS::IAM::Role\",
-      \"Properties\": {
-        \"AssumeRolePolicyDocument\": {
-          \"Version\": \"2012-10-17\",
-          \"Statement\": [
+    "ExecutionRoleForLambdaBarAPI": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
             {
-              \"Effect\": \"Allow\",
-              \"Principal\": {
-                \"Service\": [
-                  \"lambda.amazonaws.com\"
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
                 ],
-                \"AWS\": [
+                "AWS": [
                   {
-                    \"Fn::Sub\": \"arn:aws:iam::${AWS::AccountId}:root\"
+                    "Fn::Sub": "arn:aws:iam::\x24{AWS::AccountId}:root"
                   }
                 ]
               },
-              \"Action\": [
-                \"sts:AssumeRole\"
+              "Action": [
+                "sts:AssumeRole"
               ]
             }
           ]
         },
-        \"Path\": \"/\",
-        \"Policies\": [
+        "Path": "/",
+        "Policies": [
           {
-            \"PolicyName\": \"dawson-policy\",
-            \"PolicyDocument\": {
-              \"Version\": \"2012-10-17\",
-              \"Statement\": [
+            "PolicyName": "dawson-policy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
                 {
-                  \"Effect\": \"Allow\",
-                  \"Action\": [
-                    \"logs:CreateLogGroup\",
-                    \"logs:CreateLogStream\",
-                    \"logs:PutLogEvents\"
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
                   ],
-                  \"Resource\": {
-                    \"Fn::Sub\": \"arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*\"
+                  "Resource": {
+                    "Fn::Sub": "arn:aws:logs:\x24{AWS::Region}:\x24{AWS::AccountId}:*"
                   }
                 },
                 {
-                  \"Effect\": \"Allow\",
-                  \"Action\": [
-                    \"cloudformation:DescribeStacks\"
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudformation:DescribeStacks"
                   ],
-                  \"Resource\": {
-                    \"Fn::Join\": [
-                      \"\",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
                       [
-                        \"arn:aws:cloudformation:\",
+                        "arn:aws:cloudformation:",
                         {
-                          \"Ref\": \"AWS::Region\"
+                          "Ref": "AWS::Region"
                         },
-                        \":\",
+                        ":",
                         {
-                          \"Ref\": \"AWS::AccountId\"
+                          "Ref": "AWS::AccountId"
                         },
-                        \":stack/\",
+                        ":stack/",
                         {
-                          \"Ref\": \"AWS::StackName\"
+                          "Ref": "AWS::StackName"
                         },
-                        \"/*\"
+                        "/*"
                       ]
                     ]
                   }
@@ -112,357 +112,357 @@ module.exports[`primary template builder`] = {
         ]
       }
     },
-    \"LambdaBarAPI\": {
-      \"Type\": \"AWS::Lambda::Function\",
-      \"Properties\": {
-        \"Handler\": \"dawsonindex.barAPI\",
-        \"Role\": {
-          \"Fn::GetAtt\": [
-            \"ExecutionRoleForLambdaBarAPI\",
-            \"Arn\"
+    "LambdaBarAPI": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Handler": "dawsonindex.barAPI",
+        "Role": {
+          "Fn::GetAtt": [
+            "ExecutionRoleForLambdaBarAPI",
+            "Arn"
           ]
         },
-        \"Code\": {},
-        \"Runtime\": \"nodejs4.3\",
-        \"MemorySize\": 1024,
-        \"Timeout\": 30,
-        \"Environment\": {
-          \"Variables\": {
-            \"DAWSON_DistributionWWW\": {
-              \"Fn::GetAtt\": [
-                \"WWWDistribution\",
-                \"DomainName\"
+        "Code": {},
+        "Runtime": "nodejs4.3",
+        "MemorySize": 1024,
+        "Timeout": 30,
+        "Environment": {
+          "Variables": {
+            "DAWSON_DistributionWWW": {
+              "Fn::GetAtt": [
+                "WWWDistribution",
+                "DomainName"
               ]
             },
-            \"NODE_ENV\": \"development\"
+            "NODE_ENV": "development"
           }
         }
       }
     },
-    \"DeploymentAVA\": {
-      \"DependsOn\": [],
-      \"Type\": \"AWS::ApiGateway::Deployment\",
-      \"Properties\": {
-        \"RestApiId\": {
-          \"Ref\": \"API\"
+    "DeploymentAVA": {
+      "DependsOn": [],
+      "Type": "AWS::ApiGateway::Deployment",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "API"
         },
-        \"Description\": \"Automated deployment by dawson\"
+        "Description": "Automated deployment by dawson"
       }
     },
-    \"WWWDistribution\": {
-      \"Type\": \"AWS::CloudFront::Distribution\",
-      \"DependsOn\": [
-        \"API\",
-        \"BucketAssets\"
+    "WWWDistribution": {
+      "Type": "AWS::CloudFront::Distribution",
+      "DependsOn": [
+        "API",
+        "BucketAssets"
       ],
-      \"Properties\": {
-        \"DistributionConfig\": {
-          \"Aliases\": [
-            \"mydomain.com\"
+      "Properties": {
+        "DistributionConfig": {
+          "Aliases": [
+            "mydomain.com"
           ],
-          \"Origins\": [
+          "Origins": [
             {
-              \"DomainName\": {
-                \"Fn::Join\": [
-                  \"\",
+              "DomainName": {
+                "Fn::Join": [
+                  "",
                   [
                     {
-                      \"Ref\": \"BucketAssets\"
+                      "Ref": "BucketAssets"
                     },
-                    \".s3-website-\",
+                    ".s3-website-",
                     {
-                      \"Ref\": \"AWS::Region\"
+                      "Ref": "AWS::Region"
                     },
-                    \".amazonaws.com\"
+                    ".amazonaws.com"
                   ]
                 ]
               },
-              \"Id\": \"s3www\",
-              \"CustomOriginConfig\": {
-                \"HTTPPort\": \"80\",
-                \"HTTPSPort\": \"443\",
-                \"OriginProtocolPolicy\": \"http-only\"
+              "Id": "s3www",
+              "CustomOriginConfig": {
+                "HTTPPort": "80",
+                "HTTPSPort": "443",
+                "OriginProtocolPolicy": "http-only"
               }
             },
             {
-              \"DomainName\": {
-                \"Fn::Join\": [
-                  \"\",
+              "DomainName": {
+                "Fn::Join": [
+                  "",
                   [
                     {
-                      \"Ref\": \"API\"
+                      "Ref": "API"
                     },
-                    \".execute-api.\",
+                    ".execute-api.",
                     {
-                      \"Ref\": \"AWS::Region\"
+                      "Ref": "AWS::Region"
                     },
-                    \".amazonaws.com\"
+                    ".amazonaws.com"
                   ]
                 ]
               },
-              \"Id\": \"api\",
-              \"CustomOriginConfig\": {
-                \"HTTPPort\": \"80\",
-                \"HTTPSPort\": \"443\",
-                \"OriginProtocolPolicy\": \"https-only\"
+              "Id": "api",
+              "CustomOriginConfig": {
+                "HTTPPort": "80",
+                "HTTPSPort": "443",
+                "OriginProtocolPolicy": "https-only"
               }
             }
           ],
-          \"Enabled\": \"true\",
-          \"Comment\": \"\",
-          \"DefaultRootObject\": \"index.html\",
-          \"DefaultCacheBehavior\": {
-            \"TargetOriginId\": \"s3www\",
-            \"SmoothStreaming\": \"false\",
-            \"ForwardedValues\": {
-              \"QueryString\": \"true\"
+          "Enabled": "true",
+          "Comment": "",
+          "DefaultRootObject": "index.html",
+          "DefaultCacheBehavior": {
+            "TargetOriginId": "s3www",
+            "SmoothStreaming": "false",
+            "ForwardedValues": {
+              "QueryString": "true"
             },
-            \"MinTTL\": \"0\",
-            \"MaxTTL\": \"0\",
-            \"DefaultTTL\": \"0\",
-            \"ViewerProtocolPolicy\": \"allow-all\"
+            "MinTTL": "0",
+            "MaxTTL": "0",
+            "DefaultTTL": "0",
+            "ViewerProtocolPolicy": "allow-all"
           },
-          \"CacheBehaviors\": [
+          "CacheBehaviors": [
             {
-              \"AllowedMethods\": [
-                \"DELETE\",
-                \"GET\",
-                \"HEAD\",
-                \"OPTIONS\",
-                \"PATCH\",
-                \"POST\",
-                \"PUT\"
+              "AllowedMethods": [
+                "DELETE",
+                "GET",
+                "HEAD",
+                "OPTIONS",
+                "PATCH",
+                "POST",
+                "PUT"
               ],
-              \"TargetOriginId\": \"api\",
-              \"ForwardedValues\": {
-                \"QueryString\": \"true\",
-                \"Headers\": [
-                  \"Authorization\",
-                  \"Accept\",
-                  \"Content-Type\",
-                  \"Origin\",
-                  \"Referer\",
-                  \"Access-Control-Request-Headers\",
-                  \"Access-Control-Request-Method\"
+              "TargetOriginId": "api",
+              "ForwardedValues": {
+                "QueryString": "true",
+                "Headers": [
+                  "Authorization",
+                  "Accept",
+                  "Content-Type",
+                  "Origin",
+                  "Referer",
+                  "Access-Control-Request-Headers",
+                  "Access-Control-Request-Method"
                 ]
               },
-              \"ViewerProtocolPolicy\": \"allow-all\",
-              \"MinTTL\": \"0\",
-              \"MaxTTL\": \"0\",
-              \"DefaultTTL\": \"0\",
-              \"PathPattern\": \"prod/*\"
+              "ViewerProtocolPolicy": "allow-all",
+              "MinTTL": "0",
+              "MaxTTL": "0",
+              "DefaultTTL": "0",
+              "PathPattern": "prod/*"
             }
           ],
-          \"PriceClass\": \"PriceClass_200\",
-          \"ViewerCertificate\": {
-            \"AcmCertificateArn\": \"arn:bar\",
-            \"SslSupportMethod\": \"sni-only\"
+          "PriceClass": "PriceClass_200",
+          "ViewerCertificate": {
+            "AcmCertificateArn": "arn:bar",
+            "SslSupportMethod": "sni-only"
           },
-          \"CustomErrorResponses\": [
+          "CustomErrorResponses": [
             {
-              \"ErrorCode\": \"404\",
-              \"ResponsePagePath\": \"/index.html\",
-              \"ResponseCode\": \"200\",
-              \"ErrorCachingMinTTL\": \"30\"
+              "ErrorCode": "404",
+              "ResponsePagePath": "/index.html",
+              "ResponseCode": "200",
+              "ErrorCachingMinTTL": "30"
             },
             {
-              \"ErrorCode\": \"403\",
-              \"ResponsePagePath\": \"/index.html\",
-              \"ResponseCode\": \"200\",
-              \"ErrorCachingMinTTL\": \"30\"
+              "ErrorCode": "403",
+              "ResponsePagePath": "/index.html",
+              "ResponseCode": "200",
+              "ErrorCachingMinTTL": "30"
             }
           ]
         }
       }
     },
-    \"Route53Record\": {
-      \"Type\": \"AWS::Route53::RecordSet\",
-      \"Properties\": {
-        \"AliasTarget\": {
-          \"DNSName\": {
-            \"Fn::Sub\": \"${WWWDistribution.DomainName}\"
+    "Route53Record": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "AliasTarget": {
+          "DNSName": {
+            "Fn::Sub": "\x24{WWWDistribution.DomainName}"
           },
-          \"HostedZoneId\": \"Z2FDTNDATAQYW2\"
+          "HostedZoneId": "Z2FDTNDATAQYW2"
         },
-        \"Comment\": \"Record managed by dawson.\",
-        \"HostedZoneId\": {
-          \"devel\": \"ASDBAR123\"
+        "Comment": "Record managed by dawson.",
+        "HostedZoneId": {
+          "devel": "ASDBAR123"
         },
-        \"Name\": \"mydomain.com\",
-        \"Type\": \"A\"
+        "Name": "mydomain.com",
+        "Type": "A"
       }
     },
-    \"StageProd\": {
-      \"Type\": \"AWS::ApiGateway::Stage\",
-      \"Properties\": {
-        \"CacheClusterEnabled\": false,
-        \"DeploymentId\": {
-          \"Ref\": \"DeploymentAVA\"
+    "StageProd": {
+      "Type": "AWS::ApiGateway::Stage",
+      "Properties": {
+        "CacheClusterEnabled": false,
+        "DeploymentId": {
+          "Ref": "DeploymentAVA"
         },
-        \"Description\": \"prod Stage\",
-        \"RestApiId\": {
-          \"Ref\": \"API\"
+        "Description": "prod Stage",
+        "RestApiId": {
+          "Ref": "API"
         },
-        \"StageName\": \"prod\",
-        \"MethodSettings\": [
+        "StageName": "prod",
+        "MethodSettings": [
           {
-            \"HttpMethod\": \"*\",
-            \"ResourcePath\": \"/*\",
-            \"LoggingLevel\": \"INFO\",
-            \"DataTraceEnabled\": \"true\"
+            "HttpMethod": "*",
+            "ResourcePath": "/*",
+            "LoggingLevel": "INFO",
+            "DataTraceEnabled": "true"
           }
         ]
       }
     },
-    \"RoleAPIGatewayAccount\": {
-      \"Type\": \"AWS::IAM::Role\",
-      \"Properties\": {
-        \"AssumeRolePolicyDocument\": {
-          \"Version\": \"2012-10-17\",
-          \"Statement\": [
+    "RoleAPIGatewayAccount": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
             {
-              \"Effect\": \"Allow\",
-              \"Principal\": {
-                \"Service\": [
-                  \"apigateway.amazonaws.com\"
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "apigateway.amazonaws.com"
                 ]
               },
-              \"Action\": \"sts:AssumeRole\"
+              "Action": "sts:AssumeRole"
             }
           ]
         },
-        \"Path\": \"/\",
-        \"ManagedPolicyArns\": [
-          \"arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs\"
+        "Path": "/",
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
         ]
       }
     },
-    \"APIGatewayAccount\": {
-      \"Type\": \"AWS::ApiGateway::Account\",
-      \"Properties\": {
-        \"CloudWatchRoleArn\": {
-          \"Fn::Sub\": \"${RoleAPIGatewayAccount.Arn}\"
+    "APIGatewayAccount": {
+      "Type": "AWS::ApiGateway::Account",
+      "Properties": {
+        "CloudWatchRoleArn": {
+          "Fn::Sub": "\x24{RoleAPIGatewayAccount.Arn}"
         }
       }
     }
   },
-  \"Outputs\": {
-    \"BucketAssets\": {
-      \"Value\": {
-        \"Ref\": \"BucketAssets\"
+  "Outputs": {
+    "BucketAssets": {
+      "Value": {
+        "Ref": "BucketAssets"
       }
     },
-    \"DistributionWWW\": {
-      \"Value\": {
-        \"Fn::GetAtt\": [
-          \"WWWDistribution\",
-          \"DomainName\"
+    "DistributionWWW": {
+      "Value": {
+        "Fn::GetAtt": [
+          "WWWDistribution",
+          "DomainName"
         ]
       }
     }
   }
-}",
+}`,
   cfTemplate: {
     Parameters: {
       DawsonStage: {
-        Type: "String",
-        Default: "devel"
+        Type: `String`,
+        Default: `devel`
       }
     },
     Resources: {
       BucketAssets: {
-        Type: "AWS::S3::Bucket",
+        Type: `AWS::S3::Bucket`,
         Properties: {
           WebsiteConfiguration: {
-            ErrorDocument: "index.html",
-            IndexDocument: "index.html"
+            ErrorDocument: `index.html`,
+            IndexDocument: `index.html`
           }
         }
       },
       API: {
-        Type: "AWS::ApiGateway::RestApi",
+        Type: `AWS::ApiGateway::RestApi`,
         Properties: {
-          Description: "REST API for dawson app",
-          Name: "AppAPIDevel"
+          Description: `REST API for dawson app`,
+          Name: `AppAPIDevel`
         }
       },
       PermissionForLambdaBarAPI: {
-        Type: "AWS::Lambda::Permission",
+        Type: `AWS::Lambda::Permission`,
         Properties: {
-          Action: "lambda:InvokeFunction",
+          Action: `lambda:InvokeFunction`,
           FunctionName: {
-            "Fn::Sub": "${LambdaBarAPI.Arn}"
+            'Fn::Sub': `\x24{LambdaBarAPI.Arn}`
           },
-          Principal: "apigateway.amazonaws.com",
+          Principal: `apigateway.amazonaws.com`,
           SourceArn: {
-            "Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${API}/prod*"
+            'Fn::Sub': `arn:aws:execute-api:\x24{AWS::Region}:\x24{AWS::AccountId}:\x24{API}/prod*`
           }
         }
       },
       ExecutionRoleForLambdaBarAPI: {
-        Type: "AWS::IAM::Role",
+        Type: `AWS::IAM::Role`,
         Properties: {
           AssumeRolePolicyDocument: {
-            Version: "2012-10-17",
+            Version: `2012-10-17`,
             Statement: [
               {
-                Effect: "Allow",
+                Effect: `Allow`,
                 Principal: {
                   Service: [
-                    "lambda.amazonaws.com"
+                    `lambda.amazonaws.com`
                   ],
                   AWS: [
                     {
-                      "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:root"
+                      'Fn::Sub': `arn:aws:iam::\x24{AWS::AccountId}:root`
                     }
                   ]
                 },
                 Action: [
-                  "sts:AssumeRole"
+                  `sts:AssumeRole`
                 ]
               }
             ]
           },
-          Path: "/",
+          Path: `/`,
           Policies: [
             {
-              PolicyName: "dawson-policy",
+              PolicyName: `dawson-policy`,
               PolicyDocument: {
-                Version: "2012-10-17",
+                Version: `2012-10-17`,
                 Statement: [
                   {
-                    Effect: "Allow",
+                    Effect: `Allow`,
                     Action: [
-                      "logs:CreateLogGroup",
-                      "logs:CreateLogStream",
-                      "logs:PutLogEvents"
+                      `logs:CreateLogGroup`,
+                      `logs:CreateLogStream`,
+                      `logs:PutLogEvents`
                     ],
                     Resource: {
-                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*"
+                      'Fn::Sub': `arn:aws:logs:\x24{AWS::Region}:\x24{AWS::AccountId}:*`
                     }
                   },
                   {
-                    Effect: "Allow",
+                    Effect: `Allow`,
                     Action: [
-                      "cloudformation:DescribeStacks"
+                      `cloudformation:DescribeStacks`
                     ],
                     Resource: {
-                      "Fn::Join": [
-                        "",
+                      'Fn::Join': [
+                        ``,
                         [
-                          "arn:aws:cloudformation:",
+                          `arn:aws:cloudformation:`,
                           {
-                            Ref: "AWS::Region"
+                            Ref: `AWS::Region`
                           },
-                          ":",
+                          `:`,
                           {
-                            Ref: "AWS::AccountId"
+                            Ref: `AWS::AccountId`
                           },
-                          ":stack/",
+                          `:stack/`,
                           {
-                            Ref: "AWS::StackName"
+                            Ref: `AWS::StackName`
                           },
-                          "/*"
+                          `/*`
                         ]
                       ]
                     }
@@ -474,13 +474,13 @@ module.exports[`primary template builder`] = {
         }
       },
       LambdaBarAPI: {
-        Type: "AWS::Lambda::Function",
+        Type: `AWS::Lambda::Function`,
         Properties: {
-          Handler: "dawsonindex.barAPI",
+          Handler: `dawsonindex.barAPI`,
           Role: {
-            "Fn::GetAtt": [
-              "ExecutionRoleForLambdaBarAPI",
-              "Arn"
+            'Fn::GetAtt': [
+              `ExecutionRoleForLambdaBarAPI`,
+              `Arn`
             ]
           },
           Code: {
@@ -488,225 +488,225 @@ module.exports[`primary template builder`] = {
             S3Key: undefined,
             S3ObjectVersion: undefined
           },
-          Runtime: "nodejs4.3",
+          Runtime: `nodejs4.3`,
           MemorySize: 1024,
           Timeout: 30,
           Environment: {
             Variables: {
               DAWSON_DistributionWWW: {
-                "Fn::GetAtt": [
-                  "WWWDistribution",
-                  "DomainName"
+                'Fn::GetAtt': [
+                  `WWWDistribution`,
+                  `DomainName`
                 ]
               },
-              NODE_ENV: "development"
+              NODE_ENV: `development`
             }
           }
         }
       },
       DeploymentAVA: {
         DependsOn: [],
-        Type: "AWS::ApiGateway::Deployment",
+        Type: `AWS::ApiGateway::Deployment`,
         Properties: {
           RestApiId: {
-            Ref: "API"
+            Ref: `API`
           },
-          Description: "Automated deployment by dawson"
+          Description: `Automated deployment by dawson`
         }
       },
       WWWDistribution: {
-        Type: "AWS::CloudFront::Distribution",
+        Type: `AWS::CloudFront::Distribution`,
         DependsOn: [
-          "API",
-          "BucketAssets"
+          `API`,
+          `BucketAssets`
         ],
         Properties: {
           DistributionConfig: {
             Aliases: [
-              "mydomain.com"
+              `mydomain.com`
             ],
             Origins: [
               {
                 DomainName: {
-                  "Fn::Join": [
-                    "",
+                  'Fn::Join': [
+                    ``,
                     [
                       {
-                        Ref: "BucketAssets"
+                        Ref: `BucketAssets`
                       },
-                      ".s3-website-",
+                      `.s3-website-`,
                       {
-                        Ref: "AWS::Region"
+                        Ref: `AWS::Region`
                       },
-                      ".amazonaws.com"
+                      `.amazonaws.com`
                     ]
                   ]
                 },
-                Id: "s3www",
+                Id: `s3www`,
                 CustomOriginConfig: {
-                  HTTPPort: "80",
-                  HTTPSPort: "443",
-                  OriginProtocolPolicy: "http-only"
+                  HTTPPort: `80`,
+                  HTTPSPort: `443`,
+                  OriginProtocolPolicy: `http-only`
                 }
               },
               {
                 DomainName: {
-                  "Fn::Join": [
-                    "",
+                  'Fn::Join': [
+                    ``,
                     [
                       {
-                        Ref: "API"
+                        Ref: `API`
                       },
-                      ".execute-api.",
+                      `.execute-api.`,
                       {
-                        Ref: "AWS::Region"
+                        Ref: `AWS::Region`
                       },
-                      ".amazonaws.com"
+                      `.amazonaws.com`
                     ]
                   ]
                 },
-                Id: "api",
+                Id: `api`,
                 CustomOriginConfig: {
-                  HTTPPort: "80",
-                  HTTPSPort: "443",
-                  OriginProtocolPolicy: "https-only"
+                  HTTPPort: `80`,
+                  HTTPSPort: `443`,
+                  OriginProtocolPolicy: `https-only`
                 }
               }
             ],
-            Enabled: "true",
-            Comment: "",
-            DefaultRootObject: "index.html",
+            Enabled: `true`,
+            Comment: ``,
+            DefaultRootObject: `index.html`,
             DefaultCacheBehavior: {
-              TargetOriginId: "s3www",
-              SmoothStreaming: "false",
+              TargetOriginId: `s3www`,
+              SmoothStreaming: `false`,
               ForwardedValues: {
-                QueryString: "true"
+                QueryString: `true`
               },
-              MinTTL: "0",
-              MaxTTL: "0",
-              DefaultTTL: "0",
-              ViewerProtocolPolicy: "allow-all"
+              MinTTL: `0`,
+              MaxTTL: `0`,
+              DefaultTTL: `0`,
+              ViewerProtocolPolicy: `allow-all`
             },
             CacheBehaviors: [
               {
                 AllowedMethods: [
-                  "DELETE",
-                  "GET",
-                  "HEAD",
-                  "OPTIONS",
-                  "PATCH",
-                  "POST",
-                  "PUT"
+                  `DELETE`,
+                  `GET`,
+                  `HEAD`,
+                  `OPTIONS`,
+                  `PATCH`,
+                  `POST`,
+                  `PUT`
                 ],
-                TargetOriginId: "api",
+                TargetOriginId: `api`,
                 ForwardedValues: {
-                  QueryString: "true",
+                  QueryString: `true`,
                   Headers: [
-                    "Authorization",
-                    "Accept",
-                    "Content-Type",
-                    "Origin",
-                    "Referer",
-                    "Access-Control-Request-Headers",
-                    "Access-Control-Request-Method"
+                    `Authorization`,
+                    `Accept`,
+                    `Content-Type`,
+                    `Origin`,
+                    `Referer`,
+                    `Access-Control-Request-Headers`,
+                    `Access-Control-Request-Method`
                   ]
                 },
-                ViewerProtocolPolicy: "allow-all",
-                MinTTL: "0",
-                MaxTTL: "0",
-                DefaultTTL: "0",
-                PathPattern: "prod/*"
+                ViewerProtocolPolicy: `allow-all`,
+                MinTTL: `0`,
+                MaxTTL: `0`,
+                DefaultTTL: `0`,
+                PathPattern: `prod/*`
               }
             ],
-            PriceClass: "PriceClass_200",
+            PriceClass: `PriceClass_200`,
             ViewerCertificate: {
-              AcmCertificateArn: "arn:bar",
-              SslSupportMethod: "sni-only"
+              AcmCertificateArn: `arn:bar`,
+              SslSupportMethod: `sni-only`
             },
             CustomErrorResponses: [
               {
-                ErrorCode: "404",
-                ResponsePagePath: "/index.html",
-                ResponseCode: "200",
-                ErrorCachingMinTTL: "30"
+                ErrorCode: `404`,
+                ResponsePagePath: `/index.html`,
+                ResponseCode: `200`,
+                ErrorCachingMinTTL: `30`
               },
               {
-                ErrorCode: "403",
-                ResponsePagePath: "/index.html",
-                ResponseCode: "200",
-                ErrorCachingMinTTL: "30"
+                ErrorCode: `403`,
+                ResponsePagePath: `/index.html`,
+                ResponseCode: `200`,
+                ErrorCachingMinTTL: `30`
               }
             ]
           }
         }
       },
       Route53Record: {
-        Type: "AWS::Route53::RecordSet",
+        Type: `AWS::Route53::RecordSet`,
         Properties: {
           AliasTarget: {
             DNSName: {
-              "Fn::Sub": "${WWWDistribution.DomainName}"
+              'Fn::Sub': `\x24{WWWDistribution.DomainName}`
             },
-            HostedZoneId: "Z2FDTNDATAQYW2"
+            HostedZoneId: `Z2FDTNDATAQYW2`
           },
-          Comment: "Record managed by dawson.",
+          Comment: `Record managed by dawson.`,
           HostedZoneId: {
-            devel: "ASDBAR123"
+            devel: `ASDBAR123`
           },
-          Name: "mydomain.com",
-          Type: "A"
+          Name: `mydomain.com`,
+          Type: `A`
         }
       },
       StageProd: {
-        Type: "AWS::ApiGateway::Stage",
+        Type: `AWS::ApiGateway::Stage`,
         Properties: {
           CacheClusterEnabled: false,
           DeploymentId: {
-            Ref: "DeploymentAVA"
+            Ref: `DeploymentAVA`
           },
-          Description: "prod Stage",
+          Description: `prod Stage`,
           RestApiId: {
-            Ref: "API"
+            Ref: `API`
           },
-          StageName: "prod",
+          StageName: `prod`,
           MethodSettings: [
             {
-              HttpMethod: "*",
-              ResourcePath: "/*",
-              LoggingLevel: "INFO",
-              DataTraceEnabled: "true"
+              HttpMethod: `*`,
+              ResourcePath: `/*`,
+              LoggingLevel: `INFO`,
+              DataTraceEnabled: `true`
             }
           ]
         }
       },
       RoleAPIGatewayAccount: {
-        Type: "AWS::IAM::Role",
+        Type: `AWS::IAM::Role`,
         Properties: {
           AssumeRolePolicyDocument: {
-            Version: "2012-10-17",
+            Version: `2012-10-17`,
             Statement: [
               {
-                Effect: "Allow",
+                Effect: `Allow`,
                 Principal: {
                   Service: [
-                    "apigateway.amazonaws.com"
+                    `apigateway.amazonaws.com`
                   ]
                 },
-                Action: "sts:AssumeRole"
+                Action: `sts:AssumeRole`
               }
             ]
           },
-          Path: "/",
+          Path: `/`,
           ManagedPolicyArns: [
-            "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+            `arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs`
           ]
         }
       },
       APIGatewayAccount: {
-        Type: "AWS::ApiGateway::Account",
+        Type: `AWS::ApiGateway::Account`,
         Properties: {
           CloudWatchRoleArn: {
-            "Fn::Sub": "${RoleAPIGatewayAccount.Arn}"
+            'Fn::Sub': `\x24{RoleAPIGatewayAccount.Arn}`
           }
         }
       }
@@ -714,141 +714,141 @@ module.exports[`primary template builder`] = {
     Outputs: {
       BucketAssets: {
         Value: {
-          Ref: "BucketAssets"
+          Ref: `BucketAssets`
         }
       },
       DistributionWWW: {
         Value: {
-          "Fn::GetAtt": [
-            "WWWDistribution",
-            "DomainName"
+          'Fn::GetAtt': [
+            `WWWDistribution`,
+            `DomainName`
           ]
         }
       }
     }
   },
-  cloudfrontCustomDomain: "mydomain.com"
+  cloudfrontCustomDomain: `mydomain.com`
 }
 
 module.exports[`primary template builder with cloudfront disabled`] = {
-  supportBucketName: "support-bucket-test",
-  stackName: "",
-  cfTemplateJSON: "{
-  \"Parameters\": {
-    \"DawsonStage\": {
-      \"Type\": \"String\",
-      \"Default\": \"devel\"
+  supportBucketName: `support-bucket-test`,
+  stackName: ``,
+  cfTemplateJSON: `{
+  "Parameters": {
+    "DawsonStage": {
+      "Type": "String",
+      "Default": "devel"
     }
   },
-  \"Resources\": {
-    \"BucketAssets\": {
-      \"Type\": \"AWS::S3::Bucket\",
-      \"Properties\": {
-        \"WebsiteConfiguration\": {
-          \"ErrorDocument\": \"index.html\",
-          \"IndexDocument\": \"index.html\"
+  "Resources": {
+    "BucketAssets": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "WebsiteConfiguration": {
+          "ErrorDocument": "index.html",
+          "IndexDocument": "index.html"
         }
       }
     },
-    \"API\": {
-      \"Type\": \"AWS::ApiGateway::RestApi\",
-      \"Properties\": {
-        \"Description\": \"REST API for dawson app\",
-        \"Name\": \"AppAPIDevel\"
+    "API": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Description": "REST API for dawson app",
+        "Name": "AppAPIDevel"
       }
     },
-    \"ResourceBar\": {
-      \"Type\": \"AWS::ApiGateway::Resource\",
-      \"Properties\": {
-        \"RestApiId\": {
-          \"Ref\": \"API\"
+    "ResourceBar": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "API"
         },
-        \"ParentId\": {
-          \"Fn::GetAtt\": [
-            \"API\",
-            \"RootResourceId\"
+        "ParentId": {
+          "Fn::GetAtt": [
+            "API",
+            "RootResourceId"
           ]
         },
-        \"PathPart\": \"bar\"
+        "PathPart": "bar"
       }
     },
-    \"PermissionForLambdaFooAPI\": {
-      \"Type\": \"AWS::Lambda::Permission\",
-      \"Properties\": {
-        \"Action\": \"lambda:InvokeFunction\",
-        \"FunctionName\": {
-          \"Fn::Sub\": \"${LambdaFooAPI.Arn}\"
+    "PermissionForLambdaFooAPI": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::Sub": "\x24{LambdaFooAPI.Arn}"
         },
-        \"Principal\": \"apigateway.amazonaws.com\",
-        \"SourceArn\": {
-          \"Fn::Sub\": \"arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${API}/prod*\"
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Sub": "arn:aws:execute-api:\x24{AWS::Region}:\x24{AWS::AccountId}:\x24{API}/prod*"
         }
       }
     },
-    \"ExecutionRoleForLambdaFooAPI\": {
-      \"Type\": \"AWS::IAM::Role\",
-      \"Properties\": {
-        \"AssumeRolePolicyDocument\": {
-          \"Version\": \"2012-10-17\",
-          \"Statement\": [
+    "ExecutionRoleForLambdaFooAPI": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
             {
-              \"Effect\": \"Allow\",
-              \"Principal\": {
-                \"Service\": [
-                  \"lambda.amazonaws.com\"
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
                 ],
-                \"AWS\": [
+                "AWS": [
                   {
-                    \"Fn::Sub\": \"arn:aws:iam::${AWS::AccountId}:root\"
+                    "Fn::Sub": "arn:aws:iam::\x24{AWS::AccountId}:root"
                   }
                 ]
               },
-              \"Action\": [
-                \"sts:AssumeRole\"
+              "Action": [
+                "sts:AssumeRole"
               ]
             }
           ]
         },
-        \"Path\": \"/\",
-        \"Policies\": [
+        "Path": "/",
+        "Policies": [
           {
-            \"PolicyName\": \"dawson-policy\",
-            \"PolicyDocument\": {
-              \"Version\": \"2012-10-17\",
-              \"Statement\": [
+            "PolicyName": "dawson-policy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
                 {
-                  \"Effect\": \"Allow\",
-                  \"Action\": [
-                    \"logs:CreateLogGroup\",
-                    \"logs:CreateLogStream\",
-                    \"logs:PutLogEvents\"
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
                   ],
-                  \"Resource\": {
-                    \"Fn::Sub\": \"arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*\"
+                  "Resource": {
+                    "Fn::Sub": "arn:aws:logs:\x24{AWS::Region}:\x24{AWS::AccountId}:*"
                   }
                 },
                 {
-                  \"Effect\": \"Allow\",
-                  \"Action\": [
-                    \"cloudformation:DescribeStacks\"
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudformation:DescribeStacks"
                   ],
-                  \"Resource\": {
-                    \"Fn::Join\": [
-                      \"\",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
                       [
-                        \"arn:aws:cloudformation:\",
+                        "arn:aws:cloudformation:",
                         {
-                          \"Ref\": \"AWS::Region\"
+                          "Ref": "AWS::Region"
                         },
-                        \":\",
+                        ":",
                         {
-                          \"Ref\": \"AWS::AccountId\"
+                          "Ref": "AWS::AccountId"
                         },
-                        \":stack/\",
+                        ":stack/",
                         {
-                          \"Ref\": \"AWS::StackName\"
+                          "Ref": "AWS::StackName"
                         },
-                        \"/*\"
+                        "/*"
                       ]
                     ]
                   }
@@ -859,370 +859,370 @@ module.exports[`primary template builder with cloudfront disabled`] = {
         ]
       }
     },
-    \"LambdaFooAPI\": {
-      \"Type\": \"AWS::Lambda::Function\",
-      \"Properties\": {
-        \"Handler\": \"dawsonindex.fooAPI\",
-        \"Role\": {
-          \"Fn::GetAtt\": [
-            \"ExecutionRoleForLambdaFooAPI\",
-            \"Arn\"
+    "LambdaFooAPI": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Handler": "dawsonindex.fooAPI",
+        "Role": {
+          "Fn::GetAtt": [
+            "ExecutionRoleForLambdaFooAPI",
+            "Arn"
           ]
         },
-        \"Code\": {},
-        \"Runtime\": \"nodejs4.3\",
-        \"MemorySize\": 1024,
-        \"Timeout\": 30,
-        \"Environment\": {
-          \"Variables\": {
-            \"DAWSON_BucketAssets\": {
-              \"Ref\": \"BucketAssets\"
+        "Code": {},
+        "Runtime": "nodejs4.3",
+        "MemorySize": 1024,
+        "Timeout": 30,
+        "Environment": {
+          "Variables": {
+            "DAWSON_BucketAssets": {
+              "Ref": "BucketAssets"
             },
-            \"DAWSON_DistributionWWW\": \"CloudFront disabled from config\",
-            \"NODE_ENV\": \"development\"
+            "DAWSON_DistributionWWW": "CloudFront disabled from config",
+            "NODE_ENV": "development"
           }
         }
       }
     },
-    \"ModelHelloWorldModel\": {
-      \"Type\": \"AWS::ApiGateway::Model\",
-      \"Properties\": {
-        \"ContentType\": \"application/json\",
-        \"Description\": \"Model HelloWorldModel\",
-        \"RestApiId\": {
-          \"Ref\": \"API\"
+    "ModelHelloWorldModel": {
+      "Type": "AWS::ApiGateway::Model",
+      "Properties": {
+        "ContentType": "application/json",
+        "Description": "Model HelloWorldModel",
+        "RestApiId": {
+          "Ref": "API"
         },
-        \"Schema\": \"{}\"
+        "Schema": "{}"
       }
     },
-    \"MethodBarPOST\": {
-      \"Type\": \"AWS::ApiGateway::Method\",
-      \"Properties\": {
-        \"RestApiId\": {
-          \"Ref\": \"API\"
+    "MethodBarPOST": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "API"
         },
-        \"ResourceId\": {
-          \"Ref\": \"ResourceBar\"
+        "ResourceId": {
+          "Ref": "ResourceBar"
         },
-        \"HttpMethod\": \"POST\",
-        \"Integration\": {
-          \"IntegrationHttpMethod\": \"POST\",
-          \"IntegrationResponses\": [
+        "HttpMethod": "POST",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "IntegrationResponses": [
             {
-              \"ResponseParameters\": {},
-              \"ResponseTemplates\": {
-                \"text/html\": \"#set($inputRoot = $input.path('$'))\\n$inputRoot.response\"
+              "ResponseParameters": {},
+              "ResponseTemplates": {
+                "text/html": "#set($inputRoot = $input.path('$'))\\n$inputRoot.response"
               },
-              \"StatusCode\": 200
+              "StatusCode": 200
             },
             {
-              \"ResponseParameters\": {},
-              \"ResponseTemplates\": {
-                \"text/html\": \"#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))\\n$errorMessageObj.response\"
+              "ResponseParameters": {},
+              "ResponseTemplates": {
+                "text/html": "#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))\\n$errorMessageObj.response"
               },
-              \"SelectionPattern\": \".*\\\"httpStatus\\\":500.*\",
-              \"StatusCode\": 500
+              "SelectionPattern": ".*\\"httpStatus\\":500.*",
+              "StatusCode": 500
             },
             {
-              \"ResponseParameters\": {},
-              \"ResponseTemplates\": {
-                \"text/html\": \"#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))\\n$errorMessageObj.response\"
+              "ResponseParameters": {},
+              "ResponseTemplates": {
+                "text/html": "#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))\\n$errorMessageObj.response"
               },
-              \"SelectionPattern\": \".*\\\"httpStatus\\\":400.*\",
-              \"StatusCode\": 400
+              "SelectionPattern": ".*\\"httpStatus\\":400.*",
+              "StatusCode": 400
             },
             {
-              \"ResponseParameters\": {},
-              \"ResponseTemplates\": {
-                \"text/html\": \"#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))\\n$errorMessageObj.response\"
+              "ResponseParameters": {},
+              "ResponseTemplates": {
+                "text/html": "#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))\\n$errorMessageObj.response"
               },
-              \"SelectionPattern\": \".*\\\"httpStatus\\\":403.*\",
-              \"StatusCode\": 403
+              "SelectionPattern": ".*\\"httpStatus\\":403.*",
+              "StatusCode": 403
             },
             {
-              \"ResponseParameters\": {},
-              \"ResponseTemplates\": {
-                \"text/html\": \"#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))\\n$errorMessageObj.response\"
+              "ResponseParameters": {},
+              "ResponseTemplates": {
+                "text/html": "#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))\\n$errorMessageObj.response"
               },
-              \"SelectionPattern\": \".*\\\"httpStatus\\\":404.*\",
-              \"StatusCode\": 404
+              "SelectionPattern": ".*\\"httpStatus\\":404.*",
+              "StatusCode": 404
             }
           ],
-          \"PassthroughBehavior\": \"NEVER\",
-          \"RequestTemplates\": {
-            \"application/x-www-form-urlencoded\": \"#set($allParams = $input.params())\\n{\\n  \\\"params\\\" : {\\n    #foreach($type in $allParams.keySet())\\n    #set($params = $allParams.get($type))\\n    \\\"$type\\\" : {\\n      #foreach($paramName in $params.keySet())\\n      \\\"$paramName\\\" : \\\"$util.escapeJavaScript($params.get($paramName))\\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    }\\n    #if($foreach.hasNext),#end\\n    #end\\n  },\\n  \\\"context\\\" : {\\n    \\\"apiId\\\": \\\"$context.apiId\\\",\\n    \\\"authorizer\\\": {\\n      #foreach($property in $context.authorizer.keySet())\\n      \\\"$property\\\": \\\"$context.authorizer.get($property)\\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\\"httpMethod\\\": \\\"$context.httpMethod\\\",\\n    \\\"identity\\\": {\\n      #foreach($property in $context.identity.keySet())\\n      \\\"$property\\\": \\\"$context.identity.get($property)\\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\\"requestId\\\": \\\"$context.requestId\\\",\\n    \\\"resourceId\\\": \\\"$context.resourceId\\\",\\n    \\\"resourcePath\\\": \\\"$context.resourcePath\\\",\\n    \\\"stage\\\": \\\"$context.stage\\\"\\n  },\\n  \\\"body\\\": $input.json('$'),\\n  \\\"meta\\\": {\\n    \\\"expectedResponseContentType\\\": \\\"text/html\\\"\\n  }\\n}\",
-            \"application/json\": \"#set($allParams = $input.params())\\n{\\n  \\\"params\\\" : {\\n    #foreach($type in $allParams.keySet())\\n    #set($params = $allParams.get($type))\\n    \\\"$type\\\" : {\\n      #foreach($paramName in $params.keySet())\\n      \\\"$paramName\\\" : \\\"$util.escapeJavaScript($params.get($paramName))\\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    }\\n    #if($foreach.hasNext),#end\\n    #end\\n  },\\n  \\\"context\\\" : {\\n    \\\"apiId\\\": \\\"$context.apiId\\\",\\n    \\\"authorizer\\\": {\\n      #foreach($property in $context.authorizer.keySet())\\n      \\\"$property\\\": \\\"$context.authorizer.get($property)\\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\\"httpMethod\\\": \\\"$context.httpMethod\\\",\\n    \\\"identity\\\": {\\n      #foreach($property in $context.identity.keySet())\\n      \\\"$property\\\": \\\"$context.identity.get($property)\\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\\"requestId\\\": \\\"$context.requestId\\\",\\n    \\\"resourceId\\\": \\\"$context.resourceId\\\",\\n    \\\"resourcePath\\\": \\\"$context.resourcePath\\\",\\n    \\\"stage\\\": \\\"$context.stage\\\"\\n  },\\n  \\\"body\\\": $input.json('$'),\\n  \\\"meta\\\": {\\n    \\\"expectedResponseContentType\\\": \\\"text/html\\\"\\n  }\\n}\"
+          "PassthroughBehavior": "NEVER",
+          "RequestTemplates": {
+            "application/x-www-form-urlencoded": "#set($allParams = $input.params())\\n{\\n  \\"params\\" : {\\n    #foreach($type in $allParams.keySet())\\n    #set($params = $allParams.get($type))\\n    \\"$type\\" : {\\n      #foreach($paramName in $params.keySet())\\n      \\"$paramName\\" : \\"$util.escapeJavaScript($params.get($paramName))\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    }\\n    #if($foreach.hasNext),#end\\n    #end\\n  },\\n  \\"context\\" : {\\n    \\"apiId\\": \\"$context.apiId\\",\\n    \\"authorizer\\": {\\n      #foreach($property in $context.authorizer.keySet())\\n      \\"$property\\": \\"$context.authorizer.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"httpMethod\\": \\"$context.httpMethod\\",\\n    \\"identity\\": {\\n      #foreach($property in $context.identity.keySet())\\n      \\"$property\\": \\"$context.identity.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"requestId\\": \\"$context.requestId\\",\\n    \\"resourceId\\": \\"$context.resourceId\\",\\n    \\"resourcePath\\": \\"$context.resourcePath\\",\\n    \\"stage\\": \\"$context.stage\\"\\n  },\\n  \\"body\\": $input.json('$'),\\n  \\"meta\\": {\\n    \\"expectedResponseContentType\\": \\"text/html\\"\\n  }\\n}",
+            "application/json": "#set($allParams = $input.params())\\n{\\n  \\"params\\" : {\\n    #foreach($type in $allParams.keySet())\\n    #set($params = $allParams.get($type))\\n    \\"$type\\" : {\\n      #foreach($paramName in $params.keySet())\\n      \\"$paramName\\" : \\"$util.escapeJavaScript($params.get($paramName))\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    }\\n    #if($foreach.hasNext),#end\\n    #end\\n  },\\n  \\"context\\" : {\\n    \\"apiId\\": \\"$context.apiId\\",\\n    \\"authorizer\\": {\\n      #foreach($property in $context.authorizer.keySet())\\n      \\"$property\\": \\"$context.authorizer.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"httpMethod\\": \\"$context.httpMethod\\",\\n    \\"identity\\": {\\n      #foreach($property in $context.identity.keySet())\\n      \\"$property\\": \\"$context.identity.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"requestId\\": \\"$context.requestId\\",\\n    \\"resourceId\\": \\"$context.resourceId\\",\\n    \\"resourcePath\\": \\"$context.resourcePath\\",\\n    \\"stage\\": \\"$context.stage\\"\\n  },\\n  \\"body\\": $input.json('$'),\\n  \\"meta\\": {\\n    \\"expectedResponseContentType\\": \\"text/html\\"\\n  }\\n}"
           },
-          \"Type\": \"AWS\",
-          \"Uri\": {
-            \"Fn::Join\": [
-              \"\",
+          "Type": "AWS",
+          "Uri": {
+            "Fn::Join": [
+              "",
               [
-                \"arn:aws:apigateway:\",
+                "arn:aws:apigateway:",
                 {
-                  \"Ref\": \"AWS::Region\"
+                  "Ref": "AWS::Region"
                 },
-                \":lambda:path/2015-03-31/functions/\",
+                ":lambda:path/2015-03-31/functions/",
                 {
-                  \"Fn::GetAtt\": [
-                    \"LambdaFooAPI\",
-                    \"Arn\"
+                  "Fn::GetAtt": [
+                    "LambdaFooAPI",
+                    "Arn"
                   ]
                 },
-                \"/invocations\"
+                "/invocations"
               ]
             ]
           }
         },
-        \"MethodResponses\": [
+        "MethodResponses": [
           {
-            \"ResponseModels\": {
-              \"text/html\": {
-                \"Ref\": \"ModelHelloWorldModel\"
+            "ResponseModels": {
+              "text/html": {
+                "Ref": "ModelHelloWorldModel"
               }
             },
-            \"StatusCode\": 200
+            "StatusCode": 200
           },
           {
-            \"ResponseModels\": {
-              \"text/html\": {
-                \"Ref\": \"ModelHelloWorldModel\"
+            "ResponseModels": {
+              "text/html": {
+                "Ref": "ModelHelloWorldModel"
               }
             },
-            \"StatusCode\": 400
+            "StatusCode": 400
           },
           {
-            \"ResponseModels\": {
-              \"text/html\": {
-                \"Ref\": \"ModelHelloWorldModel\"
+            "ResponseModels": {
+              "text/html": {
+                "Ref": "ModelHelloWorldModel"
               }
             },
-            \"StatusCode\": 403
+            "StatusCode": 403
           },
           {
-            \"ResponseModels\": {
-              \"text/html\": {
-                \"Ref\": \"ModelHelloWorldModel\"
+            "ResponseModels": {
+              "text/html": {
+                "Ref": "ModelHelloWorldModel"
               }
             },
-            \"StatusCode\": 404
+            "StatusCode": 404
           },
           {
-            \"ResponseModels\": {
-              \"text/html\": {
-                \"Ref\": \"ModelHelloWorldModel\"
+            "ResponseModels": {
+              "text/html": {
+                "Ref": "ModelHelloWorldModel"
               }
             },
-            \"StatusCode\": 500
+            "StatusCode": 500
           },
           {
-            \"ResponseModels\": {
-              \"text/html\": {
-                \"Ref\": \"ModelHelloWorldModel\"
+            "ResponseModels": {
+              "text/html": {
+                "Ref": "ModelHelloWorldModel"
               }
             },
-            \"StatusCode\": 307,
-            \"ResponseParameters\": {
-              \"method.response.header.Location\": false
+            "StatusCode": 307,
+            "ResponseParameters": {
+              "method.response.header.Location": false
             }
           }
         ],
-        \"AuthorizationType\": \"NONE\"
+        "AuthorizationType": "NONE"
       }
     },
-    \"DeploymentAVA\": {
-      \"DependsOn\": [
-        \"MethodBarPOST\"
+    "DeploymentAVA": {
+      "DependsOn": [
+        "MethodBarPOST"
       ],
-      \"Type\": \"AWS::ApiGateway::Deployment\",
-      \"Properties\": {
-        \"RestApiId\": {
-          \"Ref\": \"API\"
+      "Type": "AWS::ApiGateway::Deployment",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "API"
         },
-        \"Description\": \"Automated deployment by dawson\"
+        "Description": "Automated deployment by dawson"
       }
     },
-    \"StageProd\": {
-      \"Type\": \"AWS::ApiGateway::Stage\",
-      \"Properties\": {
-        \"CacheClusterEnabled\": false,
-        \"DeploymentId\": {
-          \"Ref\": \"DeploymentAVA\"
+    "StageProd": {
+      "Type": "AWS::ApiGateway::Stage",
+      "Properties": {
+        "CacheClusterEnabled": false,
+        "DeploymentId": {
+          "Ref": "DeploymentAVA"
         },
-        \"Description\": \"prod Stage\",
-        \"RestApiId\": {
-          \"Ref\": \"API\"
+        "Description": "prod Stage",
+        "RestApiId": {
+          "Ref": "API"
         },
-        \"StageName\": \"prod\",
-        \"MethodSettings\": [
+        "StageName": "prod",
+        "MethodSettings": [
           {
-            \"HttpMethod\": \"*\",
-            \"ResourcePath\": \"/*\",
-            \"LoggingLevel\": \"INFO\",
-            \"DataTraceEnabled\": \"true\"
+            "HttpMethod": "*",
+            "ResourcePath": "/*",
+            "LoggingLevel": "INFO",
+            "DataTraceEnabled": "true"
           }
         ]
       }
     },
-    \"RoleAPIGatewayAccount\": {
-      \"Type\": \"AWS::IAM::Role\",
-      \"Properties\": {
-        \"AssumeRolePolicyDocument\": {
-          \"Version\": \"2012-10-17\",
-          \"Statement\": [
+    "RoleAPIGatewayAccount": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
             {
-              \"Effect\": \"Allow\",
-              \"Principal\": {
-                \"Service\": [
-                  \"apigateway.amazonaws.com\"
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "apigateway.amazonaws.com"
                 ]
               },
-              \"Action\": \"sts:AssumeRole\"
+              "Action": "sts:AssumeRole"
             }
           ]
         },
-        \"Path\": \"/\",
-        \"ManagedPolicyArns\": [
-          \"arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs\"
+        "Path": "/",
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
         ]
       }
     },
-    \"APIGatewayAccount\": {
-      \"Type\": \"AWS::ApiGateway::Account\",
-      \"Properties\": {
-        \"CloudWatchRoleArn\": {
-          \"Fn::Sub\": \"${RoleAPIGatewayAccount.Arn}\"
+    "APIGatewayAccount": {
+      "Type": "AWS::ApiGateway::Account",
+      "Properties": {
+        "CloudWatchRoleArn": {
+          "Fn::Sub": "\x24{RoleAPIGatewayAccount.Arn}"
         }
       }
     }
   },
-  \"Outputs\": {
-    \"BucketAssets\": {
-      \"Value\": {
-        \"Ref\": \"BucketAssets\"
+  "Outputs": {
+    "BucketAssets": {
+      "Value": {
+        "Ref": "BucketAssets"
       }
     },
-    \"DistributionWWW\": {
-      \"Value\": \"CloudFront disabled from config\"
+    "DistributionWWW": {
+      "Value": "CloudFront disabled from config"
     }
   }
-}",
+}`,
   cfTemplate: {
     Parameters: {
       DawsonStage: {
-        Type: "String",
-        Default: "devel"
+        Type: `String`,
+        Default: `devel`
       }
     },
     Resources: {
       BucketAssets: {
-        Type: "AWS::S3::Bucket",
+        Type: `AWS::S3::Bucket`,
         Properties: {
           WebsiteConfiguration: {
-            ErrorDocument: "index.html",
-            IndexDocument: "index.html"
+            ErrorDocument: `index.html`,
+            IndexDocument: `index.html`
           }
         }
       },
       API: {
-        Type: "AWS::ApiGateway::RestApi",
+        Type: `AWS::ApiGateway::RestApi`,
         Properties: {
-          Description: "REST API for dawson app",
-          Name: "AppAPIDevel"
+          Description: `REST API for dawson app`,
+          Name: `AppAPIDevel`
         }
       },
       ResourceBar: {
-        Type: "AWS::ApiGateway::Resource",
+        Type: `AWS::ApiGateway::Resource`,
         Properties: {
           RestApiId: {
-            Ref: "API"
+            Ref: `API`
           },
           ParentId: {
-            "Fn::GetAtt": [
-              "API",
-              "RootResourceId"
+            'Fn::GetAtt': [
+              `API`,
+              `RootResourceId`
             ]
           },
-          PathPart: "bar"
+          PathPart: `bar`
         }
       },
       PermissionForLambdaFooAPI: {
-        Type: "AWS::Lambda::Permission",
+        Type: `AWS::Lambda::Permission`,
         Properties: {
-          Action: "lambda:InvokeFunction",
+          Action: `lambda:InvokeFunction`,
           FunctionName: {
-            "Fn::Sub": "${LambdaFooAPI.Arn}"
+            'Fn::Sub': `\x24{LambdaFooAPI.Arn}`
           },
-          Principal: "apigateway.amazonaws.com",
+          Principal: `apigateway.amazonaws.com`,
           SourceArn: {
-            "Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${API}/prod*"
+            'Fn::Sub': `arn:aws:execute-api:\x24{AWS::Region}:\x24{AWS::AccountId}:\x24{API}/prod*`
           }
         }
       },
       ExecutionRoleForLambdaFooAPI: {
-        Type: "AWS::IAM::Role",
+        Type: `AWS::IAM::Role`,
         Properties: {
           AssumeRolePolicyDocument: {
-            Version: "2012-10-17",
+            Version: `2012-10-17`,
             Statement: [
               {
-                Effect: "Allow",
+                Effect: `Allow`,
                 Principal: {
                   Service: [
-                    "lambda.amazonaws.com"
+                    `lambda.amazonaws.com`
                   ],
                   AWS: [
                     {
-                      "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:root"
+                      'Fn::Sub': `arn:aws:iam::\x24{AWS::AccountId}:root`
                     }
                   ]
                 },
                 Action: [
-                  "sts:AssumeRole"
+                  `sts:AssumeRole`
                 ]
               }
             ]
           },
-          Path: "/",
+          Path: `/`,
           Policies: [
             {
-              PolicyName: "dawson-policy",
+              PolicyName: `dawson-policy`,
               PolicyDocument: {
-                Version: "2012-10-17",
+                Version: `2012-10-17`,
                 Statement: [
                   {
-                    Effect: "Allow",
+                    Effect: `Allow`,
                     Action: [
-                      "logs:CreateLogGroup",
-                      "logs:CreateLogStream",
-                      "logs:PutLogEvents"
+                      `logs:CreateLogGroup`,
+                      `logs:CreateLogStream`,
+                      `logs:PutLogEvents`
                     ],
                     Resource: {
-                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*"
+                      'Fn::Sub': `arn:aws:logs:\x24{AWS::Region}:\x24{AWS::AccountId}:*`
                     }
                   },
                   {
-                    Effect: "Allow",
+                    Effect: `Allow`,
                     Action: [
-                      "cloudformation:DescribeStacks"
+                      `cloudformation:DescribeStacks`
                     ],
                     Resource: {
-                      "Fn::Join": [
-                        "",
+                      'Fn::Join': [
+                        ``,
                         [
-                          "arn:aws:cloudformation:",
+                          `arn:aws:cloudformation:`,
                           {
-                            Ref: "AWS::Region"
+                            Ref: `AWS::Region`
                           },
-                          ":",
+                          `:`,
                           {
-                            Ref: "AWS::AccountId"
+                            Ref: `AWS::AccountId`
                           },
-                          ":stack/",
+                          `:stack/`,
                           {
-                            Ref: "AWS::StackName"
+                            Ref: `AWS::StackName`
                           },
-                          "/*"
+                          `/*`
                         ]
                       ]
                     }
@@ -1234,13 +1234,13 @@ module.exports[`primary template builder with cloudfront disabled`] = {
         }
       },
       LambdaFooAPI: {
-        Type: "AWS::Lambda::Function",
+        Type: `AWS::Lambda::Function`,
         Properties: {
-          Handler: "dawsonindex.fooAPI",
+          Handler: `dawsonindex.fooAPI`,
           Role: {
-            "Fn::GetAtt": [
-              "ExecutionRoleForLambdaFooAPI",
-              "Arn"
+            'Fn::GetAtt': [
+              `ExecutionRoleForLambdaFooAPI`,
+              `Arn`
             ]
           },
           Code: {
@@ -1248,187 +1248,187 @@ module.exports[`primary template builder with cloudfront disabled`] = {
             S3Key: undefined,
             S3ObjectVersion: undefined
           },
-          Runtime: "nodejs4.3",
+          Runtime: `nodejs4.3`,
           MemorySize: 1024,
           Timeout: 30,
           Environment: {
             Variables: {
               DAWSON_BucketAssets: {
-                Ref: "BucketAssets"
+                Ref: `BucketAssets`
               },
-              DAWSON_DistributionWWW: "CloudFront disabled from config",
-              NODE_ENV: "development"
+              DAWSON_DistributionWWW: `CloudFront disabled from config`,
+              NODE_ENV: `development`
             }
           }
         }
       },
       ModelHelloWorldModel: {
-        Type: "AWS::ApiGateway::Model",
+        Type: `AWS::ApiGateway::Model`,
         Properties: {
-          ContentType: "application/json",
-          Description: "Model HelloWorldModel",
+          ContentType: `application/json`,
+          Description: `Model HelloWorldModel`,
           RestApiId: {
-            Ref: "API"
+            Ref: `API`
           },
-          Schema: "{}"
+          Schema: `{}`
         }
       },
       MethodBarPOST: {
-        Type: "AWS::ApiGateway::Method",
+        Type: `AWS::ApiGateway::Method`,
         Properties: {
           RestApiId: {
-            Ref: "API"
+            Ref: `API`
           },
           ResourceId: {
-            Ref: "ResourceBar"
+            Ref: `ResourceBar`
           },
-          HttpMethod: "POST",
+          HttpMethod: `POST`,
           Integration: {
-            IntegrationHttpMethod: "POST",
+            IntegrationHttpMethod: `POST`,
             IntegrationResponses: [
               {
                 ResponseParameters: {},
                 ResponseTemplates: {
-                  "text/html": "#set($inputRoot = $input.path('$'))
-$inputRoot.response"
+                  'text/html': `#set($inputRoot = $input.path('$'))
+$inputRoot.response`
                 },
                 StatusCode: 200
               },
               {
                 ResponseParameters: {},
                 ResponseTemplates: {
-                  "text/html": "#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
-$errorMessageObj.response"
+                  'text/html': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+$errorMessageObj.response`
                 },
-                SelectionPattern: ".*\"httpStatus\":500.*",
+                SelectionPattern: `.*"httpStatus":500.*`,
                 StatusCode: 500
               },
               {
                 ResponseParameters: {},
                 ResponseTemplates: {
-                  "text/html": "#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
-$errorMessageObj.response"
+                  'text/html': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+$errorMessageObj.response`
                 },
-                SelectionPattern: ".*\"httpStatus\":400.*",
+                SelectionPattern: `.*"httpStatus":400.*`,
                 StatusCode: 400
               },
               {
                 ResponseParameters: {},
                 ResponseTemplates: {
-                  "text/html": "#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
-$errorMessageObj.response"
+                  'text/html': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+$errorMessageObj.response`
                 },
-                SelectionPattern: ".*\"httpStatus\":403.*",
+                SelectionPattern: `.*"httpStatus":403.*`,
                 StatusCode: 403
               },
               {
                 ResponseParameters: {},
                 ResponseTemplates: {
-                  "text/html": "#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
-$errorMessageObj.response"
+                  'text/html': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+$errorMessageObj.response`
                 },
-                SelectionPattern: ".*\"httpStatus\":404.*",
+                SelectionPattern: `.*"httpStatus":404.*`,
                 StatusCode: 404
               }
             ],
-            PassthroughBehavior: "NEVER",
+            PassthroughBehavior: `NEVER`,
             RequestTemplates: {
-              "application/x-www-form-urlencoded": "#set($allParams = $input.params())
+              'application/x-www-form-urlencoded': `#set($allParams = $input.params())
 {
-  \"params\" : {
+  "params" : {
     #foreach($type in $allParams.keySet())
     #set($params = $allParams.get($type))
-    \"$type\" : {
+    "$type" : {
       #foreach($paramName in $params.keySet())
-      \"$paramName\" : \"$util.escapeJavaScript($params.get($paramName))\"
+      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
       #if($foreach.hasNext),#end
       #end
     }
     #if($foreach.hasNext),#end
     #end
   },
-  \"context\" : {
-    \"apiId\": \"$context.apiId\",
-    \"authorizer\": {
+  "context" : {
+    "apiId": "$context.apiId",
+    "authorizer": {
       #foreach($property in $context.authorizer.keySet())
-      \"$property\": \"$context.authorizer.get($property)\"
+      "$property": "$context.authorizer.get($property)"
       #if($foreach.hasNext),#end
       #end
     },
-    \"httpMethod\": \"$context.httpMethod\",
-    \"identity\": {
+    "httpMethod": "$context.httpMethod",
+    "identity": {
       #foreach($property in $context.identity.keySet())
-      \"$property\": \"$context.identity.get($property)\"
+      "$property": "$context.identity.get($property)"
       #if($foreach.hasNext),#end
       #end
     },
-    \"requestId\": \"$context.requestId\",
-    \"resourceId\": \"$context.resourceId\",
-    \"resourcePath\": \"$context.resourcePath\",
-    \"stage\": \"$context.stage\"
+    "requestId": "$context.requestId",
+    "resourceId": "$context.resourceId",
+    "resourcePath": "$context.resourcePath",
+    "stage": "$context.stage"
   },
-  \"body\": $input.json('$'),
-  \"meta\": {
-    \"expectedResponseContentType\": \"text/html\"
+  "body": $input.json('$'),
+  "meta": {
+    "expectedResponseContentType": "text/html"
   }
-}",
-              "application/json": "#set($allParams = $input.params())
+}`,
+              'application/json': `#set($allParams = $input.params())
 {
-  \"params\" : {
+  "params" : {
     #foreach($type in $allParams.keySet())
     #set($params = $allParams.get($type))
-    \"$type\" : {
+    "$type" : {
       #foreach($paramName in $params.keySet())
-      \"$paramName\" : \"$util.escapeJavaScript($params.get($paramName))\"
+      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
       #if($foreach.hasNext),#end
       #end
     }
     #if($foreach.hasNext),#end
     #end
   },
-  \"context\" : {
-    \"apiId\": \"$context.apiId\",
-    \"authorizer\": {
+  "context" : {
+    "apiId": "$context.apiId",
+    "authorizer": {
       #foreach($property in $context.authorizer.keySet())
-      \"$property\": \"$context.authorizer.get($property)\"
+      "$property": "$context.authorizer.get($property)"
       #if($foreach.hasNext),#end
       #end
     },
-    \"httpMethod\": \"$context.httpMethod\",
-    \"identity\": {
+    "httpMethod": "$context.httpMethod",
+    "identity": {
       #foreach($property in $context.identity.keySet())
-      \"$property\": \"$context.identity.get($property)\"
+      "$property": "$context.identity.get($property)"
       #if($foreach.hasNext),#end
       #end
     },
-    \"requestId\": \"$context.requestId\",
-    \"resourceId\": \"$context.resourceId\",
-    \"resourcePath\": \"$context.resourcePath\",
-    \"stage\": \"$context.stage\"
+    "requestId": "$context.requestId",
+    "resourceId": "$context.resourceId",
+    "resourcePath": "$context.resourcePath",
+    "stage": "$context.stage"
   },
-  \"body\": $input.json('$'),
-  \"meta\": {
-    \"expectedResponseContentType\": \"text/html\"
+  "body": $input.json('$'),
+  "meta": {
+    "expectedResponseContentType": "text/html"
   }
-}"
+}`
             },
-            Type: "AWS",
+            Type: `AWS`,
             Uri: {
-              "Fn::Join": [
-                "",
+              'Fn::Join': [
+                ``,
                 [
-                  "arn:aws:apigateway:",
+                  `arn:aws:apigateway:`,
                   {
-                    Ref: "AWS::Region"
+                    Ref: `AWS::Region`
                   },
-                  ":lambda:path/2015-03-31/functions/",
+                  `:lambda:path/2015-03-31/functions/`,
                   {
-                    "Fn::GetAtt": [
-                      "LambdaFooAPI",
-                      "Arn"
+                    'Fn::GetAtt': [
+                      `LambdaFooAPI`,
+                      `Arn`
                     ]
                   },
-                  "/invocations"
+                  `/invocations`
                 ]
               ]
             }
@@ -1436,121 +1436,121 @@ $errorMessageObj.response"
           MethodResponses: [
             {
               ResponseModels: {
-                "text/html": {
-                  Ref: "ModelHelloWorldModel"
+                'text/html': {
+                  Ref: `ModelHelloWorldModel`
                 }
               },
               StatusCode: 200
             },
             {
               ResponseModels: {
-                "text/html": {
-                  Ref: "ModelHelloWorldModel"
+                'text/html': {
+                  Ref: `ModelHelloWorldModel`
                 }
               },
               StatusCode: 400
             },
             {
               ResponseModels: {
-                "text/html": {
-                  Ref: "ModelHelloWorldModel"
+                'text/html': {
+                  Ref: `ModelHelloWorldModel`
                 }
               },
               StatusCode: 403
             },
             {
               ResponseModels: {
-                "text/html": {
-                  Ref: "ModelHelloWorldModel"
+                'text/html': {
+                  Ref: `ModelHelloWorldModel`
                 }
               },
               StatusCode: 404
             },
             {
               ResponseModels: {
-                "text/html": {
-                  Ref: "ModelHelloWorldModel"
+                'text/html': {
+                  Ref: `ModelHelloWorldModel`
                 }
               },
               StatusCode: 500
             },
             {
               ResponseModels: {
-                "text/html": {
-                  Ref: "ModelHelloWorldModel"
+                'text/html': {
+                  Ref: `ModelHelloWorldModel`
                 }
               },
               StatusCode: 307,
               ResponseParameters: {
-                "method.response.header.Location": false
+                'method.response.header.Location': false
               }
             }
           ],
-          AuthorizationType: "NONE"
+          AuthorizationType: `NONE`
         }
       },
       DeploymentAVA: {
         DependsOn: [
-          "MethodBarPOST"
+          `MethodBarPOST`
         ],
-        Type: "AWS::ApiGateway::Deployment",
+        Type: `AWS::ApiGateway::Deployment`,
         Properties: {
           RestApiId: {
-            Ref: "API"
+            Ref: `API`
           },
-          Description: "Automated deployment by dawson"
+          Description: `Automated deployment by dawson`
         }
       },
       StageProd: {
-        Type: "AWS::ApiGateway::Stage",
+        Type: `AWS::ApiGateway::Stage`,
         Properties: {
           CacheClusterEnabled: false,
           DeploymentId: {
-            Ref: "DeploymentAVA"
+            Ref: `DeploymentAVA`
           },
-          Description: "prod Stage",
+          Description: `prod Stage`,
           RestApiId: {
-            Ref: "API"
+            Ref: `API`
           },
-          StageName: "prod",
+          StageName: `prod`,
           MethodSettings: [
             {
-              HttpMethod: "*",
-              ResourcePath: "/*",
-              LoggingLevel: "INFO",
-              DataTraceEnabled: "true"
+              HttpMethod: `*`,
+              ResourcePath: `/*`,
+              LoggingLevel: `INFO`,
+              DataTraceEnabled: `true`
             }
           ]
         }
       },
       RoleAPIGatewayAccount: {
-        Type: "AWS::IAM::Role",
+        Type: `AWS::IAM::Role`,
         Properties: {
           AssumeRolePolicyDocument: {
-            Version: "2012-10-17",
+            Version: `2012-10-17`,
             Statement: [
               {
-                Effect: "Allow",
+                Effect: `Allow`,
                 Principal: {
                   Service: [
-                    "apigateway.amazonaws.com"
+                    `apigateway.amazonaws.com`
                   ]
                 },
-                Action: "sts:AssumeRole"
+                Action: `sts:AssumeRole`
               }
             ]
           },
-          Path: "/",
+          Path: `/`,
           ManagedPolicyArns: [
-            "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+            `arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs`
           ]
         }
       },
       APIGatewayAccount: {
-        Type: "AWS::ApiGateway::Account",
+        Type: `AWS::ApiGateway::Account`,
         Properties: {
           CloudWatchRoleArn: {
-            "Fn::Sub": "${RoleAPIGatewayAccount.Arn}"
+            'Fn::Sub': `\x24{RoleAPIGatewayAccount.Arn}`
           }
         }
       }
@@ -1558,11 +1558,11 @@ $errorMessageObj.response"
     Outputs: {
       BucketAssets: {
         Value: {
-          Ref: "BucketAssets"
+          Ref: `BucketAssets`
         }
       },
       DistributionWWW: {
-        Value: "CloudFront disabled from config"
+        Value: `CloudFront disabled from config`
       }
     }
   },
@@ -1570,124 +1570,124 @@ $errorMessageObj.response"
 }
 
 module.exports[`primary template builder with a method using an authorizer`] = {
-  supportBucketName: "support-bucket-test",
-  stackName: "",
-  cfTemplateJSON: "{
-  \"Parameters\": {
-    \"DawsonStage\": {
-      \"Type\": \"String\",
-      \"Default\": \"devel\"
+  supportBucketName: `support-bucket-test`,
+  stackName: ``,
+  cfTemplateJSON: `{
+  "Parameters": {
+    "DawsonStage": {
+      "Type": "String",
+      "Default": "devel"
     }
   },
-  \"Resources\": {
-    \"BucketAssets\": {
-      \"Type\": \"AWS::S3::Bucket\",
-      \"Properties\": {
-        \"WebsiteConfiguration\": {
-          \"ErrorDocument\": \"index.html\",
-          \"IndexDocument\": \"index.html\"
+  "Resources": {
+    "BucketAssets": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "WebsiteConfiguration": {
+          "ErrorDocument": "index.html",
+          "IndexDocument": "index.html"
         }
       }
     },
-    \"API\": {
-      \"Type\": \"AWS::ApiGateway::RestApi\",
-      \"Properties\": {
-        \"Description\": \"REST API for dawson app\",
-        \"Name\": \"AppAPIDevel\"
+    "API": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Description": "REST API for dawson app",
+        "Name": "AppAPIDevel"
       }
     },
-    \"ResourceXxx\": {
-      \"Type\": \"AWS::ApiGateway::Resource\",
-      \"Properties\": {
-        \"RestApiId\": {
-          \"Ref\": \"API\"
+    "ResourceXxx": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "API"
         },
-        \"ParentId\": {
-          \"Fn::GetAtt\": [
-            \"API\",
-            \"RootResourceId\"
+        "ParentId": {
+          "Fn::GetAtt": [
+            "API",
+            "RootResourceId"
           ]
         },
-        \"PathPart\": \"xxx\"
+        "PathPart": "xxx"
       }
     },
-    \"PermissionForLambdaBazAPI\": {
-      \"Type\": \"AWS::Lambda::Permission\",
-      \"Properties\": {
-        \"Action\": \"lambda:InvokeFunction\",
-        \"FunctionName\": {
-          \"Fn::Sub\": \"${LambdaBazAPI.Arn}\"
+    "PermissionForLambdaBazAPI": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::Sub": "\x24{LambdaBazAPI.Arn}"
         },
-        \"Principal\": \"apigateway.amazonaws.com\",
-        \"SourceArn\": {
-          \"Fn::Sub\": \"arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${API}/prod*\"
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Sub": "arn:aws:execute-api:\x24{AWS::Region}:\x24{AWS::AccountId}:\x24{API}/prod*"
         }
       }
     },
-    \"ExecutionRoleForLambdaBazAPI\": {
-      \"Type\": \"AWS::IAM::Role\",
-      \"Properties\": {
-        \"AssumeRolePolicyDocument\": {
-          \"Version\": \"2012-10-17\",
-          \"Statement\": [
+    "ExecutionRoleForLambdaBazAPI": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
             {
-              \"Effect\": \"Allow\",
-              \"Principal\": {
-                \"Service\": [
-                  \"lambda.amazonaws.com\"
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
                 ],
-                \"AWS\": [
+                "AWS": [
                   {
-                    \"Fn::Sub\": \"arn:aws:iam::${AWS::AccountId}:root\"
+                    "Fn::Sub": "arn:aws:iam::\x24{AWS::AccountId}:root"
                   }
                 ]
               },
-              \"Action\": [
-                \"sts:AssumeRole\"
+              "Action": [
+                "sts:AssumeRole"
               ]
             }
           ]
         },
-        \"Path\": \"/\",
-        \"Policies\": [
+        "Path": "/",
+        "Policies": [
           {
-            \"PolicyName\": \"dawson-policy\",
-            \"PolicyDocument\": {
-              \"Version\": \"2012-10-17\",
-              \"Statement\": [
+            "PolicyName": "dawson-policy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
                 {
-                  \"Effect\": \"Allow\",
-                  \"Action\": [
-                    \"logs:CreateLogGroup\",
-                    \"logs:CreateLogStream\",
-                    \"logs:PutLogEvents\"
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
                   ],
-                  \"Resource\": {
-                    \"Fn::Sub\": \"arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*\"
+                  "Resource": {
+                    "Fn::Sub": "arn:aws:logs:\x24{AWS::Region}:\x24{AWS::AccountId}:*"
                   }
                 },
                 {
-                  \"Effect\": \"Allow\",
-                  \"Action\": [
-                    \"cloudformation:DescribeStacks\"
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudformation:DescribeStacks"
                   ],
-                  \"Resource\": {
-                    \"Fn::Join\": [
-                      \"\",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
                       [
-                        \"arn:aws:cloudformation:\",
+                        "arn:aws:cloudformation:",
                         {
-                          \"Ref\": \"AWS::Region\"
+                          "Ref": "AWS::Region"
                         },
-                        \":\",
+                        ":",
                         {
-                          \"Ref\": \"AWS::AccountId\"
+                          "Ref": "AWS::AccountId"
                         },
-                        \":stack/\",
+                        ":stack/",
                         {
-                          \"Ref\": \"AWS::StackName\"
+                          "Ref": "AWS::StackName"
                         },
-                        \"/*\"
+                        "/*"
                       ]
                     ]
                   }
@@ -1698,275 +1698,275 @@ module.exports[`primary template builder with a method using an authorizer`] = {
         ]
       }
     },
-    \"LambdaBazAPI\": {
-      \"Type\": \"AWS::Lambda::Function\",
-      \"Properties\": {
-        \"Handler\": \"dawsonindex.bazAPI\",
-        \"Role\": {
-          \"Fn::GetAtt\": [
-            \"ExecutionRoleForLambdaBazAPI\",
-            \"Arn\"
+    "LambdaBazAPI": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Handler": "dawsonindex.bazAPI",
+        "Role": {
+          "Fn::GetAtt": [
+            "ExecutionRoleForLambdaBazAPI",
+            "Arn"
           ]
         },
-        \"Code\": {},
-        \"Runtime\": \"nodejs4.3\",
-        \"MemorySize\": 1024,
-        \"Timeout\": 30,
-        \"Environment\": {
-          \"Variables\": {
-            \"DAWSON_BucketAssets\": {
-              \"Ref\": \"BucketAssets\"
+        "Code": {},
+        "Runtime": "nodejs4.3",
+        "MemorySize": 1024,
+        "Timeout": 30,
+        "Environment": {
+          "Variables": {
+            "DAWSON_BucketAssets": {
+              "Ref": "BucketAssets"
             },
-            \"DAWSON_DistributionWWW\": \"CloudFront disabled from config\",
-            \"NODE_ENV\": \"development\"
+            "DAWSON_DistributionWWW": "CloudFront disabled from config",
+            "NODE_ENV": "development"
           }
         }
       }
     },
-    \"ModelHelloWorldModel\": {
-      \"Type\": \"AWS::ApiGateway::Model\",
-      \"Properties\": {
-        \"ContentType\": \"application/json\",
-        \"Description\": \"Model HelloWorldModel\",
-        \"RestApiId\": {
-          \"Ref\": \"API\"
+    "ModelHelloWorldModel": {
+      "Type": "AWS::ApiGateway::Model",
+      "Properties": {
+        "ContentType": "application/json",
+        "Description": "Model HelloWorldModel",
+        "RestApiId": {
+          "Ref": "API"
         },
-        \"Schema\": \"{}\"
+        "Schema": "{}"
       }
     },
-    \"APIGAuthorizerBarAPI\": {
-      \"Type\": \"AWS::ApiGateway::Authorizer\",
-      \"Properties\": {
-        \"AuthorizerResultTtlInSeconds\": 0,
-        \"AuthorizerUri\": {
-          \"Fn::Sub\": \"arn:aws:apigateway:${AWS::Region}:lambda:path//2015-03-31/functions/${LambdaBarAPI.Arn}/invocations\"
+    "APIGAuthorizerBarAPI": {
+      "Type": "AWS::ApiGateway::Authorizer",
+      "Properties": {
+        "AuthorizerResultTtlInSeconds": 0,
+        "AuthorizerUri": {
+          "Fn::Sub": "arn:aws:apigateway:\x24{AWS::Region}:lambda:path//2015-03-31/functions/\x24{LambdaBarAPI.Arn}/invocations"
         },
-        \"IdentitySource\": \"method.request.header.token\",
-        \"Name\": \"APIGAuthorizerBarAPI\",
-        \"RestApiId\": {
-          \"Ref\": \"API\"
+        "IdentitySource": "method.request.header.token",
+        "Name": "APIGAuthorizerBarAPI",
+        "RestApiId": {
+          "Ref": "API"
         },
-        \"Type\": \"TOKEN\"
+        "Type": "TOKEN"
       }
     },
-    \"MethodXxxGET\": {
-      \"Type\": \"AWS::ApiGateway::Method\",
-      \"DependsOn\": [
-        \"APIGAuthorizerBarAPI\"
+    "MethodXxxGET": {
+      "Type": "AWS::ApiGateway::Method",
+      "DependsOn": [
+        "APIGAuthorizerBarAPI"
       ],
-      \"Properties\": {
-        \"RestApiId\": {
-          \"Ref\": \"API\"
+      "Properties": {
+        "RestApiId": {
+          "Ref": "API"
         },
-        \"ResourceId\": {
-          \"Ref\": \"ResourceXxx\"
+        "ResourceId": {
+          "Ref": "ResourceXxx"
         },
-        \"HttpMethod\": \"GET\",
-        \"Integration\": {
-          \"IntegrationHttpMethod\": \"POST\",
-          \"IntegrationResponses\": [
+        "HttpMethod": "GET",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "IntegrationResponses": [
             {
-              \"ResponseParameters\": {},
-              \"ResponseTemplates\": {
-                \"text/html\": \"#set($inputRoot = $input.path('$'))\\n$inputRoot.response\"
+              "ResponseParameters": {},
+              "ResponseTemplates": {
+                "text/html": "#set($inputRoot = $input.path('$'))\\n$inputRoot.response"
               },
-              \"StatusCode\": 200
+              "StatusCode": 200
             },
             {
-              \"ResponseParameters\": {},
-              \"ResponseTemplates\": {
-                \"text/html\": \"#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))\\n$errorMessageObj.response\"
+              "ResponseParameters": {},
+              "ResponseTemplates": {
+                "text/html": "#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))\\n$errorMessageObj.response"
               },
-              \"SelectionPattern\": \".*\\\"httpStatus\\\":500.*\",
-              \"StatusCode\": 500
+              "SelectionPattern": ".*\\"httpStatus\\":500.*",
+              "StatusCode": 500
             },
             {
-              \"ResponseParameters\": {},
-              \"ResponseTemplates\": {
-                \"text/html\": \"#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))\\n$errorMessageObj.response\"
+              "ResponseParameters": {},
+              "ResponseTemplates": {
+                "text/html": "#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))\\n$errorMessageObj.response"
               },
-              \"SelectionPattern\": \".*\\\"httpStatus\\\":400.*\",
-              \"StatusCode\": 400
+              "SelectionPattern": ".*\\"httpStatus\\":400.*",
+              "StatusCode": 400
             },
             {
-              \"ResponseParameters\": {},
-              \"ResponseTemplates\": {
-                \"text/html\": \"#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))\\n$errorMessageObj.response\"
+              "ResponseParameters": {},
+              "ResponseTemplates": {
+                "text/html": "#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))\\n$errorMessageObj.response"
               },
-              \"SelectionPattern\": \".*\\\"httpStatus\\\":403.*\",
-              \"StatusCode\": 403
+              "SelectionPattern": ".*\\"httpStatus\\":403.*",
+              "StatusCode": 403
             },
             {
-              \"ResponseParameters\": {},
-              \"ResponseTemplates\": {
-                \"text/html\": \"#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))\\n$errorMessageObj.response\"
+              "ResponseParameters": {},
+              "ResponseTemplates": {
+                "text/html": "#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))\\n$errorMessageObj.response"
               },
-              \"SelectionPattern\": \".*\\\"httpStatus\\\":404.*\",
-              \"StatusCode\": 404
+              "SelectionPattern": ".*\\"httpStatus\\":404.*",
+              "StatusCode": 404
             }
           ],
-          \"PassthroughBehavior\": \"NEVER\",
-          \"RequestTemplates\": {
-            \"application/x-www-form-urlencoded\": \"#set($allParams = $input.params())\\n{\\n  \\\"params\\\" : {\\n    #foreach($type in $allParams.keySet())\\n    #set($params = $allParams.get($type))\\n    \\\"$type\\\" : {\\n      #foreach($paramName in $params.keySet())\\n      \\\"$paramName\\\" : \\\"$util.escapeJavaScript($params.get($paramName))\\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    }\\n    #if($foreach.hasNext),#end\\n    #end\\n  },\\n  \\\"context\\\" : {\\n    \\\"apiId\\\": \\\"$context.apiId\\\",\\n    \\\"authorizer\\\": {\\n      #foreach($property in $context.authorizer.keySet())\\n      \\\"$property\\\": \\\"$context.authorizer.get($property)\\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\\"httpMethod\\\": \\\"$context.httpMethod\\\",\\n    \\\"identity\\\": {\\n      #foreach($property in $context.identity.keySet())\\n      \\\"$property\\\": \\\"$context.identity.get($property)\\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\\"requestId\\\": \\\"$context.requestId\\\",\\n    \\\"resourceId\\\": \\\"$context.resourceId\\\",\\n    \\\"resourcePath\\\": \\\"$context.resourcePath\\\",\\n    \\\"stage\\\": \\\"$context.stage\\\"\\n  },\\n  \\\"body\\\": $input.json('$'),\\n  \\\"meta\\\": {\\n    \\\"expectedResponseContentType\\\": \\\"text/html\\\"\\n  }\\n}\",
-            \"application/json\": \"#set($allParams = $input.params())\\n{\\n  \\\"params\\\" : {\\n    #foreach($type in $allParams.keySet())\\n    #set($params = $allParams.get($type))\\n    \\\"$type\\\" : {\\n      #foreach($paramName in $params.keySet())\\n      \\\"$paramName\\\" : \\\"$util.escapeJavaScript($params.get($paramName))\\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    }\\n    #if($foreach.hasNext),#end\\n    #end\\n  },\\n  \\\"context\\\" : {\\n    \\\"apiId\\\": \\\"$context.apiId\\\",\\n    \\\"authorizer\\\": {\\n      #foreach($property in $context.authorizer.keySet())\\n      \\\"$property\\\": \\\"$context.authorizer.get($property)\\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\\"httpMethod\\\": \\\"$context.httpMethod\\\",\\n    \\\"identity\\\": {\\n      #foreach($property in $context.identity.keySet())\\n      \\\"$property\\\": \\\"$context.identity.get($property)\\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\\"requestId\\\": \\\"$context.requestId\\\",\\n    \\\"resourceId\\\": \\\"$context.resourceId\\\",\\n    \\\"resourcePath\\\": \\\"$context.resourcePath\\\",\\n    \\\"stage\\\": \\\"$context.stage\\\"\\n  },\\n  \\\"body\\\": $input.json('$'),\\n  \\\"meta\\\": {\\n    \\\"expectedResponseContentType\\\": \\\"text/html\\\"\\n  }\\n}\"
+          "PassthroughBehavior": "NEVER",
+          "RequestTemplates": {
+            "application/x-www-form-urlencoded": "#set($allParams = $input.params())\\n{\\n  \\"params\\" : {\\n    #foreach($type in $allParams.keySet())\\n    #set($params = $allParams.get($type))\\n    \\"$type\\" : {\\n      #foreach($paramName in $params.keySet())\\n      \\"$paramName\\" : \\"$util.escapeJavaScript($params.get($paramName))\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    }\\n    #if($foreach.hasNext),#end\\n    #end\\n  },\\n  \\"context\\" : {\\n    \\"apiId\\": \\"$context.apiId\\",\\n    \\"authorizer\\": {\\n      #foreach($property in $context.authorizer.keySet())\\n      \\"$property\\": \\"$context.authorizer.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"httpMethod\\": \\"$context.httpMethod\\",\\n    \\"identity\\": {\\n      #foreach($property in $context.identity.keySet())\\n      \\"$property\\": \\"$context.identity.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"requestId\\": \\"$context.requestId\\",\\n    \\"resourceId\\": \\"$context.resourceId\\",\\n    \\"resourcePath\\": \\"$context.resourcePath\\",\\n    \\"stage\\": \\"$context.stage\\"\\n  },\\n  \\"body\\": $input.json('$'),\\n  \\"meta\\": {\\n    \\"expectedResponseContentType\\": \\"text/html\\"\\n  }\\n}",
+            "application/json": "#set($allParams = $input.params())\\n{\\n  \\"params\\" : {\\n    #foreach($type in $allParams.keySet())\\n    #set($params = $allParams.get($type))\\n    \\"$type\\" : {\\n      #foreach($paramName in $params.keySet())\\n      \\"$paramName\\" : \\"$util.escapeJavaScript($params.get($paramName))\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    }\\n    #if($foreach.hasNext),#end\\n    #end\\n  },\\n  \\"context\\" : {\\n    \\"apiId\\": \\"$context.apiId\\",\\n    \\"authorizer\\": {\\n      #foreach($property in $context.authorizer.keySet())\\n      \\"$property\\": \\"$context.authorizer.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"httpMethod\\": \\"$context.httpMethod\\",\\n    \\"identity\\": {\\n      #foreach($property in $context.identity.keySet())\\n      \\"$property\\": \\"$context.identity.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"requestId\\": \\"$context.requestId\\",\\n    \\"resourceId\\": \\"$context.resourceId\\",\\n    \\"resourcePath\\": \\"$context.resourcePath\\",\\n    \\"stage\\": \\"$context.stage\\"\\n  },\\n  \\"body\\": $input.json('$'),\\n  \\"meta\\": {\\n    \\"expectedResponseContentType\\": \\"text/html\\"\\n  }\\n}"
           },
-          \"Type\": \"AWS\",
-          \"Uri\": {
-            \"Fn::Join\": [
-              \"\",
+          "Type": "AWS",
+          "Uri": {
+            "Fn::Join": [
+              "",
               [
-                \"arn:aws:apigateway:\",
+                "arn:aws:apigateway:",
                 {
-                  \"Ref\": \"AWS::Region\"
+                  "Ref": "AWS::Region"
                 },
-                \":lambda:path/2015-03-31/functions/\",
+                ":lambda:path/2015-03-31/functions/",
                 {
-                  \"Fn::GetAtt\": [
-                    \"LambdaBazAPI\",
-                    \"Arn\"
+                  "Fn::GetAtt": [
+                    "LambdaBazAPI",
+                    "Arn"
                   ]
                 },
-                \"/invocations\"
+                "/invocations"
               ]
             ]
           }
         },
-        \"MethodResponses\": [
+        "MethodResponses": [
           {
-            \"ResponseModels\": {
-              \"text/html\": {
-                \"Ref\": \"ModelHelloWorldModel\"
+            "ResponseModels": {
+              "text/html": {
+                "Ref": "ModelHelloWorldModel"
               }
             },
-            \"StatusCode\": 200
+            "StatusCode": 200
           },
           {
-            \"ResponseModels\": {
-              \"text/html\": {
-                \"Ref\": \"ModelHelloWorldModel\"
+            "ResponseModels": {
+              "text/html": {
+                "Ref": "ModelHelloWorldModel"
               }
             },
-            \"StatusCode\": 400
+            "StatusCode": 400
           },
           {
-            \"ResponseModels\": {
-              \"text/html\": {
-                \"Ref\": \"ModelHelloWorldModel\"
+            "ResponseModels": {
+              "text/html": {
+                "Ref": "ModelHelloWorldModel"
               }
             },
-            \"StatusCode\": 403
+            "StatusCode": 403
           },
           {
-            \"ResponseModels\": {
-              \"text/html\": {
-                \"Ref\": \"ModelHelloWorldModel\"
+            "ResponseModels": {
+              "text/html": {
+                "Ref": "ModelHelloWorldModel"
               }
             },
-            \"StatusCode\": 404
+            "StatusCode": 404
           },
           {
-            \"ResponseModels\": {
-              \"text/html\": {
-                \"Ref\": \"ModelHelloWorldModel\"
+            "ResponseModels": {
+              "text/html": {
+                "Ref": "ModelHelloWorldModel"
               }
             },
-            \"StatusCode\": 500
+            "StatusCode": 500
           },
           {
-            \"ResponseModels\": {
-              \"text/html\": {
-                \"Ref\": \"ModelHelloWorldModel\"
+            "ResponseModels": {
+              "text/html": {
+                "Ref": "ModelHelloWorldModel"
               }
             },
-            \"StatusCode\": 307,
-            \"ResponseParameters\": {
-              \"method.response.header.Location\": false
+            "StatusCode": 307,
+            "ResponseParameters": {
+              "method.response.header.Location": false
             }
           }
         ],
-        \"AuthorizationType\": \"CUSTOM\",
-        \"AuthorizerId\": {
-          \"Ref\": \"APIGAuthorizerBarAPI\"
+        "AuthorizationType": "CUSTOM",
+        "AuthorizerId": {
+          "Ref": "APIGAuthorizerBarAPI"
         }
       }
     },
-    \"PermissionForLambdaBarAPI\": {
-      \"Type\": \"AWS::Lambda::Permission\",
-      \"Properties\": {
-        \"Action\": \"lambda:InvokeFunction\",
-        \"FunctionName\": {
-          \"Fn::Sub\": \"${LambdaBarAPI.Arn}\"
+    "PermissionForLambdaBarAPI": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::Sub": "\x24{LambdaBarAPI.Arn}"
         },
-        \"Principal\": \"apigateway.amazonaws.com\",
-        \"SourceArn\": {
-          \"Fn::Sub\": \"arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${API}/prod*\"
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Sub": "arn:aws:execute-api:\x24{AWS::Region}:\x24{AWS::AccountId}:\x24{API}/prod*"
         }
       }
     },
-    \"ExecutionRoleForLambdaBarAPI\": {
-      \"Type\": \"AWS::IAM::Role\",
-      \"Properties\": {
-        \"AssumeRolePolicyDocument\": {
-          \"Version\": \"2012-10-17\",
-          \"Statement\": [
+    "ExecutionRoleForLambdaBarAPI": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
             {
-              \"Effect\": \"Allow\",
-              \"Principal\": {
-                \"Service\": [
-                  \"lambda.amazonaws.com\"
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
                 ],
-                \"AWS\": [
+                "AWS": [
                   {
-                    \"Fn::Sub\": \"arn:aws:iam::${AWS::AccountId}:root\"
+                    "Fn::Sub": "arn:aws:iam::\x24{AWS::AccountId}:root"
                   }
                 ]
               },
-              \"Action\": [
-                \"sts:AssumeRole\"
+              "Action": [
+                "sts:AssumeRole"
               ]
             }
           ]
         },
-        \"Path\": \"/\",
-        \"Policies\": [
+        "Path": "/",
+        "Policies": [
           {
-            \"PolicyName\": \"dawson-policy\",
-            \"PolicyDocument\": {
-              \"Version\": \"2012-10-17\",
-              \"Statement\": [
+            "PolicyName": "dawson-policy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
                 {
-                  \"Effect\": \"Allow\",
-                  \"Action\": [
-                    \"logs:CreateLogGroup\",
-                    \"logs:CreateLogStream\",
-                    \"logs:PutLogEvents\"
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
                   ],
-                  \"Resource\": {
-                    \"Fn::Sub\": \"arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*\"
+                  "Resource": {
+                    "Fn::Sub": "arn:aws:logs:\x24{AWS::Region}:\x24{AWS::AccountId}:*"
                   }
                 },
                 {
-                  \"Effect\": \"Allow\",
-                  \"Action\": [
-                    \"cloudformation:DescribeStacks\"
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudformation:DescribeStacks"
                   ],
-                  \"Resource\": {
-                    \"Fn::Join\": [
-                      \"\",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
                       [
-                        \"arn:aws:cloudformation:\",
+                        "arn:aws:cloudformation:",
                         {
-                          \"Ref\": \"AWS::Region\"
+                          "Ref": "AWS::Region"
                         },
-                        \":\",
+                        ":",
                         {
-                          \"Ref\": \"AWS::AccountId\"
+                          "Ref": "AWS::AccountId"
                         },
-                        \":stack/\",
+                        ":stack/",
                         {
-                          \"Ref\": \"AWS::StackName\"
+                          "Ref": "AWS::StackName"
                         },
-                        \"/*\"
+                        "/*"
                       ]
                     ]
                   }
@@ -1977,221 +1977,221 @@ module.exports[`primary template builder with a method using an authorizer`] = {
         ]
       }
     },
-    \"LambdaBarAPI\": {
-      \"Type\": \"AWS::Lambda::Function\",
-      \"Properties\": {
-        \"Handler\": \"dawsonindex.barAPI\",
-        \"Role\": {
-          \"Fn::GetAtt\": [
-            \"ExecutionRoleForLambdaBarAPI\",
-            \"Arn\"
+    "LambdaBarAPI": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Handler": "dawsonindex.barAPI",
+        "Role": {
+          "Fn::GetAtt": [
+            "ExecutionRoleForLambdaBarAPI",
+            "Arn"
           ]
         },
-        \"Code\": {},
-        \"Runtime\": \"nodejs4.3\",
-        \"MemorySize\": 1024,
-        \"Timeout\": 30,
-        \"Environment\": {
-          \"Variables\": {
-            \"DAWSON_DistributionWWW\": \"CloudFront disabled from config\",
-            \"NODE_ENV\": \"development\"
+        "Code": {},
+        "Runtime": "nodejs4.3",
+        "MemorySize": 1024,
+        "Timeout": 30,
+        "Environment": {
+          "Variables": {
+            "DAWSON_DistributionWWW": "CloudFront disabled from config",
+            "NODE_ENV": "development"
           }
         }
       }
     },
-    \"DeploymentAVA\": {
-      \"DependsOn\": [
-        \"MethodXxxGET\"
+    "DeploymentAVA": {
+      "DependsOn": [
+        "MethodXxxGET"
       ],
-      \"Type\": \"AWS::ApiGateway::Deployment\",
-      \"Properties\": {
-        \"RestApiId\": {
-          \"Ref\": \"API\"
+      "Type": "AWS::ApiGateway::Deployment",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "API"
         },
-        \"Description\": \"Automated deployment by dawson\"
+        "Description": "Automated deployment by dawson"
       }
     },
-    \"StageProd\": {
-      \"Type\": \"AWS::ApiGateway::Stage\",
-      \"Properties\": {
-        \"CacheClusterEnabled\": false,
-        \"DeploymentId\": {
-          \"Ref\": \"DeploymentAVA\"
+    "StageProd": {
+      "Type": "AWS::ApiGateway::Stage",
+      "Properties": {
+        "CacheClusterEnabled": false,
+        "DeploymentId": {
+          "Ref": "DeploymentAVA"
         },
-        \"Description\": \"prod Stage\",
-        \"RestApiId\": {
-          \"Ref\": \"API\"
+        "Description": "prod Stage",
+        "RestApiId": {
+          "Ref": "API"
         },
-        \"StageName\": \"prod\",
-        \"MethodSettings\": [
+        "StageName": "prod",
+        "MethodSettings": [
           {
-            \"HttpMethod\": \"*\",
-            \"ResourcePath\": \"/*\",
-            \"LoggingLevel\": \"INFO\",
-            \"DataTraceEnabled\": \"true\"
+            "HttpMethod": "*",
+            "ResourcePath": "/*",
+            "LoggingLevel": "INFO",
+            "DataTraceEnabled": "true"
           }
         ]
       }
     },
-    \"RoleAPIGatewayAccount\": {
-      \"Type\": \"AWS::IAM::Role\",
-      \"Properties\": {
-        \"AssumeRolePolicyDocument\": {
-          \"Version\": \"2012-10-17\",
-          \"Statement\": [
+    "RoleAPIGatewayAccount": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
             {
-              \"Effect\": \"Allow\",
-              \"Principal\": {
-                \"Service\": [
-                  \"apigateway.amazonaws.com\"
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "apigateway.amazonaws.com"
                 ]
               },
-              \"Action\": \"sts:AssumeRole\"
+              "Action": "sts:AssumeRole"
             }
           ]
         },
-        \"Path\": \"/\",
-        \"ManagedPolicyArns\": [
-          \"arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs\"
+        "Path": "/",
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
         ]
       }
     },
-    \"APIGatewayAccount\": {
-      \"Type\": \"AWS::ApiGateway::Account\",
-      \"Properties\": {
-        \"CloudWatchRoleArn\": {
-          \"Fn::Sub\": \"${RoleAPIGatewayAccount.Arn}\"
+    "APIGatewayAccount": {
+      "Type": "AWS::ApiGateway::Account",
+      "Properties": {
+        "CloudWatchRoleArn": {
+          "Fn::Sub": "\x24{RoleAPIGatewayAccount.Arn}"
         }
       }
     }
   },
-  \"Outputs\": {
-    \"BucketAssets\": {
-      \"Value\": {
-        \"Ref\": \"BucketAssets\"
+  "Outputs": {
+    "BucketAssets": {
+      "Value": {
+        "Ref": "BucketAssets"
       }
     },
-    \"DistributionWWW\": {
-      \"Value\": \"CloudFront disabled from config\"
+    "DistributionWWW": {
+      "Value": "CloudFront disabled from config"
     }
   }
-}",
+}`,
   cfTemplate: {
     Parameters: {
       DawsonStage: {
-        Type: "String",
-        Default: "devel"
+        Type: `String`,
+        Default: `devel`
       }
     },
     Resources: {
       BucketAssets: {
-        Type: "AWS::S3::Bucket",
+        Type: `AWS::S3::Bucket`,
         Properties: {
           WebsiteConfiguration: {
-            ErrorDocument: "index.html",
-            IndexDocument: "index.html"
+            ErrorDocument: `index.html`,
+            IndexDocument: `index.html`
           }
         }
       },
       API: {
-        Type: "AWS::ApiGateway::RestApi",
+        Type: `AWS::ApiGateway::RestApi`,
         Properties: {
-          Description: "REST API for dawson app",
-          Name: "AppAPIDevel"
+          Description: `REST API for dawson app`,
+          Name: `AppAPIDevel`
         }
       },
       ResourceXxx: {
-        Type: "AWS::ApiGateway::Resource",
+        Type: `AWS::ApiGateway::Resource`,
         Properties: {
           RestApiId: {
-            Ref: "API"
+            Ref: `API`
           },
           ParentId: {
-            "Fn::GetAtt": [
-              "API",
-              "RootResourceId"
+            'Fn::GetAtt': [
+              `API`,
+              `RootResourceId`
             ]
           },
-          PathPart: "xxx"
+          PathPart: `xxx`
         }
       },
       PermissionForLambdaBazAPI: {
-        Type: "AWS::Lambda::Permission",
+        Type: `AWS::Lambda::Permission`,
         Properties: {
-          Action: "lambda:InvokeFunction",
+          Action: `lambda:InvokeFunction`,
           FunctionName: {
-            "Fn::Sub": "${LambdaBazAPI.Arn}"
+            'Fn::Sub': `\x24{LambdaBazAPI.Arn}`
           },
-          Principal: "apigateway.amazonaws.com",
+          Principal: `apigateway.amazonaws.com`,
           SourceArn: {
-            "Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${API}/prod*"
+            'Fn::Sub': `arn:aws:execute-api:\x24{AWS::Region}:\x24{AWS::AccountId}:\x24{API}/prod*`
           }
         }
       },
       ExecutionRoleForLambdaBazAPI: {
-        Type: "AWS::IAM::Role",
+        Type: `AWS::IAM::Role`,
         Properties: {
           AssumeRolePolicyDocument: {
-            Version: "2012-10-17",
+            Version: `2012-10-17`,
             Statement: [
               {
-                Effect: "Allow",
+                Effect: `Allow`,
                 Principal: {
                   Service: [
-                    "lambda.amazonaws.com"
+                    `lambda.amazonaws.com`
                   ],
                   AWS: [
                     {
-                      "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:root"
+                      'Fn::Sub': `arn:aws:iam::\x24{AWS::AccountId}:root`
                     }
                   ]
                 },
                 Action: [
-                  "sts:AssumeRole"
+                  `sts:AssumeRole`
                 ]
               }
             ]
           },
-          Path: "/",
+          Path: `/`,
           Policies: [
             {
-              PolicyName: "dawson-policy",
+              PolicyName: `dawson-policy`,
               PolicyDocument: {
-                Version: "2012-10-17",
+                Version: `2012-10-17`,
                 Statement: [
                   {
-                    Effect: "Allow",
+                    Effect: `Allow`,
                     Action: [
-                      "logs:CreateLogGroup",
-                      "logs:CreateLogStream",
-                      "logs:PutLogEvents"
+                      `logs:CreateLogGroup`,
+                      `logs:CreateLogStream`,
+                      `logs:PutLogEvents`
                     ],
                     Resource: {
-                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*"
+                      'Fn::Sub': `arn:aws:logs:\x24{AWS::Region}:\x24{AWS::AccountId}:*`
                     }
                   },
                   {
-                    Effect: "Allow",
+                    Effect: `Allow`,
                     Action: [
-                      "cloudformation:DescribeStacks"
+                      `cloudformation:DescribeStacks`
                     ],
                     Resource: {
-                      "Fn::Join": [
-                        "",
+                      'Fn::Join': [
+                        ``,
                         [
-                          "arn:aws:cloudformation:",
+                          `arn:aws:cloudformation:`,
                           {
-                            Ref: "AWS::Region"
+                            Ref: `AWS::Region`
                           },
-                          ":",
+                          `:`,
                           {
-                            Ref: "AWS::AccountId"
+                            Ref: `AWS::AccountId`
                           },
-                          ":stack/",
+                          `:stack/`,
                           {
-                            Ref: "AWS::StackName"
+                            Ref: `AWS::StackName`
                           },
-                          "/*"
+                          `/*`
                         ]
                       ]
                     }
@@ -2203,13 +2203,13 @@ module.exports[`primary template builder with a method using an authorizer`] = {
         }
       },
       LambdaBazAPI: {
-        Type: "AWS::Lambda::Function",
+        Type: `AWS::Lambda::Function`,
         Properties: {
-          Handler: "dawsonindex.bazAPI",
+          Handler: `dawsonindex.bazAPI`,
           Role: {
-            "Fn::GetAtt": [
-              "ExecutionRoleForLambdaBazAPI",
-              "Arn"
+            'Fn::GetAtt': [
+              `ExecutionRoleForLambdaBazAPI`,
+              `Arn`
             ]
           },
           Code: {
@@ -2217,205 +2217,205 @@ module.exports[`primary template builder with a method using an authorizer`] = {
             S3Key: undefined,
             S3ObjectVersion: undefined
           },
-          Runtime: "nodejs4.3",
+          Runtime: `nodejs4.3`,
           MemorySize: 1024,
           Timeout: 30,
           Environment: {
             Variables: {
               DAWSON_BucketAssets: {
-                Ref: "BucketAssets"
+                Ref: `BucketAssets`
               },
-              DAWSON_DistributionWWW: "CloudFront disabled from config",
-              NODE_ENV: "development"
+              DAWSON_DistributionWWW: `CloudFront disabled from config`,
+              NODE_ENV: `development`
             }
           }
         }
       },
       ModelHelloWorldModel: {
-        Type: "AWS::ApiGateway::Model",
+        Type: `AWS::ApiGateway::Model`,
         Properties: {
-          ContentType: "application/json",
-          Description: "Model HelloWorldModel",
+          ContentType: `application/json`,
+          Description: `Model HelloWorldModel`,
           RestApiId: {
-            Ref: "API"
+            Ref: `API`
           },
-          Schema: "{}"
+          Schema: `{}`
         }
       },
       APIGAuthorizerBarAPI: {
-        Type: "AWS::ApiGateway::Authorizer",
+        Type: `AWS::ApiGateway::Authorizer`,
         Properties: {
           AuthorizerResultTtlInSeconds: 0,
           AuthorizerUri: {
-            "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path//2015-03-31/functions/${LambdaBarAPI.Arn}/invocations"
+            'Fn::Sub': `arn:aws:apigateway:\x24{AWS::Region}:lambda:path//2015-03-31/functions/\x24{LambdaBarAPI.Arn}/invocations`
           },
-          IdentitySource: "method.request.header.token",
-          Name: "APIGAuthorizerBarAPI",
+          IdentitySource: `method.request.header.token`,
+          Name: `APIGAuthorizerBarAPI`,
           RestApiId: {
-            Ref: "API"
+            Ref: `API`
           },
-          Type: "TOKEN"
+          Type: `TOKEN`
         }
       },
       MethodXxxGET: {
-        Type: "AWS::ApiGateway::Method",
+        Type: `AWS::ApiGateway::Method`,
         DependsOn: [
-          "APIGAuthorizerBarAPI"
+          `APIGAuthorizerBarAPI`
         ],
         Properties: {
           RestApiId: {
-            Ref: "API"
+            Ref: `API`
           },
           ResourceId: {
-            Ref: "ResourceXxx"
+            Ref: `ResourceXxx`
           },
-          HttpMethod: "GET",
+          HttpMethod: `GET`,
           Integration: {
-            IntegrationHttpMethod: "POST",
+            IntegrationHttpMethod: `POST`,
             IntegrationResponses: [
               {
                 ResponseParameters: {},
                 ResponseTemplates: {
-                  "text/html": "#set($inputRoot = $input.path('$'))
-$inputRoot.response"
+                  'text/html': `#set($inputRoot = $input.path('$'))
+$inputRoot.response`
                 },
                 StatusCode: 200
               },
               {
                 ResponseParameters: {},
                 ResponseTemplates: {
-                  "text/html": "#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
-$errorMessageObj.response"
+                  'text/html': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+$errorMessageObj.response`
                 },
-                SelectionPattern: ".*\"httpStatus\":500.*",
+                SelectionPattern: `.*"httpStatus":500.*`,
                 StatusCode: 500
               },
               {
                 ResponseParameters: {},
                 ResponseTemplates: {
-                  "text/html": "#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
-$errorMessageObj.response"
+                  'text/html': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+$errorMessageObj.response`
                 },
-                SelectionPattern: ".*\"httpStatus\":400.*",
+                SelectionPattern: `.*"httpStatus":400.*`,
                 StatusCode: 400
               },
               {
                 ResponseParameters: {},
                 ResponseTemplates: {
-                  "text/html": "#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
-$errorMessageObj.response"
+                  'text/html': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+$errorMessageObj.response`
                 },
-                SelectionPattern: ".*\"httpStatus\":403.*",
+                SelectionPattern: `.*"httpStatus":403.*`,
                 StatusCode: 403
               },
               {
                 ResponseParameters: {},
                 ResponseTemplates: {
-                  "text/html": "#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
-$errorMessageObj.response"
+                  'text/html': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+$errorMessageObj.response`
                 },
-                SelectionPattern: ".*\"httpStatus\":404.*",
+                SelectionPattern: `.*"httpStatus":404.*`,
                 StatusCode: 404
               }
             ],
-            PassthroughBehavior: "NEVER",
+            PassthroughBehavior: `NEVER`,
             RequestTemplates: {
-              "application/x-www-form-urlencoded": "#set($allParams = $input.params())
+              'application/x-www-form-urlencoded': `#set($allParams = $input.params())
 {
-  \"params\" : {
+  "params" : {
     #foreach($type in $allParams.keySet())
     #set($params = $allParams.get($type))
-    \"$type\" : {
+    "$type" : {
       #foreach($paramName in $params.keySet())
-      \"$paramName\" : \"$util.escapeJavaScript($params.get($paramName))\"
+      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
       #if($foreach.hasNext),#end
       #end
     }
     #if($foreach.hasNext),#end
     #end
   },
-  \"context\" : {
-    \"apiId\": \"$context.apiId\",
-    \"authorizer\": {
+  "context" : {
+    "apiId": "$context.apiId",
+    "authorizer": {
       #foreach($property in $context.authorizer.keySet())
-      \"$property\": \"$context.authorizer.get($property)\"
+      "$property": "$context.authorizer.get($property)"
       #if($foreach.hasNext),#end
       #end
     },
-    \"httpMethod\": \"$context.httpMethod\",
-    \"identity\": {
+    "httpMethod": "$context.httpMethod",
+    "identity": {
       #foreach($property in $context.identity.keySet())
-      \"$property\": \"$context.identity.get($property)\"
+      "$property": "$context.identity.get($property)"
       #if($foreach.hasNext),#end
       #end
     },
-    \"requestId\": \"$context.requestId\",
-    \"resourceId\": \"$context.resourceId\",
-    \"resourcePath\": \"$context.resourcePath\",
-    \"stage\": \"$context.stage\"
+    "requestId": "$context.requestId",
+    "resourceId": "$context.resourceId",
+    "resourcePath": "$context.resourcePath",
+    "stage": "$context.stage"
   },
-  \"body\": $input.json('$'),
-  \"meta\": {
-    \"expectedResponseContentType\": \"text/html\"
+  "body": $input.json('$'),
+  "meta": {
+    "expectedResponseContentType": "text/html"
   }
-}",
-              "application/json": "#set($allParams = $input.params())
+}`,
+              'application/json': `#set($allParams = $input.params())
 {
-  \"params\" : {
+  "params" : {
     #foreach($type in $allParams.keySet())
     #set($params = $allParams.get($type))
-    \"$type\" : {
+    "$type" : {
       #foreach($paramName in $params.keySet())
-      \"$paramName\" : \"$util.escapeJavaScript($params.get($paramName))\"
+      "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
       #if($foreach.hasNext),#end
       #end
     }
     #if($foreach.hasNext),#end
     #end
   },
-  \"context\" : {
-    \"apiId\": \"$context.apiId\",
-    \"authorizer\": {
+  "context" : {
+    "apiId": "$context.apiId",
+    "authorizer": {
       #foreach($property in $context.authorizer.keySet())
-      \"$property\": \"$context.authorizer.get($property)\"
+      "$property": "$context.authorizer.get($property)"
       #if($foreach.hasNext),#end
       #end
     },
-    \"httpMethod\": \"$context.httpMethod\",
-    \"identity\": {
+    "httpMethod": "$context.httpMethod",
+    "identity": {
       #foreach($property in $context.identity.keySet())
-      \"$property\": \"$context.identity.get($property)\"
+      "$property": "$context.identity.get($property)"
       #if($foreach.hasNext),#end
       #end
     },
-    \"requestId\": \"$context.requestId\",
-    \"resourceId\": \"$context.resourceId\",
-    \"resourcePath\": \"$context.resourcePath\",
-    \"stage\": \"$context.stage\"
+    "requestId": "$context.requestId",
+    "resourceId": "$context.resourceId",
+    "resourcePath": "$context.resourcePath",
+    "stage": "$context.stage"
   },
-  \"body\": $input.json('$'),
-  \"meta\": {
-    \"expectedResponseContentType\": \"text/html\"
+  "body": $input.json('$'),
+  "meta": {
+    "expectedResponseContentType": "text/html"
   }
-}"
+}`
             },
-            Type: "AWS",
+            Type: `AWS`,
             Uri: {
-              "Fn::Join": [
-                "",
+              'Fn::Join': [
+                ``,
                 [
-                  "arn:aws:apigateway:",
+                  `arn:aws:apigateway:`,
                   {
-                    Ref: "AWS::Region"
+                    Ref: `AWS::Region`
                   },
-                  ":lambda:path/2015-03-31/functions/",
+                  `:lambda:path/2015-03-31/functions/`,
                   {
-                    "Fn::GetAtt": [
-                      "LambdaBazAPI",
-                      "Arn"
+                    'Fn::GetAtt': [
+                      `LambdaBazAPI`,
+                      `Arn`
                     ]
                   },
-                  "/invocations"
+                  `/invocations`
                 ]
               ]
             }
@@ -2423,139 +2423,139 @@ $errorMessageObj.response"
           MethodResponses: [
             {
               ResponseModels: {
-                "text/html": {
-                  Ref: "ModelHelloWorldModel"
+                'text/html': {
+                  Ref: `ModelHelloWorldModel`
                 }
               },
               StatusCode: 200
             },
             {
               ResponseModels: {
-                "text/html": {
-                  Ref: "ModelHelloWorldModel"
+                'text/html': {
+                  Ref: `ModelHelloWorldModel`
                 }
               },
               StatusCode: 400
             },
             {
               ResponseModels: {
-                "text/html": {
-                  Ref: "ModelHelloWorldModel"
+                'text/html': {
+                  Ref: `ModelHelloWorldModel`
                 }
               },
               StatusCode: 403
             },
             {
               ResponseModels: {
-                "text/html": {
-                  Ref: "ModelHelloWorldModel"
+                'text/html': {
+                  Ref: `ModelHelloWorldModel`
                 }
               },
               StatusCode: 404
             },
             {
               ResponseModels: {
-                "text/html": {
-                  Ref: "ModelHelloWorldModel"
+                'text/html': {
+                  Ref: `ModelHelloWorldModel`
                 }
               },
               StatusCode: 500
             },
             {
               ResponseModels: {
-                "text/html": {
-                  Ref: "ModelHelloWorldModel"
+                'text/html': {
+                  Ref: `ModelHelloWorldModel`
                 }
               },
               StatusCode: 307,
               ResponseParameters: {
-                "method.response.header.Location": false
+                'method.response.header.Location': false
               }
             }
           ],
-          AuthorizationType: "CUSTOM",
+          AuthorizationType: `CUSTOM`,
           AuthorizerId: {
-            Ref: "APIGAuthorizerBarAPI"
+            Ref: `APIGAuthorizerBarAPI`
           }
         }
       },
       PermissionForLambdaBarAPI: {
-        Type: "AWS::Lambda::Permission",
+        Type: `AWS::Lambda::Permission`,
         Properties: {
-          Action: "lambda:InvokeFunction",
+          Action: `lambda:InvokeFunction`,
           FunctionName: {
-            "Fn::Sub": "${LambdaBarAPI.Arn}"
+            'Fn::Sub': `\x24{LambdaBarAPI.Arn}`
           },
-          Principal: "apigateway.amazonaws.com",
+          Principal: `apigateway.amazonaws.com`,
           SourceArn: {
-            "Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${API}/prod*"
+            'Fn::Sub': `arn:aws:execute-api:\x24{AWS::Region}:\x24{AWS::AccountId}:\x24{API}/prod*`
           }
         }
       },
       ExecutionRoleForLambdaBarAPI: {
-        Type: "AWS::IAM::Role",
+        Type: `AWS::IAM::Role`,
         Properties: {
           AssumeRolePolicyDocument: {
-            Version: "2012-10-17",
+            Version: `2012-10-17`,
             Statement: [
               {
-                Effect: "Allow",
+                Effect: `Allow`,
                 Principal: {
                   Service: [
-                    "lambda.amazonaws.com"
+                    `lambda.amazonaws.com`
                   ],
                   AWS: [
                     {
-                      "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:root"
+                      'Fn::Sub': `arn:aws:iam::\x24{AWS::AccountId}:root`
                     }
                   ]
                 },
                 Action: [
-                  "sts:AssumeRole"
+                  `sts:AssumeRole`
                 ]
               }
             ]
           },
-          Path: "/",
+          Path: `/`,
           Policies: [
             {
-              PolicyName: "dawson-policy",
+              PolicyName: `dawson-policy`,
               PolicyDocument: {
-                Version: "2012-10-17",
+                Version: `2012-10-17`,
                 Statement: [
                   {
-                    Effect: "Allow",
+                    Effect: `Allow`,
                     Action: [
-                      "logs:CreateLogGroup",
-                      "logs:CreateLogStream",
-                      "logs:PutLogEvents"
+                      `logs:CreateLogGroup`,
+                      `logs:CreateLogStream`,
+                      `logs:PutLogEvents`
                     ],
                     Resource: {
-                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*"
+                      'Fn::Sub': `arn:aws:logs:\x24{AWS::Region}:\x24{AWS::AccountId}:*`
                     }
                   },
                   {
-                    Effect: "Allow",
+                    Effect: `Allow`,
                     Action: [
-                      "cloudformation:DescribeStacks"
+                      `cloudformation:DescribeStacks`
                     ],
                     Resource: {
-                      "Fn::Join": [
-                        "",
+                      'Fn::Join': [
+                        ``,
                         [
-                          "arn:aws:cloudformation:",
+                          `arn:aws:cloudformation:`,
                           {
-                            Ref: "AWS::Region"
+                            Ref: `AWS::Region`
                           },
-                          ":",
+                          `:`,
                           {
-                            Ref: "AWS::AccountId"
+                            Ref: `AWS::AccountId`
                           },
-                          ":stack/",
+                          `:stack/`,
                           {
-                            Ref: "AWS::StackName"
+                            Ref: `AWS::StackName`
                           },
-                          "/*"
+                          `/*`
                         ]
                       ]
                     }
@@ -2567,13 +2567,13 @@ $errorMessageObj.response"
         }
       },
       LambdaBarAPI: {
-        Type: "AWS::Lambda::Function",
+        Type: `AWS::Lambda::Function`,
         Properties: {
-          Handler: "dawsonindex.barAPI",
+          Handler: `dawsonindex.barAPI`,
           Role: {
-            "Fn::GetAtt": [
-              "ExecutionRoleForLambdaBarAPI",
-              "Arn"
+            'Fn::GetAtt': [
+              `ExecutionRoleForLambdaBarAPI`,
+              `Arn`
             ]
           },
           Code: {
@@ -2581,79 +2581,79 @@ $errorMessageObj.response"
             S3Key: undefined,
             S3ObjectVersion: undefined
           },
-          Runtime: "nodejs4.3",
+          Runtime: `nodejs4.3`,
           MemorySize: 1024,
           Timeout: 30,
           Environment: {
             Variables: {
-              DAWSON_DistributionWWW: "CloudFront disabled from config",
-              NODE_ENV: "development"
+              DAWSON_DistributionWWW: `CloudFront disabled from config`,
+              NODE_ENV: `development`
             }
           }
         }
       },
       DeploymentAVA: {
         DependsOn: [
-          "MethodXxxGET"
+          `MethodXxxGET`
         ],
-        Type: "AWS::ApiGateway::Deployment",
+        Type: `AWS::ApiGateway::Deployment`,
         Properties: {
           RestApiId: {
-            Ref: "API"
+            Ref: `API`
           },
-          Description: "Automated deployment by dawson"
+          Description: `Automated deployment by dawson`
         }
       },
       StageProd: {
-        Type: "AWS::ApiGateway::Stage",
+        Type: `AWS::ApiGateway::Stage`,
         Properties: {
           CacheClusterEnabled: false,
           DeploymentId: {
-            Ref: "DeploymentAVA"
+            Ref: `DeploymentAVA`
           },
-          Description: "prod Stage",
+          Description: `prod Stage`,
           RestApiId: {
-            Ref: "API"
+            Ref: `API`
           },
-          StageName: "prod",
+          StageName: `prod`,
           MethodSettings: [
             {
-              HttpMethod: "*",
-              ResourcePath: "/*",
-              LoggingLevel: "INFO",
-              DataTraceEnabled: "true"
+              HttpMethod: `*`,
+              ResourcePath: `/*`,
+              LoggingLevel: `INFO`,
+              DataTraceEnabled: `true`
             }
           ]
         }
       },
       RoleAPIGatewayAccount: {
-        Type: "AWS::IAM::Role",
+        Type: `AWS::IAM::Role`,
         Properties: {
           AssumeRolePolicyDocument: {
-            Version: "2012-10-17",
+            Version: `2012-10-17`,
             Statement: [
               {
-                Effect: "Allow",
+                Effect: `Allow`,
                 Principal: {
                   Service: [
-                    "apigateway.amazonaws.com"
+                    `apigateway.amazonaws.com`
                   ]
                 },
-                Action: "sts:AssumeRole"
+                Action: `sts:AssumeRole`
               }
             ]
           },
-          Path: "/",
+          Path: `/`,
           ManagedPolicyArns: [
-            "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+            `arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs`
           ]
         }
       },
       APIGatewayAccount: {
-        Type: "AWS::ApiGateway::Account",
+        Type: `AWS::ApiGateway::Account`,
         Properties: {
           CloudWatchRoleArn: {
-            "Fn::Sub": "${RoleAPIGatewayAccount.Arn}"
+            'Fn::Sub': `\x24{RoleAPIGatewayAccount.Arn}`
           }
         }
       }
@@ -2661,11 +2661,11 @@ $errorMessageObj.response"
     Outputs: {
       BucketAssets: {
         Value: {
-          Ref: "BucketAssets"
+          Ref: `BucketAssets`
         }
       },
       DistributionWWW: {
-        Value: "CloudFront disabled from config"
+        Value: `CloudFront disabled from config`
       }
     }
   },
