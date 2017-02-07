@@ -58,7 +58,7 @@
   },
   "bin": "dist/index.js",
   "devDependencies": {
-    "ava": "^0.18.0",
+    "ava": "https://github.com/lusentis/ava#replace-snapshot",
     "deep-sort-object": "^1.0.1",
     "eslint": "^3.14.1",
     "eslint-config-semistandard": "^7.0.0",
