@@ -4,7 +4,7 @@ dawson documentation
 dawson is a [serverless](https://auth0.com/blog/what-is-serverless/) web framework for Node.js on AWS. dawson uses [AWS CloudFormation](https://aws.amazon.com/cloudformation/), [Amazon CloudFront](https://aws.amazon.com/cloudfront/), [Amazon API Gateway](https://aws.amazon.com/apigateway/) and  [AWS Lambda](https://aws.amazon.com/lambda/) to deploy the backend code and to manage the infrastructure for you. 
 
 ### Is dawson for me?
-👍🏽 I'm building a️ single-page app/website with a backend  
+👍🏽 I'm building a single-page app/website with a backend  
 👍🏽 I'm building an API   
 👍🏽 I'm building a server-rendered app/website  
 
@@ -136,10 +136,11 @@ dawson ships a few commands that you should use to manage your application, here
 When you run the `$ dawson deploy` command, dawson reads your file's contents and constructs a (*JSON*) description of the AWS infrastructure that needs to be created (functions, API endpoints, etc...). Such description is called **Template**. The Template is then uploaded to AWS, which performs the actual deploy. AWS takes care of creating resources, calculating changes and to perform the actual deployment. 
 
 **The description will contain the following Resources:**
-- each Function, defined as an [AWS Lambda Function](https://aws.amazon.com/lambda/faqs/)
-- an [API Gateway HTTP Endpoint](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-create-api-step-by-step.html), linked to each function (if a `path` is set)
-- one [S3 Bucket](https://docs.aws.amazon.com/AmazonS3/latest/dev/UsingBucket.html) is created and your static assets (html, css, js,...) are uploaded there; dawson calls it `BucketAssets`
-- a [CloudFront Distribution](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html) (*like a CDN*) is created and is configured to serve the static assets from S3 and the API Endpoints from API Gateway; dawson calls it `DistributionWWW`
+
+- each Function, defined as an [AWS Lambda Function](https://aws.amazon.com/lambda/faqs/)  
+- an [API Gateway HTTP Endpoint](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-create-api-step-by-step.html), linked to each function (if a `path` is set)  
+- one [S3 Bucket](https://docs.aws.amazon.com/AmazonS3/latest/dev/UsingBucket.html) is created and your static assets (html, css, js,...) are uploaded there; dawson calls it `BucketAssets`  
+- a [CloudFront Distribution](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html) (*like a CDN*) is created and is configured to serve the static assets from S3 and the API Endpoints from API Gateway; dawson calls it `WWWDistribution`  
 - *other support resources*
 
 *Reference architecture:*
