@@ -30,6 +30,8 @@ $ export AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... AWS_REGION=...
 $ dawson deploy
 ```
 
+# Table of Contents
+
 <!-- toc -->
 
 - [0. Working with AWS](#0-working-with-aws)
