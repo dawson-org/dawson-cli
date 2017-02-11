@@ -20,7 +20,7 @@ export default function createError (
 
     const msg = '\n' + stripIndent`
 
-${errorTitle} 
+${errorTitle}
 ${chalk.red.bold(kind)}
 
 ${reasonTitle}

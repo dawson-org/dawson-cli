@@ -1,5 +1,9 @@
 {
-  "extends": "semistandard",
+  "extends": [
+    "semistandard",
+    "plugin:import/errors",
+    "plugin:import/warnings"
+  ],
   "rules": {
     "no-template-curly-in-string": 0,
     "object-curly-spacing": [1, "always"]
