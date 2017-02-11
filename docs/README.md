@@ -260,7 +260,7 @@ Additionally, every function has access to a `process.env` Object.
 dawson sets the following properties:
 * **`NODE_ENV`** will match the value of `process.env.NODE_ENV` that was set when executing `$ dawson deploy`
 * **`DAWSON_BucketAssets`** the Physical Resource Name of the S3 Bucket that contains the static assets
-* **`DAWSON_DistributionWWW`** the CNAME (DNS name) of the CloudFront Distribution
+* **`DAWSON_WWWDistribution`** the CNAME (DNS name) of the CloudFront Distribution
 * each of the Template Outputs, including custom Outputs, as `DAWSON_<OutputName>`. For Example, a custom Output named `FooBar`, will be available from your Functions as `process.env.DAWSON_FooBar` (Output Name's CaSe is preserved).
 
 See Chapter 6 for details about referencing Custom Resources.
@@ -352,7 +352,7 @@ export function fetchMe (params) {
   }
 }
 fetchMe.api = {
-  path: '/fetchMyJSON',
+  path: 'fetchMyJSON',
   responseContentType: 'application/json'
 }
 ```
@@ -365,7 +365,7 @@ export function fetchAsync (params) {
   })
 }
 fetchAsync.api = {
-  path: '/fetchSomething'
+  path: 'fetchSomething'
 }
 ```
 ```js
@@ -428,7 +428,7 @@ foo.api = {
 **Required**: yes | **Type**: `string`|`boolean`
 **Use for**: Specifying an HTTP path 
 
-The HTTP path to this function, without leading and trailing slashes.  
+The HTTP path to this function, *without* leading and trailing slashes.  
 The path must be unique in your whole app. You may use path parameters placeholder, as in API Gateway, by sorrounding the parameter name with `{}`).  
 If `false`, no API Gateway method will be deployed (see [Function Parameters](./Function-Parameters) for details).  
 
