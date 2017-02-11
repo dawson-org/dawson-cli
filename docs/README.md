@@ -125,7 +125,7 @@ dawson reads the contents of a file named `api.js` in your current working direc
 dawson uses the `name` field in the `package.json` file in your current working directory to determine the app name, which will be used as a prefix for many AWS Resources that are created automatically. Make sure you have correctly set the `name` field it's *not possible to change* it later.
 
 ## 1.3 the dawson CLI
-dawson ships a few commands that you should use to manage your application, here's a brief overview. Up-to-date reference for commands and argumends may be accessed using `$ dawson --help`.
+dawson ships a few commands that you should use to manage your application, here's a brief overview. Up-to-date reference for commands and arguments may be accessed using `$ dawson --help`.
 
 `$ dawson deploy` creates or updates the whole infrastructure and deploys your application  
 `$ dawson log -t -f <function>` pulls function's logs from AWS in real time  
