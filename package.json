@@ -1,6 +1,6 @@
 {
   "name": "dawson",
-  "version": "0.16.1",
+  "version": "0.17.0-1",
   "description": "Serverless Web Framework for AWS Lambda and API Gateway",
   "repository": "https://github.com/lusentis/dawson",
   "main": "dist/index.js",
@@ -8,14 +8,14 @@
     "clean": "rm -rf dist/",
     "compile": "babel -s true --source-maps inline -d dist/ src/ --ignore *.AppleDouble*",
     "link:watch": "nodemon -w src -x npm -- run lint-link",
-    "format": "prettier-eslint --write src/**/*.js | snazzy",
-    "lint": "npm run format",
+    "format": "prettier-eslint --write src/**/*.js",
+    "lint": "eslint src/**/*.js",
     "lint-link": "npm run lint && npm link",
     "lint:watch": "nodemon -w src -x npm -- run lint",
     "prepublish": "npm run clean && npm run compile",
     "pre-commit": "npm run lint",
-    "coverage-report": "nyc report --check-coverage --branches 100 --functions 100 --lines 100 --statements 100 --reporter=lcov",
-    "test": "nyc ava src/**/*.spec.js && npm run coverage-report"
+    "coverage-report": "nyc report --check-coverage --functions 100 --lines 100 --statements 100 --reporter=lcov",
+    "test": "npm run lint && nyc ava src/**/*.spec.js && npm run coverage-report"
   },
   "engines": {
     "node": ">=6"
@@ -24,7 +24,9 @@
   "license": "GPL-3.0",
   "dependencies": {
     "aws-sdk": "^2.7.17",
+    "babel-cli": "^6.14.0",
     "babel-polyfill": "^6.16.0",
+    "babel-preset-dawson": "0.0.3",
     "babel-register": "^6.16.3",
     "chalk": "^1.1.3",
     "chokidar": "^1.6.1",
@@ -39,7 +41,6 @@
     "hard-rejection": "^1.0.0",
     "http-proxy": "^1.14.0",
     "indent-string": "^3.0.0",
-    "json5": "^0.5.1",
     "listr": "^0.10.0",
     "listr-verbose-renderer": "^0.3.0",
     "lodash": "^4.17.2",
@@ -57,14 +58,12 @@
   },
   "bin": "dist/index.js",
   "devDependencies": {
-    "ava": "^0.18.0",
-    "babel-cli": "^6.14.0",
-    "babel-plugin-transform-object-rest-spread": "^6.20.2",
-    "babel-preset-env": "^1.1.4",
+    "ava": "https://github.com/lusentis/ava#replace-snapshot",
     "deep-sort-object": "^1.0.1",
     "eslint": "^3.14.1",
     "eslint-config-semistandard": "^7.0.0",
     "eslint-config-standard": "^6.2.1",
+    "eslint-plugin-import": "^2.2.0",
     "eslint-plugin-promise": "^3.4.0",
     "eslint-plugin-standard": "^2.0.1",
     "nyc": "^10.1.2",
@@ -78,6 +77,11 @@
     ]
   },
   "nyc": {
+    "exclude": [
+      "**/*.spec.js",
+      "src/logger.js",
+      "src/config.js"
+    ],
     "require": [
       "babel-register"
     ],

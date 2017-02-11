@@ -31,9 +31,9 @@ import taskCreateBundle from '../libs/createBundle';
 import { debug, error, log, success, warning } from '../logger';
 import {
   getStackOutputs,
-  getStackResources,
-  templateStackName
-} from '../libs/cloudformation';
+  getStackResources
+} from '../libs/aws/cfn-get-stack-info-helpers';
+import { templateStackName } from '../factories/cloudformation';
 import { templateLambdaRoleName } from '../factories/cf_lambda';
 
 const sts = new AWS.STS({});

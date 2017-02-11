@@ -1,178 +1,14 @@
 import AWS from 'aws-sdk';
-import chalk from 'chalk';
-import moment from 'moment';
 import Observable from 'zen-observable';
+import { debug, error } from '../../logger';
+import moment from 'moment';
+import chalk from 'chalk';
 import Table from 'cli-table';
+import createError from '../../libs/error';
 import { oneLineTrim, stripIndent } from 'common-tags';
 
-import createError from '../libs/error';
-import { AWS_REGION } from '../config';
-import { debug, error } from '../logger';
-
-const cloudformation = new AWS.CloudFormation({ apiVersion: '2010-05-15' });
-
-const SAFE_STACK_POLICY = {
-  // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/protect-stack-resources.html
-  // DynamoDB tables & S3 Buckets shall not be deleted
-  Statement: [
-    {
-      Effect: 'Deny',
-      Principal: '*',
-      Action: ['Update:Replace', 'Update:Delete'],
-      Resource: '*',
-      Condition: {
-        StringEquals: {
-          ResourceType: [
-            'AWS::DynamoDB::Table',
-            'AWS::ApiGateway::RestApi',
-            'AWS::CloudFront::Distribution',
-            'AWS::S3::Bucket'
-          ]
-        }
-      }
-    },
-    { Effect: 'Allow', Principal: '*', Action: 'Update:*', Resource: '*' }
-  ]
-};
-
-const UNSAFE_STACK_POLICY = {
-  Statement: [
-    { Effect: 'Allow', Action: 'Update:*', Principal: '*', Resource: '*' }
-  ]
-};
-
-export function templateStackName ({ appName, stage }) {
-  const stageUCFirst = stage ? stage[0].toUpperCase() + stage.substring(1) : '';
-  return `${appName}${stageUCFirst}`;
-}
-
-function stackUpload ({ bucketName, stackBody }) {
-  const s3 = new AWS.S3({});
-  const key = 'dawson-root-template-' +
-    Date.now() +
-    '-' +
-    Math.floor(Math.random() * 1000) +
-    '.template';
-  const s3Params = {
-    Bucket: bucketName,
-    Key: key,
-    Body: new Buffer(stackBody, 'utf-8')
-  };
-  return s3.putObject(s3Params).promise().then(data => {
-    const s3Subdomain = AWS_REGION === 'us-east-1' ? 's3' : `s3-${AWS_REGION}`;
-    const url = `https://${s3Subdomain}.amazonaws.com/${bucketName}/${key}`;
-    const signedDebugUrl = s3.getSignedUrl('getObject', {
-      Bucket: bucketName,
-      Key: key,
-      Expires: 300
-    });
-    debug('Template URL (signed)', signedDebugUrl);
-    return url;
-  });
-}
-
-function checkStackExists ({ stackName }) {
-  return new Promise((resolve, reject) => {
-    cloudformation.describeStacks({ StackName: stackName }, (err, data) => {
-      if (err || !data.Stacks.find(s => s.StackName === stackName)) {
-        debug('No existing stack found, creating new');
-        return resolve(false);
-      }
-      debug('Updating existing stack');
-      return resolve(true);
-    });
-  });
-}
-
-export async function buildStack (
-  { supportBucketName = null, stackName, cfTemplateJSON, inline = false }
-) {
-  const templateSource = inline
-    ? { TemplateBody: cfTemplateJSON }
-    : {
-      TemplateURL: (
-          await stackUpload({
-            bucketName: supportBucketName,
-            stackBody: cfTemplateJSON
-          })
-        )
-    };
-  var params = {
-    StackName: stackName,
-    Capabilities: ['CAPABILITY_IAM'],
-    Tags: [{ Key: 'createdBy', Value: 'dawson' }],
-    ...templateSource,
-    StackPolicyBody: JSON.stringify(SAFE_STACK_POLICY),
-    OnFailure: 'DO_NOTHING' // deleted when updating
-  };
-  return params;
-}
-
-export async function createOrUpdateStack (
-  { stackName, cfParams, dryrun, ignoreNoUpdates = false }
-) {
-  const stackExists = await checkStackExists({ stackName });
-  let updateStackResponse;
-
-  try {
-    if (stackExists) {
-      delete cfParams.OnFailure;
-      updateStackResponse = await cloudformation
-        .updateStack(cfParams)
-        .promise();
-    } else {
-      updateStackResponse = await cloudformation
-        .createStack(cfParams)
-        .promise();
-    }
-  } catch (err) {
-    if (
-      ignoreNoUpdates && err.message.match(/No updates are to be performed/i)
-    ) {
-      debug('This stack does not need any update'.gray);
-      return false;
-    }
-    error('Stack update not accepted:'.bold.red, err.message.red);
-    throw err;
-  }
-
-  return updateStackResponse;
-}
-
-export async function removeStackPolicy ({ stackName }) {
-  return await cloudformation
-    .setStackPolicy({
-      StackName: stackName,
-      StackPolicyBody: JSON.stringify(UNSAFE_STACK_POLICY)
-    })
-    .promise();
-}
-
-export async function restoreStackPolicy ({ stackName }) {
-  return await cloudformation
-    .setStackPolicy({
-      StackName: stackName,
-      StackPolicyBody: JSON.stringify(SAFE_STACK_POLICY)
-    })
-    .promise();
-}
-
-export function getStackOutputs ({ stackName }) {
-  return cloudformation
-    .describeStacks({ StackName: stackName })
-    .promise()
-    .then(data => data.Stacks[0].Outputs);
-}
-
-export function getStackResources ({ stackName }) {
-  return cloudformation
-    .describeStackResources({ StackName: stackName })
-    .promise()
-    .then(data => data.StackResources);
-}
-
 let LAST_STACK_REASON = '';
-export function waitForUpdateCompleted (args) {
+export function promiseForUpdateCompleted (args) {
   const startTimestamp = Date.now();
   return new Promise((resolve, reject) => {
     setTimeout(
@@ -216,6 +52,8 @@ function uiPollStackStatusHelper (
   done,
   onProgress = () => {}
 ) {
+  const cloudformation = new AWS.CloudFormation({});
+  const AWS_REGION = AWS.config.region;
   cloudformation.describeStacks({ StackName: stackName }, (err, data) => {
     if (err) {
       error('Cannot call describeStacks', err.message);

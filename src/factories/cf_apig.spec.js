@@ -708,21 +708,19 @@ $inputRoot.response`
 });
 
 test('templateDeployment', t => {
-  const date = new Date().toISOString();
   const expected = {
     Deployment1234ABC: {
       DependsOn: ['MethodUsersGET'],
       Type: 'AWS::ApiGateway::Deployment',
       Properties: {
         RestApiId: { Ref: 'API' },
-        Description: `Automated deployment by dawson on ${date}`
+        Description: `Automated deployment by dawson`
       }
     }
   };
   const actual = templateDeployment({
     deploymentUid: '1234ABC',
-    dependsOnMethods: [{ resourceName: 'Users', httpMethod: 'GET' }],
-    date
+    dependsOnMethods: [{ resourceName: 'Users', httpMethod: 'GET' }]
   });
   t.deepEqual(
     sortObject(expected),
