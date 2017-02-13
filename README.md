@@ -24,7 +24,7 @@ $ dawson deploy
 ```
 
 ## Documentation
-[Getting Started Guide, API & CLI Documentation](https://github.com/dawson-org/dawson-cli/wiki)
+[Getting Started Guide, API & CLI Documentation](https://github.com/dawson-org/dawson-cli/blob/master/docs/README.md)
 
 
 ## About
