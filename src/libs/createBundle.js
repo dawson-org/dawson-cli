@@ -5,9 +5,23 @@ import fs from 'fs';
 import Listr from 'listr';
 import promisify from 'es6-promisify';
 import temp from 'temp';
+import path from 'path';
 
 import createIndex from './createIndex';
-import loadConfig from '../config';
+import loadConfig, { BABEL_CONFIG } from '../config';
+import { debug } from '../logger';
+
+const makeBabelArgs = (ignore = []) => ([
+  '.',
+  '--out-dir',
+  '.dawson-dist/',
+  '--ignore',
+  `node_modules,${ignore.join(',')}`,
+  (BABEL_CONFIG.babelrc === false) ? '--no-babelrc' : null,
+  '--presets',
+  BABEL_CONFIG.presets.map(p => Array.isArray(p) ? p[0] : p).join(','), // only preset names, without config
+  '--copy-files'
+].filter(Boolean));
 
 const s3 = new AWS.S3({});
 const writeFile = promisify(fs.writeFile.bind(fs));
@@ -38,20 +52,15 @@ async function createTempFiles () {
   return { tempZipFile };
 }
 
-function compile ({ ignore = [] }) {
-  return execa('babel', [
-    '.',
-    '--out-dir',
-    '.dawson-dist/',
-    '--ignore',
-    `node_modules,${ignore.join(',')}`,
-    '--copy-files'
-  ]);
+function compile ({ ignore }) {
+  const babelPath = path.join(__dirname, '..', '..', 'node_modules', '.bin', 'babel');
+  debug('Babel path =', babelPath);
+  return execa(babelPath, makeBabelArgs(ignore));
 }
 
 function install ({ skipChmod }) {
   return execa.shell(
-    `cd .dawson-dist && yarn add babel-polyfill && yarn ${skipChmod
+    `cd .dawson-dist && yarn add babel-cli babel-polyfill babel-preset-env babel-plugin-transform-object-rest-spread && yarn ${skipChmod
       ? ''
       : '&& chmod -Rf a+rX .'}`
   );

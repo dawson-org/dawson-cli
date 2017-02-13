@@ -1,5 +1,6 @@
 import { templateAPIID } from './cf_apig';
 import { templateAssetsBucketName } from './cf_s3';
+import { debug } from '../logger';
 
 // WebACL
 //
@@ -46,6 +47,7 @@ function templateViewerCertificate (
   { stageName, alias, acmCertificateArn, skipAcmCertificate }
 ) {
   if (!alias || skipAcmCertificate) {
+    debug(`Skipping ACM SSL/TLS Certificate validation`);
     return { ViewerCertificate: { CloudFrontDefaultCertificate: 'true' } };
   }
   return {

@@ -342,7 +342,7 @@ export function templateMethod (
     }
   };
 }
-export function templateDeployment ({ deploymentUid, dependsOnMethods, date }) {
+export function templateDeployment ({ deploymentUid, dependsOnMethods }) {
   const dependsOn = dependsOnMethods.map(methodInfo => {
     const { resourceName, httpMethod } = methodInfo;
     return templateMethodName({ resourceName, httpMethod });
@@ -353,7 +353,7 @@ export function templateDeployment ({ deploymentUid, dependsOnMethods, date }) {
       Type: 'AWS::ApiGateway::Deployment',
       Properties: {
         RestApiId: { Ref: `${templateAPIID()}` },
-        Description: `Automated deployment by dawson on ${date}`
+        Description: `Automated deployment by dawson`
       }
     }
   };
@@ -416,9 +416,10 @@ export function templateCloudWatchRole () {
   };
 }
 function templateAuthorizerName ({ authorizerFunctionName }) {
-  return `APIGAuthorizer${authorizerFunctionName[
-    0
-  ].toUpperCase()}${authorizerFunctionName.slice(1)}`;
+  // sorry for the following line, but it's needed to avoid prettier
+  // to wrap the line in a point that makes eslint complain
+  const firstChar = authorizerFunctionName[0].toUpperCase();
+  return `APIGAuthorizer${firstChar}${authorizerFunctionName.slice(1)}`;
 }
 export function templateAuthorizer ({ authorizerFunctionName }) {
   const lambdaLogicalName = templateLambdaName({

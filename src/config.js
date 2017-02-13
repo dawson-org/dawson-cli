@@ -1,14 +1,20 @@
 
 // this will compile on-the-fly the `api.js` required below
 // by `require(PROJECT_ROOT + '/api');`
-require('babel-register');
+
+export const BABEL_CONFIG = {
+  // also used in libs/createBundle.js
+  presets: ['dawson'],
+  babelrc: false
+};
+
+require('babel-register')(BABEL_CONFIG);
 
 import AWS from 'aws-sdk';
 import execa from 'execa';
-import JSON5 from 'json5';
 import Type from 'prop-types';
 import { inspect } from 'util';
-import { readFileSync } from 'fs';
+import { existsSync } from 'fs';
 import { stripIndent } from 'common-tags';
 
 import createError from './libs/error';
@@ -150,30 +156,23 @@ function validateDawsonConfig (dawson) {
   return true;
 }
 
+function execIfExists (...args) {
+  try {
+    return execa.sync(...args);
+  } catch (e) {
+    return { status: -127 };
+  }
+}
+
 function validateSystem () {
-  const zipResult = execa.sync('zip', ['--help']);
+  const zipResult = execIfExists('zip', ['--help']);
   if (zipResult.status !== 0) {
     return [
       `zip is a required dependency but the zip binary was not found: ${zipResult.error.message}`,
       `install the 'zip' command using operating system's package manager`
     ];
   }
-
-  const babelResult = execa.sync('babel', ['--version']);
-  const babelVersion = babelResult.stdout;
-  if (babelResult.status !== 0) {
-    return [
-      `babel-cli is a required dependency but the babel binary v6.x.x was not found: ${babelResult.error.message}`,
-      `Please check the documentation: https://github.com/dawson-org/dawson-cli/wiki/`
-    ];
-  }
-  if (!babelVersion || !babelVersion.toString().match(/^6\./)) {
-    return [
-      `babel-cli is a required dependency but the babel binary v6.x was not found: ${babelResult.error.message}`,
-      `Please check the documentation: https://github.com/dawson-org/dawson-cli/wiki/`
-    ];
-  }
-  const yarnResult = execa.sync('yarn', ['help']);
+  const yarnResult = execIfExists('yarn', ['help']);
   if (yarnResult.status !== 0) {
     return [
       `yarn is a required dependency but the yarn binary was not found: ${yarnResult.error.message}`,
@@ -184,7 +183,7 @@ function validateSystem () {
 }
 
 export function validateDocker () {
-  const dockerResult = execa.sync('docker', ['--help']);
+  const dockerResult = execIfExists('docker', ['--help']);
   if (dockerResult.status !== 0) {
     throw new Error(stripIndent`
       docker is a required dependency but the docker binary was not found: ${dockerResult.error.message}.
@@ -200,47 +199,24 @@ function validatePackageJSON (source) {
       `Please check the documentation: https://github.com/dawson-org/dawson-cli/wiki/`
     ];
   }
-  if (!source.devDependencies || !Object.keys(source.devDependencies).includes('babel-preset-env')) {
-    return [
-      `You are missing a required devDependency: 'babel-preset-env'.`,
-      stripIndent`
-        Please add 'babel-preset-env' to the 'devDependencies' field in package.json.
-        Check the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/
-      `
-    ];
-  }
   return validateDawsonConfig(source.dawson);
 }
 
 function validateBabelRc (rootDir) {
-  try {
-    const babelRcContents = readFileSync(rootDir + '/.babelrc');
-    const babelConfig = JSON5.parse(babelRcContents);
-    if (!babelConfig.presets ||
-        !babelConfig.presets.some(preset =>
-          JSON.stringify(preset) === JSON.stringify(['env', { 'targets': { 'node': 4 } }]))
-      ) {
-      throw new Error(`missing preset "env" with "node": 4 target`);
-    }
-    return true;
-  } catch (e) {
-    return [
-      `Babel is missing the 'env' preset`,
-      stripIndent`
-        You need to create a .babelrc file and specify at least the "env" preset (${e.message}).
-        You can copy-paste the following lines in a '${rootDir}/.babelrc' file:
-        {
-          "presets": [
-            ["env", { "targets": { "node": 4 } }]
-          ]
-        }
+  const error = [
+    `You cannot configure babel with a .babelrc, please use the "babel" property in your package.json`,
+    stripIndent`
+      Just move the contents of the .babelrc file into your package.json.
 
-        If you want to skip this check and you're absolutely sure to have configured babel
-        correctly, you can run this command with --skip-babelrc-validation
-        Check the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/
-      `
-    ];
+      If you want to skip this check and you're absolutely sure to have configured babel
+      correctly, you can run this command with --skip-babelrc-validation
+      Fore more info see https://babeljs.io/docs/usage/babelrc/#use-via-package-json
+    `
+  ];
+  if (existsSync(rootDir + '/.babelrc')) {
+    return error;
   }
+  return true;
 }
 
 function validateAPI (source) {
@@ -338,7 +314,7 @@ export default function loadConfig (rootDir = process.cwd()) {
   if (!requiredPkgJson.name) {
     console.error(createError({
       kind: 'Missing app name',
-      reason: `The package.json shuold contain a 'name' field`,
+      reason: `The package.json should contain a 'name' field`,
       solution: stripIndent`
         * add a non-empty 'name' field to your package.json.
         `
@@ -357,12 +333,12 @@ export default function loadConfig (rootDir = process.cwd()) {
         solution: stripIndent`
         * check your babel configuration, you may need a syntax plugin if you are
           using an experimental syntax
-        * check the syntax of the api.js file by running it with 'babel-node'
+        * check the syntax of the api.js file by running it with 'babel-node --presets babel-preset-dawson'
         `
       }).toFormattedString());
       process.exit(1);
     }
-    if (e.message.match(/cannot find module/i)) {
+    if (e.message.match(/cannot find module.*\/api'$/i)) {
       console.error(createError({
         kind: 'Cannot find api.js',
         reason: 'There is no api.js file in the current directory',
@@ -374,6 +350,21 @@ export default function loadConfig (rootDir = process.cwd()) {
         * check if the file exists by running 'stat ${rootDir}/api.js'
         * run dawson from the correct folder
         * check file permissions on api.js
+        `
+      }).toFormattedString());
+      process.exit(1);
+    }
+    if (e.message.match(/Couldn't find preset "(.*?)" relative to/i)) {
+      console.error(createError({
+        kind: 'Missing babel dependencies',
+        reason: 'Some babel presets or plugins could not be loaded',
+        detailedReason: stripIndent`
+          Please install babel-preset-dawson.
+          Babel's error message is: '${e.message}'
+        `,
+        solution: stripIndent`
+        $ npm install --save-dev babel-preset-dawson
+        $ yarn add --dev babel-preset-dawson
         `
       }).toFormattedString());
       process.exit(1);
