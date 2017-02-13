@@ -314,7 +314,7 @@ export default function loadConfig (rootDir = process.cwd()) {
   if (!requiredPkgJson.name) {
     console.error(createError({
       kind: 'Missing app name',
-      reason: `The package.json shuold contain a 'name' field`,
+      reason: `The package.json should contain a 'name' field`,
       solution: stripIndent`
         * add a non-empty 'name' field to your package.json.
         `
@@ -333,7 +333,7 @@ export default function loadConfig (rootDir = process.cwd()) {
         solution: stripIndent`
         * check your babel configuration, you may need a syntax plugin if you are
           using an experimental syntax
-        * check the syntax of the api.js file by running it with 'babel-node'
+        * check the syntax of the api.js file by running it with 'babel-node --presets babel-preset-dawson'
         `
       }).toFormattedString());
       process.exit(1);
