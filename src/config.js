@@ -338,7 +338,7 @@ export default function loadConfig (rootDir = process.cwd()) {
       }).toFormattedString());
       process.exit(1);
     }
-    if (e.message.match(/cannot find module/i)) {
+    if (e.message.match(/cannot find module.*\/api'$/i)) {
       console.error(createError({
         kind: 'Cannot find api.js',
         reason: 'There is no api.js file in the current directory',
