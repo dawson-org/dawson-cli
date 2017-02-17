@@ -60,6 +60,7 @@ $ dawson deploy
   * [`authorizer`](#authorizer)
   * [`policyStatements`](#policystatements)
   * [`redirects`](#redirects)
+  * [`devInstrument`](#devInstrument)
 - [5. Application configuration](#5-application-configuration)
   * [`pre-deploy`](#pre-deploy)
   * [`post-deploy`](#post-deploy)
@@ -482,7 +483,7 @@ A Statement that allows access to CloudWatch Logs is automatically added.
 
 ## `redirects`
 **Required**: no | **Type**: `boolean` | **Default**: `false`  
-**Use for**: Settings wether a function is expected to return a `307 Temporary Redirect` or not
+**Use for**: Sets wether a function is expected to return a `307 Temporary Redirect` or not
 
 If `true`, dawson expect this function to **always return** an Object with a `Location` key. The HTTP response will then contain the appropriate `Location` header.
 
@@ -499,6 +500,34 @@ index.api = {
   redirect: true
 }
 ```
+
+## `devInstrument`
+**Required**: no | **Type**: `boolean` | **Default**: `false`  
+**Use for**: testing event-handling Functions locally
+
+This option can be useful for testing, using the Development Server, Functions that run in response to non-HTTP events, such as S3 Events.  
+If `true`, this function won't be actually deployed to AWS, but dawson publishes a hook (via AWS SQS) that allows this Function to be run within the Development Server: Events generated on AWS will be piped locally to this Function.
+
+dawson pipes any [event supported by Lambda](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html) other than API Gateway's events, such as events coming from the following services:
+* Amazon S3
+* Amazon DynamoDB
+* Amazon Kinesis Streams
+* Amazon Simple Notification Service
+* Amazon Simple Email Service
+* Amazon Cognito
+* AWS CloudFormation
+* Amazon CloudWatch Logs
+* Amazon CloudWatch Events
+* AWS CodeCommit
+* Scheduled Events (powered by Amazon CloudWatch Events)
+* AWS Config
+* Amazon Echo
+* Amazon Lex
+
+To ensure that each event is not processed both by AWS Lambda and by the Development Server, when this option is set to `true`, this AWS Lambda Function is configured to ignore any event.
+**Unless you know what you're doing, setting this option to `true` in production is not a good idea.**
+
+This option can only be set when `path === false`, as it makes no sense to use this when an API Gateway Endpoint is present.
 
 ---
 
