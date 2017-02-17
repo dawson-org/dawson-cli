@@ -145,7 +145,8 @@ function getEnvVariables (outputs) {
 }
 
 async function runDockerContainer (
-  { res, runner, event, outputs, resources, PROJECT_ROOT }
+  { runner, event, outputs, resources, PROJECT_ROOT },
+  callback
 ) {
   if (!credentialsCache.has(runner)) {
     log(
@@ -175,7 +176,7 @@ async function runDockerContainer (
         .concat(flatten(envVariables.map(v => ['--env', v]))),
       spawnOptions: { stdio: ['pipe', 'pipe', process.stdout] }
     });
-    apiCallback(res, runner, null, invokeResult);
+    callback(runner, null, invokeResult);
   } catch (invokeError) {
     if (!invokeError.stdout) {
       error(`dawson Internal Error`.bold);
@@ -191,7 +192,7 @@ async function runDockerContainer (
       'Lambda terminated with error:\n',
       util.inspect(parsedError, { depth: 10, color: true })
     );
-    apiCallback(res, runner, parsedError, null);
+    callback(runner, parsedError, null);
   }
 }
 
@@ -240,7 +241,10 @@ async function processAPIRequest (
 
   const authorizer = runner.api.authorizer;
   const executeCall = () =>
-    runDockerContainer({ res, runner, event, outputs, resources, PROJECT_ROOT });
+    runDockerContainer(
+      { res, runner, event, outputs, resources, PROJECT_ROOT },
+      (...args) => apiCallback(res, ...args)
+    );
 
   if (!authorizer) {
     executeCall();
