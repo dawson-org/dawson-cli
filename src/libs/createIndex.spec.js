@@ -83,7 +83,26 @@ module.exports.myEventHandler = function (event, context, callback) {
       const runner = require('./api').myEventHandler;
       Promise.resolve()
       .then(function () {
-        return runner(event, context);
+        return new Promise((resolve, reject) => {
+  console.log('devInstrument: will handle this event');
+  const AWS = require('aws-sdk');
+  const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
+  const queueUrl = process.env.DAWSONInstrument_Queue_MyEventHandler;
+  const message = JSON.stringify(event);
+  sqs.sendMessage({
+    QueueUrl: queueUrl,
+    MessageBody: message
+  })
+  .promise()
+  .then(data => {
+    console.log('devInstrument: message publish OK', data.MessageId);
+    return callback(null);
+  })
+  .catch(e => {
+    console.log('devInstrument: error publishing to Queue', queueUrl, message);
+    return callback(e);
+  });
+});
       })
       .then(function (data) {
         // this function has not been called via API Gateway, we return the value as-is
@@ -116,7 +135,10 @@ return callback(null, data);
     path: 'hello',
     responseContentType: 'application/json'
   };
-  config.myEventHandler.api = { path: false };
+  config.myEventHandler.api = {
+    path: false,
+    devInstrument: true
+  };
   const actual = createIndex(config, 'barapp');
   t.deepEqual(expected, actual);
 });

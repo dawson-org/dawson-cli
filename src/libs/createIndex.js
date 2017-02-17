@@ -1,5 +1,34 @@
 import { stripIndent } from 'common-tags';
 
+function getRunnerCode (name, apiConfig) {
+  if (apiConfig.devInstrument !== true) {
+    return 'return runner(event, context);';
+  }
+  const logicalLambdaName = `${name[0].toUpperCase()}${name.slice(1)}`;
+  return stripIndent`
+    return new Promise((resolve, reject) => {
+      console.log('devInstrument: will handle this event');
+      const AWS = require('aws-sdk');
+      const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
+      const queueUrl = process.env.DAWSONInstrument_Queue_${logicalLambdaName};
+      const message = JSON.stringify(event);
+      sqs.sendMessage({
+        QueueUrl: queueUrl,
+        MessageBody: message
+      })
+      .promise()
+      .then(data => {
+        console.log('devInstrument: message publish OK', data.MessageId);
+        return callback(null);
+      })
+      .catch(e => {
+        console.log('devInstrument: error publishing to Queue', queueUrl, message);
+        return callback(e);
+      });
+    });
+  `;
+}
+
 function getWrappingCode (apis, name) {
   const apiConfig = apis[name].api;
   if (!apiConfig) {
@@ -15,7 +44,7 @@ function getWrappingCode (apis, name) {
       const runner = require('./api').${name};
       Promise.resolve()
       .then(function () {
-        return runner(event, context);
+        ${getRunnerCode(name, apiConfig)}
       })
       .then(function (data) {
         ${hasEndpoint
