@@ -614,6 +614,8 @@ There's no particular restriction on what resources you can add here, just keep 
 - if you are defining more than 5 DynamoDB Tables, the first creation will fail with a message saying that there are too many indexes being provisoned. You should add dependencies between Tables using the DependsOn property to force CloudFormation to deploy them serially and not in parallel
 - if you add an API Gateway Method, you should update the `<deploymentLogicalName>.DependsOn` list to include such method's Logical Name (what?! more [here](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-apigateway-deployment.html), scroll down to "Method Dependency", ask me if unclear), otherwise you'll get a cryptic error from CloudFormation / API Gateway. `deploymentLogicalName` is available as `deploymentLogicalName` property on `cutomTemplateFragment`'s second parameter
 
+**You may check out dawson's [ready to use Resources Snippets](https://github.com/dawson-org/dawson-snippets).**
+
 **Example**
 ```js
 export function customTemplateFragment(currentTemplate, dawsonInternalVariables);
@@ -642,6 +644,7 @@ export function customTemplateFragment(currentTemplate, dawsonInternalVariables)
 Please **do not hardcode Resource IDs** in your code. **They will change and will break your application**. Always set an Output and access the Physical Resource Id from `process.env`. It's also tempting to use developer-provided names for resources such as DynamoDB Tables and S3 Buckets: don't; it will probably break the built-in Stages support.
 
 > The full Template Reference is available in the [AWS CloudFormation User Guide](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-reference.html).
+> You may check out dawson's [ready to use Resources Snippets](https://github.com/dawson-org/dawson-snippets).
 > You can use `Fn::GetAtt`, `Fn::Sub`, `Ref` etc to reference other resources in this Template.
 
 
