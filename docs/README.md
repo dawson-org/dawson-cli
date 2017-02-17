@@ -503,10 +503,10 @@ index.api = {
 
 ## `devInstrument`
 **Required**: no | **Type**: `boolean` | **Default**: `false`  
-**Use for**: testing event-handling Functions locally
+**Use for**: running event-handling Functions locally
 
-This option can be useful for testing, using the Development Server, Functions that run in response to non-HTTP events, such as S3 Events.  
-If `true`, this function won't be actually deployed to AWS, but dawson publishes a hook (via AWS SQS) that allows this Function to be run within the Development Server: Events generated on AWS will be piped locally to this Function.
+This option can be useful to test from the Development Server, Functions that run in response to non-HTTP events (such as S3 Events).  
+If `true`, Events generated on AWS will be piped locally to this Function.
 
 dawson pipes any [event supported by Lambda](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html) other than API Gateway's events, such as events coming from the following services:
 * Amazon S3
@@ -524,8 +524,8 @@ dawson pipes any [event supported by Lambda](https://docs.aws.amazon.com/lambda/
 * Amazon Echo
 * Amazon Lex
 
-To ensure that each event is not processed both by AWS Lambda and by the Development Server, when this option is set to `true`, this AWS Lambda Function is configured to ignore any event.
-**Unless you know what you're doing, setting this option to `true` in production is not a good idea.**
+> To ensure that each event is not processed both by AWS Lambda and by the Development Server, when this option is set to `true` this AWS Lambda Function is configured to ignore any Event she receives.  
+> Unless you know what you're doing, setting this option to `true` in production is not a good idea.
 
 This option can only be set when `path === false`, as it makes no sense to use this when an API Gateway Endpoint is present.
 
