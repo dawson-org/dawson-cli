@@ -1,3 +1,6 @@
+
+import merge from 'lodash/merge';
+
 import { RESERVED_FUCTION_NAMES } from '../config';
 import { debug } from '../logger';
 
@@ -51,7 +54,6 @@ function taskProcessTemplate (
   let cfTemplate = {
     Parameters: { DawsonStage: { Type: 'String', Default: appStage } },
     Resources: {
-      ...customTemplateObjects.Resources,
       ...templateAssetsBucket(),
       ...templateRest({ appStage }),
       ...functionTemplatePartials,
@@ -64,7 +66,6 @@ function taskProcessTemplate (
       ...route53Partial
     },
     Outputs: {
-      ...customTemplateObjects.Outputs,
       BucketAssets: { Value: CFN_DAWSON_OUTPUTS.BucketAssets() },
       DistributionWWW: {
         Value: CFN_DAWSON_OUTPUTS.DistributionWWW({ cloudfrontSettings })
@@ -77,6 +78,8 @@ function taskProcessTemplate (
     ...templateStage({ stageName, deploymentUid }),
     ...templateAccount()
   };
+
+  cfTemplate = merge(cfTemplate, customTemplateObjects);
 
   if (typeof API_DEFINITIONS['processCFTemplate'] === 'function') {
     cfTemplate = API_DEFINITIONS['processCFTemplate'](cfTemplate);
