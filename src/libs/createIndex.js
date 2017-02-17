@@ -1,4 +1,5 @@
 import { stripIndent } from 'common-tags';
+import prettier from 'prettier';
 
 function getRunnerCode (name, apiConfig) {
   if (apiConfig.devInstrument !== true ||
@@ -90,7 +91,7 @@ export default function createIndex (apis, stackName) {
   const exportedFunctions = Object
     .keys(apis)
     .map(name => getWrappingCode(apis, name));
-  return stripIndent`
+  let code = stripIndent`
     require('babel-polyfill');
 
     const stackName = '${stackName}';
@@ -124,4 +125,10 @@ export default function createIndex (apis, stackName) {
 
     ${exportedFunctions.join('\n\n')}
   `;
+  code = prettier.format(code, {
+    printWidth: 80,
+    singleQuote: true,
+    bracketSpacing: true
+  });
+  return code;
 }

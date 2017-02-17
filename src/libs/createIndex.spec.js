@@ -7,129 +7,145 @@ import createIndex from './createIndex';
 test('createIndex', t => {
   const expected = `require('babel-polyfill');
 
-    const stackName = 'barapp';
-    var stackOutputs = null;
+const stackName = 'barapp';
+var stackOutputs = null;
 
-    function dawsonDescribeOutputs() {
-      if (!stackOutputs) {
-        const AWS = require('aws-sdk');
-        const cloudformation = new AWS.CloudFormation({});
-        const params = {
-          StackName: stackName,
-        };
-        return cloudformation.describeStacks(params).promise()
-        .then(result => {
-          const outputs = result.Stacks[0].Outputs;
-          const ret = {};
-          outputs.forEach(output => {
-            ret[output.OutputKey] = output.OutputValue;
-          });
-          stackOutputs = ret;
-          return ret;
-        })
-        .catch(err => {
-          console.error(\`Error describing stack barapp\`, err.message, err.stack);
-          throw err;
-        });
-      } else {
-        return Promise.resolve(stackOutputs);
-      }
-    }
-
-    module.exports.helloWorld = function (event, context, callback) {
-      if (event.__ping) {
-        return callback(null, '"pong__"');
-      }
-      context.dawsonDescribeOutputs = dawsonDescribeOutputs;
-      const runner = require('./api').helloWorld;
-      Promise.resolve()
-      .then(function () {
-        return runner(event, context);
-      })
-      .then(function (data) {
-        if (event.meta && event.meta.expectedResponseContentType.indexOf('application/json') !== -1) {
-  return callback(null, { response: JSON.stringify(data) });
-}
-callback(null, { response: data });
-      })
-      .catch(function (err) {
-        try {
-          // Promise rejections should be Errors containing a JSON-stringified 'message property'
-          // which contains the error information to be displayed.
-          // If the property is not valid JSON, the error is not exposed to the client
-          // and a generic HTTP 500 error will be exposed
-          JSON.parse(err.message);
-          console.error('Lambda will terminate with error', err.message);
-          return callback(err.message);
-        } catch (_jsonError) {
-          console.error('Unhandled error will be swallowed and reported as HTTP 500:');
-          console.error(err);
-          console.error('Stack Trace:', err.message, err.stack);
-          const opaqueError = {
-            unhandled: true,
-            message: 'Unhandled internal error',
-            httpStatus: 500
-          };
-          return callback(JSON.stringify(opaqueError));
-        }
-      });
+function dawsonDescribeOutputs() {
+  if (!stackOutputs) {
+    const AWS = require('aws-sdk');
+    const cloudformation = new AWS.CloudFormation({});
+    const params = {
+      StackName: stackName
     };
-
-module.exports.myEventHandler = function (event, context, callback) {
-      if (event.__ping) {
-        return callback(null, '"pong__"');
-      }
-      context.dawsonDescribeOutputs = dawsonDescribeOutputs;
-      const runner = require('./api').myEventHandler;
-      Promise.resolve()
-      .then(function () {
-        return new Promise((resolve, reject) => {
-  console.log('devInstrument: will handle this event');
-  const AWS = require('aws-sdk');
-  const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
-  const queueUrl = process.env.DAWSONInstrument_Queue_MyEventHandler;
-  const message = JSON.stringify(event);
-  sqs.sendMessage({
-    QueueUrl: queueUrl,
-    MessageBody: message
-  })
-  .promise()
-  .then(data => {
-    console.log('devInstrument: message publish OK', data.MessageId);
-    return callback(null);
-  })
-  .catch(e => {
-    console.log('devInstrument: error publishing to Queue', queueUrl, message);
-    return callback(e);
-  });
-});
+    return cloudformation
+      .describeStacks(params)
+      .promise()
+      .then(result => {
+        const outputs = result.Stacks[0].Outputs;
+        const ret = {};
+        outputs.forEach(output => {
+          ret[output.OutputKey] = output.OutputValue;
+        });
+        stackOutputs = ret;
+        return ret;
       })
-      .then(function (data) {
-        // this function has not been called via API Gateway, we return the value as-is
-return callback(null, data);
-      })
-      .catch(function (err) {
-        try {
-          // Promise rejections should be Errors containing a JSON-stringified 'message property'
-          // which contains the error information to be displayed.
-          // If the property is not valid JSON, the error is not exposed to the client
-          // and a generic HTTP 500 error will be exposed
-          JSON.parse(err.message);
-          console.error('Lambda will terminate with error', err.message);
-          return callback(err.message);
-        } catch (_jsonError) {
-          console.error('Unhandled error will be swallowed and reported as HTTP 500:');
-          console.error(err);
-          console.error('Stack Trace:', err.message, err.stack);
-          const opaqueError = {
-            unhandled: true,
-            message: 'Unhandled internal error',
-            httpStatus: 500
-          };
-          return callback(JSON.stringify(opaqueError));
-        }
+      .catch(err => {
+        console.error(\`Error describing stack barapp\`, err.message, err.stack);
+        throw err;
       });
-    };`;
+  } else {
+    return Promise.resolve(stackOutputs);
+  }
+}
+
+module.exports.helloWorld = function(event, context, callback) {
+  if (event.__ping) {
+    return callback(null, '"pong__"');
+  }
+  context.dawsonDescribeOutputs = dawsonDescribeOutputs;
+  const runner = require('./api').helloWorld;
+  Promise.resolve()
+    .then(function() {
+      return runner(event, context);
+    })
+    .then(function(data) {
+      if (
+        event.meta &&
+        event.meta.expectedResponseContentType.indexOf('application/json') !==
+          -1
+      ) {
+        return callback(null, { response: JSON.stringify(data) });
+      }
+      callback(null, { response: data });
+    })
+    .catch(function(err) {
+      try {
+        // Promise rejections should be Errors containing a JSON-stringified 'message property'
+        // which contains the error information to be displayed.
+        // If the property is not valid JSON, the error is not exposed to the client
+        // and a generic HTTP 500 error will be exposed
+        JSON.parse(err.message);
+        console.error('Lambda will terminate with error', err.message);
+        return callback(err.message);
+      } catch (_jsonError) {
+        console.error(
+          'Unhandled error will be swallowed and reported as HTTP 500:'
+        );
+        console.error(err);
+        console.error('Stack Trace:', err.message, err.stack);
+        const opaqueError = {
+          unhandled: true,
+          message: 'Unhandled internal error',
+          httpStatus: 500
+        };
+        return callback(JSON.stringify(opaqueError));
+      }
+    });
+};
+
+module.exports.myEventHandler = function(event, context, callback) {
+  if (event.__ping) {
+    return callback(null, '"pong__"');
+  }
+  context.dawsonDescribeOutputs = dawsonDescribeOutputs;
+  const runner = require('./api').myEventHandler;
+  Promise.resolve()
+    .then(function() {
+      return new Promise((resolve, reject) => {
+        console.log('devInstrument: will handle this event');
+        const AWS = require('aws-sdk');
+        const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
+        const queueUrl = process.env.DAWSONInstrument_Queue_MyEventHandler;
+        const message = JSON.stringify(event);
+        sqs
+          .sendMessage({
+            QueueUrl: queueUrl,
+            MessageBody: message
+          })
+          .promise()
+          .then(data => {
+            console.log('devInstrument: message publish OK', data.MessageId);
+            return callback(null);
+          })
+          .catch(e => {
+            console.log(
+              'devInstrument: error publishing to Queue',
+              queueUrl,
+              message
+            );
+            return callback(e);
+          });
+      });
+    })
+    .then(function(data) {
+      // this function has not been called via API Gateway, we return the value as-is
+      return callback(null, data);
+    })
+    .catch(function(err) {
+      try {
+        // Promise rejections should be Errors containing a JSON-stringified 'message property'
+        // which contains the error information to be displayed.
+        // If the property is not valid JSON, the error is not exposed to the client
+        // and a generic HTTP 500 error will be exposed
+        JSON.parse(err.message);
+        console.error('Lambda will terminate with error', err.message);
+        return callback(err.message);
+      } catch (_jsonError) {
+        console.error(
+          'Unhandled error will be swallowed and reported as HTTP 500:'
+        );
+        console.error(err);
+        console.error('Stack Trace:', err.message, err.stack);
+        const opaqueError = {
+          unhandled: true,
+          message: 'Unhandled internal error',
+          httpStatus: 500
+        };
+        return callback(JSON.stringify(opaqueError));
+      }
+    });
+};
+`;
   const config = { helloWorld: {}, myEventHandler: {}, processCFTemplate: {} };
   config.helloWorld.api = {
     path: 'hello',
