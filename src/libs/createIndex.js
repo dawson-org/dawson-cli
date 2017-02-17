@@ -1,7 +1,8 @@
 import { stripIndent } from 'common-tags';
 
 function getRunnerCode (name, apiConfig) {
-  if (apiConfig.devInstrument !== true) {
+  if (apiConfig.devInstrument !== true ||
+      process.env.DAWSON_DEV_PROXY === 'yes') {
     return 'return runner(event, context);';
   }
   const logicalLambdaName = `${name[0].toUpperCase()}${name.slice(1)}`;
