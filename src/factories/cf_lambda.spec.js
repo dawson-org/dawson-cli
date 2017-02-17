@@ -378,3 +378,141 @@ test('templateLambda with inline codes', t => {
   });
   t.deepEqual(expected, actual, 'should return a lambda template');
 });
+
+test('templateLambda with dev instruments', t => {
+  const expected = {
+    ExecutionRoleForLambdaMyFunction: {
+      Type: 'AWS::IAM::Role',
+      Properties: {
+        AssumeRolePolicyDocument: {
+          Version: '2012-10-17',
+          Statement: [
+            {
+              Effect: 'Allow',
+              Principal: {
+                AWS: [{ 'Fn::Sub': 'arn:aws:iam::${AWS::AccountId}:root' }],
+                Service: ['lambda.amazonaws.com']
+              },
+              Action: ['sts:AssumeRole']
+            }
+          ]
+        },
+        Path: '/',
+        Policies: [
+          {
+            PolicyName: 'dawson-policy',
+            PolicyDocument: {
+              Version: '2012-10-17',
+              Statement: [
+                {
+                  Effect: 'Allow',
+                  Action: [
+                    'logs:CreateLogGroup',
+                    'logs:CreateLogStream',
+                    'logs:PutLogEvents'
+                  ],
+                  Resource: {
+                    'Fn::Sub': 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+                  } // eslint-disable-line
+                },
+                {
+                  Effect: 'Allow',
+                  Action: ['cloudformation:DescribeStacks'],
+                  Resource: {
+                    'Fn::Join': [
+                      '',
+                      [
+                        'arn:aws:cloudformation:',
+                        { Ref: 'AWS::Region' },
+                        ':',
+                        { Ref: 'AWS::AccountId' },
+                        ':stack/',
+                        { Ref: 'AWS::StackName' },
+                        '/*'
+                      ]
+                    ]
+                  }
+                },
+                { Effect: 'Deny', Action: '*', Resource: '*' }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    LambdaMyFunction: {
+      Type: 'AWS::Lambda::Function',
+      Properties: {
+        Handler: `dawsonindex.myFunction`,
+        Role: { 'Fn::GetAtt': ['ExecutionRoleForLambdaMyFunction', 'Arn'] },
+        Code: {
+          S3Bucket: 'demobucket',
+          S3Key: 'demokey',
+          S3ObjectVersion: 'demoversion'
+        },
+        Runtime: 'foobar',
+        MemorySize: 1024,
+        Timeout: 30,
+        Environment: {
+          Variables: {
+            DAWSON_myBar: 'baz',
+            NODE_ENV: 'development',
+            DAWSONInstrument_Queue_MyFunction: { Ref: 'IQueueMyFunction' }
+          }
+        }
+      }
+    },
+    PermissionForLambdaMyFunction: {
+      Properties: {
+        Action: 'lambda:InvokeFunction',
+        FunctionName: { 'Fn::Sub': '${LambdaMyFunction.Arn}' },
+        Principal: 'apigateway.amazonaws.com',
+        SourceArn: {
+          'Fn::Sub': 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${API}/prod*'
+        }
+      },
+      Type: 'AWS::Lambda::Permission'
+    },
+    IQueueMyFunction: {
+      Type: 'AWS::SQS::Queue',
+      Properties: {}
+    },
+    IQueueMyFunctionPolicy: {
+      Type: 'AWS::SQS::QueuePolicy',
+      Properties: {
+        Queues: [
+          {
+            Ref: 'IQueueMyFunction'
+          }
+        ],
+        PolicyDocument: {
+          Version: '2012-10-17',
+          Statement: [
+            {
+              Effect: 'Allow',
+              Principal: '*',
+              Action: ['SQS:SendMessage'],
+              Resource: {
+                'Fn::GetAtt': ['IQueueMyFunction', 'Arn']
+              }
+            }
+          ]
+        }
+      }
+    }
+  };
+  const actual = templateLambda({
+    lambdaName: 'MyFunction',
+    handlerFunctionName: 'myFunction',
+    zipS3Location: {
+      Bucket: 'demobucket',
+      Key: 'demokey',
+      VersionId: 'demoversion'
+    },
+    runtime: 'foobar',
+    policyStatements: [{ Effect: 'Deny', Action: '*', Resource: '*' }],
+    environment: { myBar: 'baz' },
+    devInstrument: true
+  });
+  t.deepEqual(expected, actual, 'should return a lambda template');
+});
