@@ -4,9 +4,9 @@ dawson documentation
 dawson is a [serverless](https://auth0.com/blog/what-is-serverless/) web framework for Node.js on AWS. dawson uses [AWS CloudFormation](https://aws.amazon.com/cloudformation/), [Amazon CloudFront](https://aws.amazon.com/cloudfront/), [Amazon API Gateway](https://aws.amazon.com/apigateway/) and  [AWS Lambda](https://aws.amazon.com/lambda/) to deploy the backend code and to manage the infrastructure for you. 
 
 ### Is dawson for me?
-👍🏽 I'm building a single-page app/website with a backend  
-👍🏽 I'm building an API   
-👍🏽 I'm building a server-rendered app/website  
+👍 I'm building a single-page app/website with a backend  
+👍 I'm building an API   
+👍 I'm building a server-rendered app/website  
 
 The main goal of dawson is to be a zero-configuration yet fully extensible *[backend]* web framework for building web apps on AWS. You should be able to start using dawson without creating any configuration file and with only a basic knowledge of Amazon Web Services.
 
@@ -60,6 +60,7 @@ $ dawson deploy
   * [`authorizer`](#authorizer)
   * [`policyStatements`](#policystatements)
   * [`redirects`](#redirects)
+  * [`devInstrument`](#devinstrument)
 - [5. Application configuration](#5-application-configuration)
   * [`pre-deploy`](#pre-deploy)
   * [`post-deploy`](#post-deploy)
@@ -482,7 +483,7 @@ A Statement that allows access to CloudWatch Logs is automatically added.
 
 ## `redirects`
 **Required**: no | **Type**: `boolean` | **Default**: `false`  
-**Use for**: Settings wether a function is expected to return a `307 Temporary Redirect` or not
+**Use for**: Sets wether a function is expected to return a `307 Temporary Redirect` or not
 
 If `true`, dawson expect this function to **always return** an Object with a `Location` key. The HTTP response will then contain the appropriate `Location` header.
 
@@ -499,6 +500,34 @@ index.api = {
   redirect: true
 }
 ```
+
+## `devInstrument`
+**Required**: no | **Type**: `boolean` | **Default**: `false`  
+**Use for**: running event-handling Functions locally
+
+This option can be useful to test from the Development Server, Functions that run in response to non-HTTP events (such as S3 Events).  
+If `true`, Events generated on AWS will be piped locally to this Function.
+
+dawson pipes any [event supported by Lambda](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html) other than API Gateway's events, such as events coming from the following services:
+* Amazon S3
+* Amazon DynamoDB
+* Amazon Kinesis Streams
+* Amazon Simple Notification Service
+* Amazon Simple Email Service
+* Amazon Cognito
+* AWS CloudFormation
+* Amazon CloudWatch Logs
+* Amazon CloudWatch Events
+* AWS CodeCommit
+* Scheduled Events (powered by Amazon CloudWatch Events)
+* AWS Config
+* Amazon Echo
+* Amazon Lex
+
+> To ensure that each event is not processed both by AWS Lambda and by the Development Server, when this option is set to `true` this AWS Lambda Function is configured to ignore any Event she receives.  
+> Unless you know what you're doing, setting this option to `true` in production is not a good idea.
+
+This option can only be set when `path === false`, as it makes no sense to use this when an API Gateway Endpoint is present.
 
 ---
 

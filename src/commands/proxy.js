@@ -38,6 +38,7 @@ import { templateLambdaRoleName } from '../factories/cf_lambda';
 
 const sts = new AWS.STS({});
 const iam = new AWS.IAM({});
+const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
 const credentialsCache = new WeakMap();
 
 function findApi ({ method, pathname, API_DEFINITIONS }) {
@@ -176,6 +177,7 @@ async function runDockerContainer (
         .concat(flatten(envVariables.map(v => ['--env', v]))),
       spawnOptions: { stdio: ['pipe', 'pipe', process.stdout] }
     });
+    log(`End of docker run`.dim);
     callback(runner, null, invokeResult);
   } catch (invokeError) {
     if (!invokeError.stdout) {
@@ -272,6 +274,22 @@ function findRoleName (stackResources, runner) {
   });
   if (!found) {
     throw new Error(`Cannot find an IAM Role for '${cfLogicalRoleName}'`);
+  }
+  return found;
+}
+
+function findQueueURL (stackResources, runner) {
+  const functionName = runner.name;
+  const lambdaName = functionName[0].toUpperCase() + functionName.substring(1);
+  const cfLogicalRoleName = `IQueue${lambdaName}`;
+  let found = null;
+  stackResources.forEach(resource => {
+    if (resource.LogicalResourceId === cfLogicalRoleName) {
+      found = resource.PhysicalResourceId;
+    }
+  });
+  if (!found) {
+    throw new Error(`Cannot find a Queue Role for '${cfLogicalRoleName}'`);
   }
   return found;
 }
@@ -434,6 +452,61 @@ function createBundle ({ stage, stackName, onlyCompile = false, skipChmod }) {
   });
 }
 
+function handleIncomingSQSMessage ({ queueUrl, runner, outputs, resources, PROJECT_ROOT, message }) {
+  const body = message.Body;
+  const receiptHandle = message.ReceiptHandle;
+  const event = JSON.parse(body);
+  runDockerContainer(
+    { runner, event, outputs, resources, PROJECT_ROOT },
+    (runner, error, result) => {
+      log(`* Event handling by dev server is completed`.dim);
+      sqs.deleteMessage({
+        QueueUrl: queueUrl,
+        ReceiptHandle: receiptHandle
+      })
+      .promise()
+      .then(() => {
+        log(`* Message deleted from the Queue`.dim);
+        log(`============== Log Fragment End ==============\n`.dim);
+      })
+      .catch(e => {
+        log(`* Cleanup failed, message could not have been removed from the Queue`, e);
+      });
+    }
+  );
+}
+
+function handleIncomingSQSMessages ({ queueUrl, runner, outputs, resources, PROJECT_ROOT }) {
+  sqs.receiveMessage({
+    QueueUrl: queueUrl,
+    WaitTimeSeconds: 20,
+    VisibilityTimeout: 30
+  })
+  .promise()
+  .then(data => {
+    if (data.Messages && data.Messages.length > 0) {
+      data.Messages.forEach(message => handleIncomingSQSMessage(
+        { queueUrl, runner, outputs, resources, PROJECT_ROOT, message }
+      ));
+    }
+    return handleIncomingSQSMessages(...arguments);
+  });
+}
+
+function startQueuePolling ({ outputs, resources, PROJECT_ROOT }) {
+  const { API_DEFINITIONS } = loadConfig();
+  Object.values(API_DEFINITIONS).forEach(runner => {
+    if (!runner.api) {
+      return;
+    }
+    if (runner.api.devInstrument !== true) {
+      return true;
+    }
+    const queueUrl = findQueueURL(resources, runner);
+    handleIncomingSQSMessages({ queueUrl, runner, outputs, resources, PROJECT_ROOT });
+  });
+}
+
 export function run (argv) {
   const { SETTINGS, API_DEFINITIONS, APP_NAME, PROJECT_ROOT } = loadConfig();
   validateDocker();
@@ -447,6 +520,7 @@ export function run (argv) {
   } = argv;
   const onlyCompile = fastStartup;
   const port = argv.port || process.env.PORT || 3000;
+  process.env.DAWSON_DEV_PROXY = 'yes'; // used by createIndex to skip devInstrument
 
   const stackName = templateStackName({ appName: APP_NAME, stage });
 
@@ -638,9 +712,44 @@ export function run (argv) {
                     ),
                     detailedReason: (
                       stripIndent`
-                    dawson couldn't find any role to use when executing this function.
+                    dawson couldn't find any IAM Role to use when executing this function.
                     This happens when you're invoking a function that has never been deployed before.
                     Before a function can be executed, it must have been deployed at least once.
+                  `
+                    ),
+                    solution: 'execute $ dawson deploy, wait for the deploy to complete and then run this command again.'
+                  });
+                }
+              });
+            }
+          },
+          {
+            title: 'checking SQS Queues',
+            task: () => {
+              Object.values(API_DEFINITIONS).every(runner => {
+                if (!runner.api) {
+                  return true;
+                }
+                if (runner.api.devInstrument !== true) {
+                  return true;
+                }
+                try {
+                  const queueUrl = findQueueURL(resources, runner);
+                  debug(
+                    `Function '${runner.name}' will execute polling messages from '${queueUrl}'`
+                  );
+                  return true;
+                } catch (e) {
+                  throw createError({
+                    kind: 'Missing resources',
+                    reason: (
+                      `Function '${runner.name}' has not yet been fully deployed.`
+                    ),
+                    detailedReason: (
+                      stripIndent`
+                    dawson couldn't find a Queue to poll for events to execute this function with.
+                    This happens when you're invoking a function that has never been deployed before
+                    or because you have changed the devInstrument api property without deploying.
                   `
                     ),
                     solution: 'execute $ dawson deploy, wait for the deploy to complete and then run this command again.'
@@ -658,6 +767,7 @@ export function run (argv) {
   startupTasks
     .run()
     .then(() => {
+      startQueuePolling({ outputs, resources, PROJECT_ROOT });
       server.listen(port);
       success(
         '\n' +

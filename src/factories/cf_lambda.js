@@ -113,6 +113,55 @@ module.exports.handler = function (event, context, callback) {
 }
 `;
 
+function getDevInstrumentProperties ({ lambdaName, devInstrument }) {
+  if (devInstrument !== true) {
+    return {
+      Properties: {},
+      Environment: {}
+    };
+  }
+  const lambdaLogicalName = `${lambdaName[0].toUpperCase()}${lambdaName.slice(
+    1
+  )}`;
+  const queueLogicalName = `IQueue${lambdaLogicalName}`;
+  return {
+    Resources: {
+      [queueLogicalName]: {
+        Type: 'AWS::SQS::Queue',
+        Properties: {}
+      },
+      [`${queueLogicalName}Policy`]: {
+        Type: 'AWS::SQS::QueuePolicy',
+        Properties: {
+          Queues: [
+            {
+              Ref: queueLogicalName
+            }
+          ],
+          PolicyDocument: {
+            Version: '2012-10-17',
+            Statement: [
+              {
+                Effect: 'Allow',
+                Principal: '*', // should be, but doesn't work: { AWS: { Ref: 'AWS::AccountId' } },
+                Action: ['SQS:SendMessage'],
+                Resource: {
+                  'Fn::GetAtt': [queueLogicalName, 'Arn']
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    Environment: {
+      [`DAWSONInstrument_Queue_${lambdaName}`]: {
+        Ref: queueLogicalName
+      }
+    }
+  };
+}
+
 export function templateLambda (
   {
     lambdaName,
@@ -121,7 +170,8 @@ export function templateLambda (
     zipS3Location = null,
     policyStatements,
     runtime = 'nodejs4.3',
-    environment = {}
+    environment = {},
+    devInstrument
   }
 ) {
   const code = zipS3Location
@@ -139,6 +189,11 @@ export function templateLambda (
   });
   prefixedEnvironment.NODE_ENV = process.env.NODE_ENV || 'development';
 
+  const devInstrumentProperties = getDevInstrumentProperties({
+    lambdaName,
+    devInstrument
+  });
+
   return {
     ...templateLambdaPermission({ lambdaName }),
     ...templateLambdaExecutionRole({ lambdaName, policyStatements }),
@@ -153,8 +208,14 @@ export function templateLambda (
         Runtime: runtime,
         MemorySize: 1024,
         Timeout: 30,
-        Environment: { Variables: { ...prefixedEnvironment } }
+        Environment: {
+          Variables: {
+            ...prefixedEnvironment,
+            ...devInstrumentProperties.Environment
+          }
+        }
       }
-    }
+    },
+    ...devInstrumentProperties.Resources
   };
 }
