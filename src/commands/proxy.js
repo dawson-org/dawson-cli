@@ -78,6 +78,123 @@ function getContentType (fn) {
   return fn.api.responseContentType || 'text/html';
 }
 
+function apiCallback (res, runner, responseError, responseData) {
+  const contentType = getContentType(runner);
+  if (responseError) {
+    const errorResponse = JSON.parse(responseError.errorMessage);
+    if (errorResponse.unhandled === true) {
+      warning(
+        'Unhandled Error:'.bold,
+        oneLine`
+        Your lambda function returned an invalid error. Error messages must be valid JSON.stringfy-ed strings and
+        should contain an httpStatus (int) and a response (string|object) property. This error will be swallowed and a generic HTTP 500 response will be returned to the client.
+        Please refer to the documentation for instruction on how to deliver proper error responses.
+      `
+      );
+    }
+    if (typeof errorResponse.response !== 'string') {
+      errorResponse.response = 'unhandled error (check the console for details)';
+    }
+    res.writeHead(errorResponse.httpStatus || 500, {
+      'Content-Type': contentType
+    });
+    if (contentType === 'application/json') {
+      res.write(JSON.stringify(errorResponse));
+    } else {
+      res.write(errorResponse.response);
+    }
+    res.end();
+    return;
+  }
+  if (
+    runner.api.redirects &&
+      responseData.response &&
+      responseData.response.Location
+  ) {
+    const location = responseData.response.Location;
+    res.writeHead(307, { 'Content-Type': 'text/plain', Location: location });
+    res.write(`You are being redirected to ${location}`);
+    res.end();
+    return;
+  }
+  if (typeof responseData.response !== 'string') {
+    error(
+      `Your function must return a string (or an Object if 'responseContentType' is 'application/json')`
+    );
+    res.writeHead(500, { 'Content-Type': 'text/plain' });
+    res.write('dawson message: function returned an invalid body');
+    res.end();
+    return;
+  }
+  res.writeHead(200, { 'Content-Type': contentType });
+  if (typeof responseData.response === 'object') {
+    res.write(JSON.stringify(responseData.response));
+  } else {
+    res.write(responseData.response);
+  }
+  log(`============== Log Fragment End ==============\n`.dim);
+  res.end();
+  return;
+}
+
+function getEnvVariables (outputs) {
+  const envVariables = outputs.map(output => {
+    return `DAWSON_${output.OutputKey}=${output.OutputValue}`;
+  });
+  return envVariables;
+}
+
+async function runDockerContainer (
+  { res, runner, event, outputs, resources, PROJECT_ROOT }
+) {
+  if (!credentialsCache.has(runner)) {
+    log(
+      `   [STS] requesting AWS Temporary Credentials for Lambda '${runner.name}' (this will take a few seconds)`
+    );
+    const assumedRoleCredentials = await assumeRole(resources, runner);
+    credentialsCache.set(runner, assumedRoleCredentials);
+  }
+  const credentials = credentialsCache.get(runner);
+  const envVariables = getEnvVariables(outputs);
+  try {
+    log(`\n============= Log Fragment Begin =============`.dim);
+    log(`Function name: `.bold, runner.name);
+    const invokeResult = dockerLambda({
+      event,
+      taskDir: `${PROJECT_ROOT}/.dawson-dist`,
+      handler: `dawsonindex.${runner.name}`,
+      dockerArgs: []
+        .concat(['-m', '512M'])
+        .concat(['--env', `NODE_ENV=${process.env.NODE_ENV || 'development'}`])
+        .concat(['--env', `AWS_ACCESS_KEY_ID=${credentials.AccessKeyId}`])
+        .concat([
+          '--env',
+          `AWS_SECRET_ACCESS_KEY=${credentials.SecretAccessKey}`
+        ])
+        .concat(['--env', `AWS_SESSION_TOKEN=${credentials.SessionToken}`])
+        .concat(flatten(envVariables.map(v => ['--env', v]))),
+      spawnOptions: { stdio: ['pipe', 'pipe', process.stdout] }
+    });
+    apiCallback(res, runner, null, invokeResult);
+  } catch (invokeError) {
+    if (!invokeError.stdout) {
+      error(`dawson Internal Error`.bold);
+      console.dir(invokeError);
+      return;
+    }
+    const parsedError = JSON.parse(
+      invokeError.stdout.toString('utf8'),
+      null,
+      2
+    );
+    error(
+      'Lambda terminated with error:\n',
+      util.inspect(parsedError, { depth: 10, color: true })
+    );
+    apiCallback(res, runner, parsedError, null);
+  }
+}
+
 async function processAPIRequest (
   req,
   res,
@@ -91,9 +208,6 @@ async function processAPIRequest (
     PROJECT_ROOT
   }
 ) {
-  const envVariables = outputs.map(output => {
-    return `DAWSON_${output.OutputKey}=${output.OutputValue}`;
-  });
   try {
     var runner = findApi({ method: req.method, pathname, API_DEFINITIONS });
   } catch (e) {
@@ -124,124 +238,20 @@ async function processAPIRequest (
   };
   debug('Event parameter:'.gray.bold, JSON.stringify(event, null, 2).gray);
 
-  const callback = function apiCallback (err, data) {
-    const contentType = getContentType(runner);
-    if (err) {
-      const errorResponse = JSON.parse(err.errorMessage);
-      if (errorResponse.unhandled === true) {
-        warning(
-          'Unhandled Error:'.bold,
-          oneLine`
-          Your lambda function returned an invalid error. Error messages must be valid JSON.stringfy-ed strings and
-          should contain an httpStatus (int) and a response (string|object) property. This error will be swallowed and a generic HTTP 500 response will be returned to the client.
-          Please refer to the documentation for instruction on how to deliver proper error responses.
-        `
-        );
-      }
-      if (typeof errorResponse.response !== 'string') {
-        errorResponse.response = 'unhandled error (check the console for details)';
-      }
-      res.writeHead(errorResponse.httpStatus || 500, {
-        'Content-Type': contentType
-      });
-      if (contentType === 'application/json') {
-        res.write(JSON.stringify(errorResponse));
-      } else {
-        res.write(errorResponse.response);
-      }
-      res.end();
-      return;
-    }
-    if (runner.api.redirects && data.response && data.response.Location) {
-      const location = data.response.Location;
-      res.writeHead(307, { 'Content-Type': 'text/plain', Location: location });
-      res.write(`You are being redirected to ${location}`);
-      res.end();
-      return;
-    }
-    if (typeof data.response !== 'string') {
-      error(
-        `Your function must return a string (or an Object if 'responseContentType' is 'application/json')`
-      );
-      res.writeHead(500, { 'Content-Type': 'text/plain' });
-      res.write('dawson message: function returned an invalid body');
-      res.end();
-      return;
-    }
-    res.writeHead(200, { 'Content-Type': contentType });
-    if (typeof data.response === 'object') {
-      res.write(JSON.stringify(data.response));
-    } else {
-      res.write(data.response);
-    }
-    log(`============== Log Fragment End ==============\n`.dim);
-    res.end();
-    return;
-  };
-
-  if (!credentialsCache.has(runner)) {
-    log(
-      `   [STS] requesting AWS Temporary Credentials for Lambda '${runner.name}' (this will take a few seconds)`
-    );
-    credentialsCache.set(runner, await assumeRole(resources, runner));
-  }
-  const credentials = credentialsCache.get(runner);
-
-  const doCall = () => {
-    try {
-      log(`\n============= Log Fragment Begin =============`.dim);
-      log(`Function name: `.bold, runner.name);
-      const invokeResult = dockerLambda({
-        event,
-        taskDir: `${PROJECT_ROOT}/.dawson-dist`,
-        handler: `dawsonindex.${runner.name}`,
-        dockerArgs: []
-          .concat(['-m', '512M'])
-          .concat([
-            '--env',
-            `NODE_ENV=${process.env.NODE_ENV || 'development'}`
-          ])
-          .concat(['--env', `AWS_ACCESS_KEY_ID=${credentials.AccessKeyId}`])
-          .concat([
-            '--env',
-            `AWS_SECRET_ACCESS_KEY=${credentials.SecretAccessKey}`
-          ])
-          .concat(['--env', `AWS_SESSION_TOKEN=${credentials.SessionToken}`])
-          .concat(flatten(envVariables.map(v => ['--env', v]))),
-        spawnOptions: { stdio: ['pipe', 'pipe', process.stdout] }
-      });
-      callback(null, invokeResult);
-    } catch (invokeError) {
-      if (!invokeError.stdout) {
-        error(`dawson Internal Error`.bold);
-        console.dir(invokeError);
-        return;
-      }
-      const parsedError = JSON.parse(
-        invokeError.stdout.toString('utf8'),
-        null,
-        2
-      );
-      error(
-        'Lambda terminated with error:\n',
-        util.inspect(parsedError, { depth: 10, color: true })
-      );
-      callback(parsedError, null);
-    }
-  };
-
   const authorizer = runner.api.authorizer;
+  const executeCall = () =>
+    runDockerContainer({ res, runner, event, outputs, resources, PROJECT_ROOT });
 
   if (!authorizer) {
-    doCall();
+    executeCall();
   } else {
     runAuthorizer({
       authorizer,
       event,
-      envVariables,
       req,
       res,
-      successCallback: doCall
+      outputs,
+      successCallback: executeCall
     });
   }
 }
@@ -281,7 +291,7 @@ async function assumeRole (stackResources, runner) {
 }
 
 function runAuthorizer (
-  { authorizer, event, envVariables, req, res, successCallback }
+  { authorizer, event, req, res, successCallback, outputs }
 ) {
   // https://docs.aws.amazon.com/apigateway/latest/developerguide/use-custom-authorizer.html
   // @TODO: correctly handle 401, 403, 500 response as described in the documentation
@@ -305,6 +315,7 @@ function runAuthorizer (
     return;
   }
 
+  const envVariables = getEnvVariables(outputs);
   envVariables.forEach(declaration => {
     const [key, value] = declaration.split('=');
     process.env[key] = value;
@@ -315,9 +326,8 @@ function runAuthorizer (
     {
       succeed: ({ policyDocument, principalId, context }) => {
         if (
-          !Object
-            .values(context)
-            .every(val => ['number', 'string', 'boolean'].includes(typeof val))
+          !Object.values(context).every(val =>
+            ['number', 'string', 'boolean'].includes(typeof val))
         ) {
           throw new Error(
             'Authorizer Error: augmented context values can only be of type number, string or boolean.'
