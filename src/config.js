@@ -24,6 +24,7 @@ export const RESERVED_FUCTION_NAMES = ['customTemplateFragment', 'processCFTempl
 
 const FUNCTION_CONFIGURATION_PROPERTIES = [
   'path',
+  'devInstrument',
   'authorizer',
   'method',
   'policyStatements',
@@ -72,6 +73,19 @@ const FUNCTION_CONFIGURATION_SCHEMA = {
       }
     },
     authorizer: Type.func,
+    devInstrument: function (props, propName) {
+      const val = props[propName];
+      if (typeof val === 'undefined') {
+        return;
+      }
+      if (typeof val === 'boolean') {
+        if (val === true && props.path !== false) {
+          return new Error(`the 'devInstrument' property can only be set on functions having path === false.`);
+        }
+        return;
+      }
+      throw new Error(`value of property 'devInstrument' must be a boolean, not '${typeof val}'.`);
+    },
     method: Type.oneOf(['GET', 'POST', 'PUT', 'HEAD', 'DELETE', 'OPTIONS']),
     policyStatements: Type.arrayOf(Type.shape({
       Effect: Type.string.isRequired,
