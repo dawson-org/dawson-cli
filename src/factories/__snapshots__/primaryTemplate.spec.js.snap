@@ -134,7 +134,8 @@ module.exports[`primary template builder`] = {
                 "DomainName"
               ]
             },
-            "NODE_ENV": "development"
+            "NODE_ENV": "development",
+            "DAWSON_STAGE": "devel"
           }
         }
       }
@@ -499,7 +500,8 @@ module.exports[`primary template builder`] = {
                   `DomainName`
                 ]
               },
-              NODE_ENV: `development`
+              NODE_ENV: `development`,
+              DAWSON_STAGE: `devel`
             }
           }
         }
@@ -879,7 +881,8 @@ module.exports[`primary template builder with cloudfront disabled`] = {
               "Ref": "BucketAssets"
             },
             "DAWSON_DistributionWWW": "CloudFront disabled from config",
-            "NODE_ENV": "development"
+            "NODE_ENV": "development",
+            "DAWSON_STAGE": "devel"
           }
         }
       }
@@ -1257,7 +1260,8 @@ module.exports[`primary template builder with cloudfront disabled`] = {
                 Ref: `BucketAssets`
               },
               DAWSON_DistributionWWW: `CloudFront disabled from config`,
-              NODE_ENV: `development`
+              NODE_ENV: `development`,
+              DAWSON_STAGE: `devel`
             }
           }
         }
@@ -1718,7 +1722,8 @@ module.exports[`primary template builder with a method using an authorizer`] = {
               "Ref": "BucketAssets"
             },
             "DAWSON_DistributionWWW": "CloudFront disabled from config",
-            "NODE_ENV": "development"
+            "NODE_ENV": "development",
+            "DAWSON_STAGE": "devel"
           }
         }
       }
@@ -1994,7 +1999,8 @@ module.exports[`primary template builder with a method using an authorizer`] = {
         "Environment": {
           "Variables": {
             "DAWSON_DistributionWWW": "CloudFront disabled from config",
-            "NODE_ENV": "development"
+            "NODE_ENV": "development",
+            "DAWSON_STAGE": "devel"
           }
         }
       }
@@ -2226,7 +2232,8 @@ module.exports[`primary template builder with a method using an authorizer`] = {
                 Ref: `BucketAssets`
               },
               DAWSON_DistributionWWW: `CloudFront disabled from config`,
-              NODE_ENV: `development`
+              NODE_ENV: `development`,
+              DAWSON_STAGE: `devel`
             }
           }
         }
@@ -2587,7 +2594,8 @@ $errorMessageObj.response`
           Environment: {
             Variables: {
               DAWSON_DistributionWWW: `CloudFront disabled from config`,
-              NODE_ENV: `development`
+              NODE_ENV: `development`,
+              DAWSON_STAGE: `devel`
             }
           }
         }

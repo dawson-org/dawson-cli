@@ -90,7 +90,14 @@ function taskProcessTemplate (
 }
 
 function taskCreateFunctionTemplatePartial (
-  { index, def, stackName, zipS3Location, environment: originalEnvironment }
+  {
+    index,
+    def,
+    stackName,
+    zipS3Location,
+    environment: originalEnvironment,
+    appStage
+  }
 ) {
   if (typeof def.api !== 'object') {
     throw new Error(
@@ -136,7 +143,8 @@ function taskCreateFunctionTemplatePartial (
     policyStatements,
     runtime,
     environment,
-    devInstrument
+    devInstrument,
+    appStage
   });
 
   if (resourcePath === false) {
@@ -265,7 +273,8 @@ export default function generateTemplate (
       def,
       stackName,
       zipS3Location,
-      environment
+      environment,
+      appStage
     });
     functionTemplatePartials = { ...functionTemplatePartials, ...template };
     if (methodDefinition) {

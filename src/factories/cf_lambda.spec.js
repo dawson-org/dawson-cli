@@ -149,7 +149,7 @@ test('templateLambda', t => {
         Runtime: 'foobar',
         MemorySize: 1024,
         Timeout: 30,
-        Environment: { Variables: { DAWSON_myBar: 'baz', NODE_ENV: 'development' } }
+        Environment: { Variables: { DAWSON_myBar: 'baz', NODE_ENV: 'development', DAWSON_STAGE: 'devel' } }
       }
     },
     PermissionForLambdaMyFunction: {
@@ -165,6 +165,7 @@ test('templateLambda', t => {
     }
   };
   const actual = templateLambda({
+    appStage: 'devel',
     lambdaName: 'MyFunction',
     handlerFunctionName: 'myFunction',
     zipS3Location: {
@@ -250,7 +251,7 @@ test('templateLambda in production', t => {
         Runtime: 'foobar',
         MemorySize: 1024,
         Timeout: 30,
-        Environment: { Variables: { DAWSON_myBar: 'baz', NODE_ENV: 'production' } }
+        Environment: { Variables: { DAWSON_myBar: 'baz', NODE_ENV: 'production', DAWSON_STAGE: 'devel' } }
       }
     },
     PermissionForLambdaMyFunction: {
@@ -268,6 +269,7 @@ test('templateLambda in production', t => {
   const oldEnv = `${process.env.NODE_ENV || ''}`;
   process.env.NODE_ENV = 'production';
   const actual = templateLambda({
+    appStage: 'devel',
     lambdaName: 'MyFunction',
     handlerFunctionName: 'myFunction',
     zipS3Location: {
@@ -354,7 +356,7 @@ test('templateLambda with inline codes', t => {
         Runtime: 'nodejs4.3',
         MemorySize: 1024,
         Timeout: 30,
-        Environment: { Variables: { NODE_ENV: 'development' } }
+        Environment: { Variables: { NODE_ENV: 'development', DAWSON_STAGE: 'devel' } }
       }
     },
     PermissionForLambdaMyFunction: {
@@ -370,6 +372,7 @@ test('templateLambda with inline codes', t => {
     }
   };
   const actual = templateLambda({
+    appStage: 'devel',
     lambdaName: 'MyFunction',
     handlerFunctionName: 'myFunction',
     inlineCode: (
@@ -457,6 +460,7 @@ test('templateLambda with dev instruments', t => {
           Variables: {
             DAWSON_myBar: 'baz',
             NODE_ENV: 'development',
+            DAWSON_STAGE: 'devel',
             DAWSONInstrument_Queue_MyFunction: { Ref: 'IQueueMyFunction' }
           }
         }
@@ -502,6 +506,7 @@ test('templateLambda with dev instruments', t => {
     }
   };
   const actual = templateLambda({
+    appStage: 'devel',
     lambdaName: 'MyFunction',
     handlerFunctionName: 'myFunction',
     zipS3Location: {

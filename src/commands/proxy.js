@@ -146,7 +146,7 @@ function getEnvVariables (outputs) {
 }
 
 async function runDockerContainer (
-  { runner, event, outputs, resources, PROJECT_ROOT },
+  { stage, runner, event, outputs, resources, PROJECT_ROOT },
   callback
 ) {
   if (!credentialsCache.has(runner)) {
@@ -168,6 +168,7 @@ async function runDockerContainer (
       dockerArgs: []
         .concat(['-m', '512M'])
         .concat(['--env', `NODE_ENV=${process.env.NODE_ENV || 'development'}`])
+        .concat(['--env', `DAWSON_STAGE=${stage}`])
         .concat(['--env', `AWS_ACCESS_KEY_ID=${credentials.AccessKeyId}`])
         .concat([
           '--env',
@@ -202,6 +203,7 @@ async function processAPIRequest (
   req,
   res,
   {
+    stage,
     body,
     outputs,
     resources,
@@ -244,7 +246,7 @@ async function processAPIRequest (
   const authorizer = runner.api.authorizer;
   const executeCall = () =>
     runDockerContainer(
-      { res, runner, event, outputs, resources, PROJECT_ROOT },
+      { stage, res, runner, event, outputs, resources, PROJECT_ROOT },
       (...args) => apiCallback(res, ...args)
     );
 
@@ -452,12 +454,12 @@ function createBundle ({ stage, stackName, onlyCompile = false, skipChmod }) {
   });
 }
 
-function handleIncomingSQSMessage ({ queueUrl, runner, outputs, resources, PROJECT_ROOT, message }) {
+function handleIncomingSQSMessage ({ stage, queueUrl, runner, outputs, resources, PROJECT_ROOT, message }) {
   const body = message.Body;
   const receiptHandle = message.ReceiptHandle;
   const event = JSON.parse(body);
   runDockerContainer(
-    { runner, event, outputs, resources, PROJECT_ROOT },
+    { stage, runner, event, outputs, resources, PROJECT_ROOT },
     (runner, error, result) => {
       log(`* Event handling by dev server is completed`.dim);
       sqs.deleteMessage({
@@ -476,7 +478,7 @@ function handleIncomingSQSMessage ({ queueUrl, runner, outputs, resources, PROJE
   );
 }
 
-function handleIncomingSQSMessages ({ queueUrl, runner, outputs, resources, PROJECT_ROOT }) {
+function handleIncomingSQSMessages ({ stage, queueUrl, runner, outputs, resources, PROJECT_ROOT }) {
   sqs.receiveMessage({
     QueueUrl: queueUrl,
     WaitTimeSeconds: 20,
@@ -486,14 +488,14 @@ function handleIncomingSQSMessages ({ queueUrl, runner, outputs, resources, PROJ
   .then(data => {
     if (data.Messages && data.Messages.length > 0) {
       data.Messages.forEach(message => handleIncomingSQSMessage(
-        { queueUrl, runner, outputs, resources, PROJECT_ROOT, message }
+        { stage, queueUrl, runner, outputs, resources, PROJECT_ROOT, message }
       ));
     }
     return handleIncomingSQSMessages(...arguments);
   });
 }
 
-function startQueuePolling ({ outputs, resources, PROJECT_ROOT }) {
+function startQueuePolling ({ stage, outputs, resources, PROJECT_ROOT }) {
   const { API_DEFINITIONS } = loadConfig();
   Object.values(API_DEFINITIONS).forEach(runner => {
     if (!runner.api) {
@@ -503,7 +505,7 @@ function startQueuePolling ({ outputs, resources, PROJECT_ROOT }) {
       return true;
     }
     const queueUrl = findQueueURL(resources, runner);
-    handleIncomingSQSMessages({ queueUrl, runner, outputs, resources, PROJECT_ROOT });
+    handleIncomingSQSMessages({ stage, queueUrl, runner, outputs, resources, PROJECT_ROOT });
   });
 }
 
@@ -562,6 +564,7 @@ export function run (argv) {
       let jsonBody = {};
       const next = () => {
         processAPIRequest(req, res, {
+          stage,
           pathname,
           querystring,
           body: jsonBody,
@@ -767,7 +770,7 @@ export function run (argv) {
   startupTasks
     .run()
     .then(() => {
-      startQueuePolling({ outputs, resources, PROJECT_ROOT });
+      startQueuePolling({ stage, outputs, resources, PROJECT_ROOT });
       server.listen(port);
       success(
         '\n' +
