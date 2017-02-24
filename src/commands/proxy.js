@@ -40,6 +40,7 @@ const sts = new AWS.STS({});
 const iam = new AWS.IAM({});
 const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
 const credentialsCache = new WeakMap();
+const CREDENTIALS_DURATION_SECONDS = 3600;
 
 function findApi ({ method, pathname, API_DEFINITIONS }) {
   let found = null;
@@ -155,6 +156,7 @@ async function runDockerContainer (
     );
     const assumedRoleCredentials = await assumeRole(resources, runner);
     credentialsCache.set(runner, assumedRoleCredentials);
+    setTimeout(() => credentialsCache.delete(runner), (CREDENTIALS_DURATION_SECONDS - 600) * 1000);
   }
   const credentials = credentialsCache.get(runner);
   const envVariables = getEnvVariables(outputs);
@@ -304,7 +306,7 @@ async function assumeRole (stackResources, runner) {
   const assumeRoleParams = {
     RoleArn: roleArn,
     RoleSessionName: 'dawson-dev-proxy',
-    DurationSeconds: 900
+    DurationSeconds: CREDENTIALS_DURATION_SECONDS
   };
   const assumedRole = await sts.assumeRole(assumeRoleParams).promise();
   debug(
