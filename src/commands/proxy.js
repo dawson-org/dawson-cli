@@ -134,7 +134,7 @@ function apiCallback (res, runner, responseError, responseData) {
   } else {
     res.write(responseData.response);
   }
-  log(`============== Log Fragment End ==============\n`.dim);
+  log(`======= Log Fragment End =======\n`.dim);
   res.end();
   return;
 }
@@ -152,17 +152,20 @@ async function runDockerContainer (
 ) {
   if (!credentialsCache.has(runner)) {
     log(
-      `   [STS] requesting AWS Temporary Credentials for Lambda '${runner.name}' (this will take a few seconds)`
+      `   [STS] requesting new AWS temporary credentials for Lambda '${runner.name}' (${new Date().toISOString()})`
     );
     const assumedRoleCredentials = await assumeRole(resources, runner);
     credentialsCache.set(runner, assumedRoleCredentials);
     setTimeout(() => credentialsCache.delete(runner), (CREDENTIALS_DURATION_SECONDS - 600) * 1000);
+  } else {
+    log(
+      `   [STS] using cached credentials for Lambda '${runner.name}'`
+    );
   }
   const credentials = credentialsCache.get(runner);
   const envVariables = getEnvVariables(outputs);
   try {
-    log(`\n============= Log Fragment Begin =============`.dim);
-    log(`Function name: `.bold, runner.name);
+    log(`\n======= Log Fragment Begin for «${runner.name.bold}» =======`.dim);
     const invokeResult = dockerLambda({
       event,
       taskDir: `${PROJECT_ROOT}/.dawson-dist`,
@@ -471,7 +474,7 @@ function handleIncomingSQSMessage ({ stage, queueUrl, runner, outputs, resources
       .promise()
       .then(() => {
         log(`* Message deleted from the Queue`.dim);
-        log(`============== Log Fragment End ==============\n`.dim);
+        log(`======= Log Fragment End =======\n`.dim);
       })
       .catch(e => {
         log(`* Cleanup failed, message could not have been removed from the Queue`, e);
