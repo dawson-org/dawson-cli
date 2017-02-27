@@ -81,6 +81,8 @@ export function templateRest ({ appStage }) {
   };
 }
 
+const resolvedPathResources = {};
+
 export function templateResourceHelper ({ resourcePath }) {
   const resourcePathTokens = resourcePath.split('/');
   let lastResourceName;
@@ -92,10 +94,20 @@ export function templateResourceHelper ({ resourcePath }) {
       resourceName = null;
     } else if (pathToken[0] === '{') {
       let pathWithoutBrackets = /\{(.*)\}/.exec(pathToken)[1];
+      if (!pathWithoutBrackets.match(/^[a-z0-9]+$/i)) {
+        throw new Error(`Path part in '${resourcePath}' cannot contain non-alphanum characters inside brackets.`);
+      }
       resourceName = pathWithoutBrackets[0].toUpperCase() +
         pathWithoutBrackets.substring(1);
     } else {
-      resourceName = pathToken[0].toUpperCase() + pathToken.substring(1);
+      const cleanPath = pathToken.replace(/[^a-z0-9]+/gi, '');
+      resourceName = cleanPath[0].toUpperCase() + cleanPath.substring(1);
+      if (!resolvedPathResources[cleanPath]) {
+        resolvedPathResources[cleanPath] = pathToken;
+      }
+      if (resolvedPathResources[cleanPath] !== pathToken) {
+        throw new Error(`Path part '${cleanPath}' in '${resourcePath}' conflicts with an existing path: '${resolvedPathResources[cleanPath]}', please rename.`);
+      }
     }
     assert(
       !pathToken || pathToken[0] !== '/',
