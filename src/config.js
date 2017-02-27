@@ -65,7 +65,7 @@ const FUNCTION_CONFIGURATION_SCHEMA = {
         return new Error(`path should not begin or end with a '/'`);
       }
       if (!val.split(/\//g).every(token => /^{[^?#]+}$/.test(token) || /^[^?#{}]+$/.test(token))) {
-        return new Error(`path part eiter must start and end with a curly brace or must not contain any curly brace, and it cannot contain two consecutive slashes`);
+        return new Error(`path part either must start and end with a curly brace or must not contain any curly brace, and it cannot contain two consecutive slashes`);
       }
     },
     authorizer: Type.func,
