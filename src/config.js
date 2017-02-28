@@ -115,7 +115,7 @@ let requiredApi;
 function validateCloudFrontConfig (cloudfront) {
   const message = [
     `The value of the 'cloudfront' property in your package.json is invalid.`,
-    `Please check the documentation: https://github.com/dawson-org/dawson-cli/wiki/`
+    `Please check the documentation: https://dawson.sh/docs.html`
   ];
   if (typeof cloudfront === 'undefined') { return true; }
   if (typeof cloudfront !== 'object') {
@@ -133,7 +133,7 @@ function validateCloudFrontConfig (cloudfront) {
 function validateRoute53Config (route53) {
   const message = [
     `The value of the 'route53' property in your package.json is invalid (expected object<string>).`,
-    `Please check the documentation: https://github.com/dawson-org/dawson-cli/wiki/`
+    `Please check the documentation: https://dawson.sh/docs.html`
   ];
   if (typeof route53 === 'undefined') { return true; }
   if (typeof route53 !== 'object') {
@@ -154,7 +154,7 @@ function validateDawsonConfig (dawson, rootDir) {
   })) {
     return [
       `Encountered an unknown property 'dawson.${currentPropertyName}' in package.json`,
-      `Please check the documentation: https://github.com/dawson-org/dawson-cli/wiki/`
+      `Please check the documentation: https://dawson.sh/docs.html`
     ];
   }
 
@@ -219,7 +219,7 @@ function validatePackageJSON (source, rootDir) {
   if (!source.name) {
     return [
       'You have not specified a `name` field in your package.json.',
-      `Please check the documentation: https://github.com/dawson-org/dawson-cli/wiki/`
+      `Please check the documentation: https://dawson.sh/docs.html`
     ];
   }
   return validateDawsonConfig(source.dawson, rootDir);
@@ -249,7 +249,7 @@ function validateAPI (source) {
   if (source.customTemplateFragment && typeof source.customTemplateFragment !== 'function') {
     return [
       `if 'customTemplateFragment' is defined, it must be a 'function', not '${typeof source.customTemplateFragment}'`,
-      `Refer to the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/`
+      `Refer to the documentation for more info: https://dawson.sh/docs.html`
     ];
   }
 
@@ -275,7 +275,7 @@ function validateAPI (source) {
   } catch (e) {
     return [
       `Invalid function configuration for ${current}: ${e.message}`,
-      `Check the api property of this function. Refer to the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/`
+      `Check the api property of this function. Refer to the documentation for more info: https://dawson.sh/docs.html`
     ];
   }
 
@@ -286,13 +286,13 @@ function validateAPI (source) {
         if (typeof source[authorizerName] !== 'function') {
           return [
             `Authorizer '${authorizerName}' should be exported from api.js`,
-            `Check the api property of this function. Refer to the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/`
+            `Check the api property of this function. Refer to the documentation for more info: https://dawson.sh/docs.html`
           ];
         }
         if (source[authorizerName].api.path !== false) {
           return [
             `Authorizer '${authorizerName}' should have api.path === false`,
-            `Check the api property of this function. Refer to the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/`
+            `Check the api property of this function. Refer to the documentation for more info: https://dawson.sh/docs.html`
           ];
         }
       }
@@ -300,7 +300,7 @@ function validateAPI (source) {
   } catch (e) {
     return [
       `Invalid function configuration for ${current}: ${e.message}`,
-      `Check the api property of this function. Refer to the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/`
+      `Check the api property of this function. Refer to the documentation for more info: https://dawson.sh/docs.html`
     ];
   }
 
