@@ -65,7 +65,7 @@ $ dawson deploy
   * [`pre-deploy`](#pre-deploy)
   * [`post-deploy`](#post-deploy)
   * [`ignore`](#ignore)
-  * [`root`](#cloudfrontrootorigin)
+  * [`root`](#root)
   * [`route53`](#route53)
   * [`cloudfront`](#cloudfront)
   * [5.1 SSL/TLS Certificates](#51-ssltls-certificates)
