@@ -12,6 +12,27 @@ export function templateAssetsBucket () {
           IndexDocument: 'index.html'
         }
       }
+    },
+    [`${templateAssetsBucketName()}Policy`]: {
+      Type: 'AWS::S3::BucketPolicy',
+      Properties: {
+        Bucket: { Ref: `${templateAssetsBucketName()}` },
+        PolicyDocument: {
+          Statement: [
+            {
+              Action: ['s3:GetObject'],
+              Effect: 'Allow',
+              Resource: {
+                'Fn::Join': [
+                  '',
+                  ['arn:aws:s3:::', { Ref: `${templateAssetsBucketName()}` }, '/*']
+                ]
+              },
+              Principal: '*'
+            }
+          ]
+        }
+      }
     }
   };
 }

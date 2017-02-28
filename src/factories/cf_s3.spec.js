@@ -18,6 +18,27 @@ test('templateAssetsBucket', t => {
           IndexDocument: 'index.html'
         }
       }
+    },
+    BucketAssetsPolicy: {
+      Type: 'AWS::S3::BucketPolicy',
+      Properties: {
+        Bucket: { Ref: 'BucketAssets' },
+        PolicyDocument: {
+          Statement: [
+            {
+              Action: ['s3:GetObject'],
+              Effect: 'Allow',
+              Resource: {
+                'Fn::Join': [
+                  '',
+                  ['arn:aws:s3:::', { Ref: 'BucketAssets' }, '/*']
+                ]
+              },
+              Principal: '*'
+            }
+          ]
+        }
+      }
     }
   };
   const actual = templateAssetsBucket();
