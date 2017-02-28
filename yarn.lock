@@ -2960,7 +2960,7 @@ mime-db@~1.26.0:
   version "1.26.0"
   resolved "https://registry.yarnpkg.com/mime-db/-/mime-db-1.26.0.tgz#eaffcd0e4fc6935cf8134da246e2e6c35305adff"
 
-mime-types@^2.1.12, mime-types@~2.1.7:
+mime-types@^2.1.12, mime-types@^2.1.14, mime-types@~2.1.7:
   version "2.1.14"
   resolved "https://registry.yarnpkg.com/mime-types/-/mime-types-2.1.14.tgz#f7ef7d97583fcaf3b7d282b6f8b5679dab1e94ee"
   dependencies:
@@ -3855,12 +3855,13 @@ rxjs@^5.0.0-beta.11, rxjs@^5.0.3:
   dependencies:
     symbol-observable "^1.0.1"
 
-s3-recursive-uploader@^0.1.0:
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/s3-recursive-uploader/-/s3-recursive-uploader-0.1.0.tgz#b4689790ff761e918454dc6d43f3db3794b15b8e"
+s3-recursive-uploader@0.2:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/s3-recursive-uploader/-/s3-recursive-uploader-0.2.0.tgz#4c6bd2bc50cf5e8db674291db0e33f3c8820d761"
   dependencies:
     async "^2.1.5"
     aws-sdk "^2.22.0"
+    mime-types "^2.1.14"
     recursive-readdir "^2.1.1"
 
 safe-buffer@^5.0.1:
