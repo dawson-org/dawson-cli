@@ -39,7 +39,8 @@ const APP_CONFIGURATION_PROPERTIES = [
   'ignore',
   'cloudfront',
   'route53',
-  'root'
+  'root',
+  'assetsDir'
 ];
 
 const FUNCTION_CONFIGURATION_SCHEMA = {
@@ -145,7 +146,7 @@ function validateRoute53Config (route53) {
   return true;
 }
 
-function validateDawsonConfig (dawson) {
+function validateDawsonConfig (dawson, rootDir) {
   let currentPropertyName;
   if (!Object.keys(dawson).every(key => {
     currentPropertyName = key;
@@ -155,6 +156,18 @@ function validateDawsonConfig (dawson) {
       `Encountered an unknown property 'dawson.${currentPropertyName}' in package.json`,
       `Please check the documentation: https://github.com/dawson-org/dawson-cli/wiki/`
     ];
+  }
+
+  if (dawson.assetsDir) {
+    const resolvedAssetsPath = `${rootDir}/${dawson.assetsDir}`;
+    if (!existsSync(resolvedAssetsPath)) {
+      return [
+        `Path specified by 'assetsDir' does not exist.`,
+        `Directory does not exist: '${resolvedAssetsPath}',
+        either create this directory, set the correct value for the 'assetsDir' property
+        in package.json, or set 'assetsDir' to false if you're not using static assets`
+      ];
+    }
   }
 
   const cloudfrontIsValid = validateCloudFrontConfig(dawson.cloudfront);
@@ -202,14 +215,14 @@ export function validateDocker () {
   }
 }
 
-function validatePackageJSON (source) {
+function validatePackageJSON (source, rootDir) {
   if (!source.name) {
     return [
       'You have not specified a `name` field in your package.json.',
       `Please check the documentation: https://github.com/dawson-org/dawson-cli/wiki/`
     ];
   }
-  return validateDawsonConfig(source.dawson);
+  return validateDawsonConfig(source.dawson, rootDir);
 }
 
 function validateBabelRc (rootDir) {
@@ -417,7 +430,7 @@ export default function loadConfig (rootDir = process.cwd()) {
     process.exit(1);
   }
 
-  const pkgJsonValidationResult = validatePackageJSON(requiredPkgJson);
+  const pkgJsonValidationResult = validatePackageJSON(requiredPkgJson, rootDir);
   if (pkgJsonValidationResult !== true) {
     console.error(createError({
       kind: `dawson configuration error`,

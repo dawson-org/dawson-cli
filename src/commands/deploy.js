@@ -5,6 +5,7 @@ import execa from 'execa';
 import Listr from 'listr';
 import verboseRenderer from 'listr-verbose-renderer';
 import { stripIndent } from 'common-tags';
+import s3Uploader from 's3-recursive-uploader';
 
 import loadConfig from '../config';
 import taskCreateBundle from '../libs/createBundle';
@@ -18,7 +19,7 @@ import createOrUpdateStack from '../libs/aws/cfn-create-or-update-stack';
 import { templateStackName, buildCreateStackParams } from '../factories/cloudformation';
 import { observerForUpdateCompleted } from '../libs/aws/cfn-update-observer';
 import { removeStackPolicy, restoreStackPolicy } from '../libs/aws/cfn-stack-policy-helpers';
-import { getStackOutputs } from '../libs/aws/cfn-get-stack-info-helpers';
+import { getStackOutputs, getStackResources } from '../libs/aws/cfn-get-stack-info-helpers';
 
 function taskUploadZip ({ supportBucketName, appStage, stackName, ignore, skipChmod }, ctx) {
   return taskCreateBundle({
@@ -68,6 +69,7 @@ export async function deploy ({
     API_DEFINITIONS,
     SETTINGS,
     APP_NAME,
+    PROJECT_ROOT,
     getCloudFrontSettings,
     getHostedZoneId
   } = loadConfig();
@@ -103,7 +105,9 @@ export async function deploy ({
           cloudfrontConfigMap: cloudfrontStagesMap,
           appName: APP_NAME,
           skipChmod,
-          deploymentUid: `${Date.now()}${Math.floor(Math.random() * 1000)}`
+          deploymentUid: `${Date.now()}${Math.floor(Math.random() * 1000)}`,
+          rootDir: PROJECT_ROOT,
+          assetsDir: typeof SETTINGS.assetsDir === 'undefined' ? 'assets' : false
         });
       }
     },
@@ -192,6 +196,18 @@ export async function deploy ({
       title: 'running post-deploy hook',
       skip: () => !SETTINGS['post-deploy'],
       task: () => execa.shell(SETTINGS['post-deploy'])
+    },
+    {
+      title: 'uploading assets',
+      skip: ctx => !ctx.assetsDir,
+      task: async ctx => {
+        const resources = await getStackResources({ stackName: ctx.stackName });
+        const assetsBucket = resources.find(o => o.LogicalResourceId === 'BucketAssets').PhysicalResourceId;
+        await s3Uploader({
+          source: `${ctx.rootDir}/${ctx.assetsDir}`,
+          destination: `${assetsBucket}/assets/`
+        });
+      }
     }
   ], {
     renderer: verbose ? verboseRenderer : undefined
