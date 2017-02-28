@@ -10,9 +10,14 @@ You can use `dawson` to build and deploy backend code and infrastructure for sin
 
 ```js
 // api.js
-export function greet (event) {
+
+import pug from 'pug';
+const template = pug.compileFile('template.pug');
+
+export async function greet (event) {
     const name = event.params.path.name
-    return `Hello ${name}, you look awesome!`
+    const age = await getUserAge(name);
+    return template({ name, age });
 }
 greet.api = {
     path: 'greet/{name}'
@@ -20,6 +25,7 @@ greet.api = {
 ```
 ```bash
 $ npm install -g dawson
+$ export AWS_REGION=... AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=...
 $ dawson deploy
 ```
 
