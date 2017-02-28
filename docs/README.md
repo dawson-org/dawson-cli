@@ -65,7 +65,7 @@ $ dawson deploy
   * [`pre-deploy`](#pre-deploy)
   * [`post-deploy`](#post-deploy)
   * [`ignore`](#ignore)
-  * [`cloudfrontRootOrigin`](#cloudfrontrootorigin)
+  * [`root`](#cloudfrontrootorigin)
   * [`route53`](#route53)
   * [`cloudfront`](#cloudfront)
   * [5.1 SSL/TLS Certificates](#51-ssltls-certificates)
@@ -546,7 +546,7 @@ If the default settings does not fit your use case, you can configure dawson's b
     "route53": {
       "default": "Z187MLBSXQKXXX"
     },
-    "cloudfrontRootOrigin": "api",
+    "root": "api",
     "cloudfront": {
       "default": true,
       "production": "myapp.com",
@@ -580,7 +580,7 @@ A list of partial paths to ignore when compiling, when zipping the bundle and wh
 Paths should begin with `*` unless they're absolute (see [zip man page](https://linux.die.net/man/1/zip)).
 **Do not** specify `node_modules` here, it is already ignored when needed.  
 
-## `cloudfrontRootOrigin`
+## `root`
 **Required**: no | **Type**: `"api" | "assets"` | **Default**: `api`  
 **Use for**: Specifying wether the root ("/") path of your app serves the contents from the `assets/` folder or from the API
 

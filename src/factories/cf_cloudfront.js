@@ -64,7 +64,7 @@ export function templateCloudfrontDistribution (
     alias,
     acmCertificateArn,
     skipAcmCertificate,
-    cloudfrontRootOrigin
+    root
   }
 ) {
   const aliasesConfig = {};
@@ -157,7 +157,7 @@ export function templateCloudfrontDistribution (
   let otherCB;
   let defaultRootObject;
   let CustomErrorResponses;
-  if (cloudfrontRootOrigin === 'assets') {
+  if (root === 'assets') {
     delete s3CB.PathPattern; // serve root from s3
     apiCB.PathPattern = 'prod/*'; // serve api from api/
     delete apiOrigin.OriginPath; // do not add trailing prod/ when fwding api

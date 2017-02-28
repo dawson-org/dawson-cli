@@ -110,7 +110,7 @@ test('templateCloudfrontDistribution without WebACL', t => {
     alias: 'dawson.sh',
     acmCertificateArn: 'arn:aws:acm:fake',
     skipAcmCertificate: false,
-    cloudfrontRootOrigin: 'api'
+    root: 'api'
   });
   t.deepEqual(actual, expected);
 });
@@ -214,7 +214,7 @@ test('templateCloudfrontDistribution without aliases', t => {
   };
   const actual = templateCloudfrontDistribution({
     stageName: 'prod',
-    cloudfrontRootOrigin: 'api'
+    root: 'api'
   });
   t.deepEqual(expected, actual);
 });
@@ -331,7 +331,7 @@ test('templateCloudfrontDistribution with root origin set to assets', t => {
   };
   const actual = templateCloudfrontDistribution({
     stageName: 'prod',
-    cloudfrontRootOrigin: 'assets'
+    root: 'assets'
   });
   t.deepEqual(expected, actual);
 });
@@ -453,7 +453,7 @@ test('templateCloudfrontDistribution with WebACL', t => {
     alias: 'dawson.sh',
     acmCertificateArn: 'arn:aws:acm:fake',
     skipAcmCertificate: false,
-    cloudfrontRootOrigin: 'api'
+    root: 'api'
   });
   process.env.NODE_ENV = oldEnv;
   t.deepEqual(actual, expected);

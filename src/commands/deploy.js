@@ -71,7 +71,7 @@ export async function deploy ({
     getHostedZoneId
   } = loadConfig();
   const cloudfrontStagesMap = SETTINGS.cloudfront;
-  const cloudfrontRootOrigin = SETTINGS.cloudfrontRootOrigin || 'api';
+  const root = SETTINGS.root || 'api';
 
   if (dangerDeleteResources) {
     danger(stripIndent`
@@ -97,7 +97,7 @@ export async function deploy ({
           stackName: templateStackName({ appName: APP_NAME, stage: appStage }),
           stageName: 'prod',
           appStage,
-          cloudfrontRootOrigin: cloudfrontRootOrigin,
+          root: root,
           ignore: SETTINGS.ignore,
           cloudfrontConfigMap: cloudfrontStagesMap,
           appName: APP_NAME,

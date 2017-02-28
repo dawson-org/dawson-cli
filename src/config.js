@@ -39,7 +39,7 @@ const APP_CONFIGURATION_PROPERTIES = [
   'ignore',
   'cloudfront',
   'route53',
-  'cloudfrontRootOrigin'
+  'root'
 ];
 
 const FUNCTION_CONFIGURATION_SCHEMA = {

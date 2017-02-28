@@ -407,7 +407,7 @@ function runAuthorizer (
 }
 
 function requestForAPI (req, SETTINGS) {
-  if (SETTINGS.cloudfrontRootOrigin === 'assets') {
+  if (SETTINGS.root === 'assets') {
     return req.url.startsWith('/prod');
   } else {
     return !req.url.startsWith('/assets');
@@ -416,7 +416,7 @@ function requestForAPI (req, SETTINGS) {
 
 function parseAPIUrl (req, SETTINGS) {
   let urlString;
-  if (SETTINGS.cloudfrontRootOrigin === 'assets') {
+  if (SETTINGS.root === 'assets') {
     urlString = req.url.replace('/prod', '');
   } else {
     urlString = req.url;
@@ -427,7 +427,7 @@ function parseAPIUrl (req, SETTINGS) {
 
 function parseAssetsUrlString (req, SETTINGS) {
   let urlString;
-  if (SETTINGS.cloudfrontRootOrigin !== 'assets') {
+  if (SETTINGS.root !== 'assets') {
     urlString = req.url.replace('/assets', '');
   } else {
     urlString = req.url;
