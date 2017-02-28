@@ -25,7 +25,11 @@ const requestTemplatePartial = contentType => {
     #set($params = $allParams.get($type))
     "$type" : {
       #foreach($paramName in $params.keySet())
+      #if($type == "header")
+      "$paramName.toLowerCase()" : "$util.escapeJavaScript($params.get($paramName))"
+      #else
       "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
+      #end
       #if($foreach.hasNext),#end
       #end
     }
