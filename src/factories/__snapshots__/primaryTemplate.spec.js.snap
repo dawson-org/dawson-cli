@@ -238,13 +238,14 @@ module.exports[`primary template builder`] = {
               "ForwardedValues": {
                 "QueryString": "true",
                 "Headers": [
-                  "Authorization",
-                  "Accept",
-                  "Content-Type",
-                  "Origin",
-                  "Referer",
-                  "Access-Control-Request-Headers",
-                  "Access-Control-Request-Method"
+                  "authorization",
+                  "accept",
+                  "accept-language",
+                  "content-type",
+                  "origin",
+                  "referer",
+                  "access-control-request-headers",
+                  "access-control-request-method"
                 ]
               },
               "ViewerProtocolPolicy": "allow-all",
@@ -604,13 +605,14 @@ module.exports[`primary template builder`] = {
                 ForwardedValues: {
                   QueryString: `true`,
                   Headers: [
-                    `Authorization`,
-                    `Accept`,
-                    `Content-Type`,
-                    `Origin`,
-                    `Referer`,
-                    `Access-Control-Request-Headers`,
-                    `Access-Control-Request-Method`
+                    `authorization`,
+                    `accept`,
+                    `accept-language`,
+                    `content-type`,
+                    `origin`,
+                    `referer`,
+                    `access-control-request-headers`,
+                    `access-control-request-method`
                   ]
                 },
                 ViewerProtocolPolicy: `allow-all`,

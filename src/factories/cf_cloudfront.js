@@ -2,6 +2,17 @@ import { templateAPIID } from './cf_apig';
 import { templateAssetsBucketName } from './cf_s3';
 import { debug } from '../logger';
 
+export const WHITELISTED_HEADERS = [
+  'authorization',
+  'accept',
+  'accept-language',
+  'content-type',
+  'origin',
+  'referer',
+  'access-control-request-headers',
+  'access-control-request-method'
+];
+
 // WebACL
 //
 
@@ -137,15 +148,7 @@ export function templateCloudfrontDistribution (
     TargetOriginId: 'api',
     ForwardedValues: {
       QueryString: 'true',
-      Headers: [
-        'Authorization',
-        'Accept',
-        'Content-Type',
-        'Origin',
-        'Referer',
-        'Access-Control-Request-Headers',
-        'Access-Control-Request-Method'
-      ]
+      Headers: WHITELISTED_HEADERS
     },
     ViewerProtocolPolicy: 'allow-all',
     MinTTL: '0',

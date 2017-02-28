@@ -37,13 +37,14 @@ test('templateCloudfrontDistribution without WebACL', t => {
             DefaultTTL: '0',
             ForwardedValues: {
               Headers: [
-                'Authorization',
-                'Accept',
-                'Content-Type',
-                'Origin',
-                'Referer',
-                'Access-Control-Request-Headers',
-                'Access-Control-Request-Method'
+                'authorization',
+                'accept',
+                'accept-language',
+                'content-type',
+                'origin',
+                'referer',
+                'access-control-request-headers',
+                'access-control-request-method'
               ],
               QueryString: 'true'
             },
@@ -147,13 +148,14 @@ test('templateCloudfrontDistribution without aliases', t => {
             DefaultTTL: '0',
             ForwardedValues: {
               Headers: [
-                'Authorization',
-                'Accept',
-                'Content-Type',
-                'Origin',
-                'Referer',
-                'Access-Control-Request-Headers',
-                'Access-Control-Request-Method'
+                'authorization',
+                'accept',
+                'accept-language',
+                'content-type',
+                'origin',
+                'referer',
+                'access-control-request-headers',
+                'access-control-request-method'
               ],
               QueryString: 'true'
             },
@@ -239,13 +241,14 @@ test('templateCloudfrontDistribution with root origin set to assets', t => {
               DefaultTTL: '0',
               ForwardedValues: {
                 Headers: [
-                  'Authorization',
-                  'Accept',
-                  'Content-Type',
-                  'Origin',
-                  'Referer',
-                  'Access-Control-Request-Headers',
-                  'Access-Control-Request-Method'
+                  'authorization',
+                  'accept',
+                  'accept-language',
+                  'content-type',
+                  'origin',
+                  'referer',
+                  'access-control-request-headers',
+                  'access-control-request-method'
                 ],
                 QueryString: 'true'
               },
@@ -369,13 +372,14 @@ test('templateCloudfrontDistribution with WebACL', t => {
             DefaultTTL: '0',
             ForwardedValues: {
               Headers: [
-                'Authorization',
-                'Accept',
-                'Content-Type',
-                'Origin',
-                'Referer',
-                'Access-Control-Request-Headers',
-                'Access-Control-Request-Method'
+                'authorization',
+                'accept',
+                'accept-language',
+                'content-type',
+                'origin',
+                'referer',
+                'access-control-request-headers',
+                'access-control-request-method'
               ],
               QueryString: 'true'
             },
