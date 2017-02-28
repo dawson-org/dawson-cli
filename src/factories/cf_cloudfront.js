@@ -10,7 +10,8 @@ export const WHITELISTED_HEADERS = [
   'origin',
   'referer',
   'access-control-request-headers',
-  'access-control-request-method'
+  'access-control-request-method',
+  'token'
 ];
 
 // WebACL

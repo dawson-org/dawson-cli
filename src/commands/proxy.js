@@ -332,6 +332,7 @@ function runAuthorizer (
   // https://docs.aws.amazon.com/apigateway/latest/developerguide/use-custom-authorizer.html
   // @TODO: correctly handle 401, 403, 500 response as described in the documentation
 
+  debug('Authorizer event', event);
   const token = event.params.header.token;
   log(`   🔒 Invoking authorizer, token = ${util.inspect(token)}`.yellow.dim);
 

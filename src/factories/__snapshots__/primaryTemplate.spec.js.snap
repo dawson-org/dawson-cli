@@ -276,7 +276,8 @@ module.exports[`primary template builder`] = {
                   "origin",
                   "referer",
                   "access-control-request-headers",
-                  "access-control-request-method"
+                  "access-control-request-method",
+                  "token"
                 ]
               },
               "ViewerProtocolPolicy": "allow-all",
@@ -674,7 +675,8 @@ module.exports[`primary template builder`] = {
                     `origin`,
                     `referer`,
                     `access-control-request-headers`,
-                    `access-control-request-method`
+                    `access-control-request-method`,
+                    `token`
                   ]
                 },
                 ViewerProtocolPolicy: `allow-all`,

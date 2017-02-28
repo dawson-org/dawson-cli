@@ -44,7 +44,8 @@ test('templateCloudfrontDistribution without WebACL', t => {
                 'origin',
                 'referer',
                 'access-control-request-headers',
-                'access-control-request-method'
+                'access-control-request-method',
+                'token'
               ],
               QueryString: 'true'
             },
@@ -155,7 +156,8 @@ test('templateCloudfrontDistribution without aliases', t => {
                 'origin',
                 'referer',
                 'access-control-request-headers',
-                'access-control-request-method'
+                'access-control-request-method',
+                'token'
               ],
               QueryString: 'true'
             },
@@ -248,7 +250,8 @@ test('templateCloudfrontDistribution with root origin set to assets', t => {
                   'origin',
                   'referer',
                   'access-control-request-headers',
-                  'access-control-request-method'
+                  'access-control-request-method',
+                  'token'
                 ],
                 QueryString: 'true'
               },
@@ -379,7 +382,8 @@ test('templateCloudfrontDistribution with WebACL', t => {
                 'origin',
                 'referer',
                 'access-control-request-headers',
-                'access-control-request-method'
+                'access-control-request-method',
+                'token'
               ],
               QueryString: 'true'
             },
