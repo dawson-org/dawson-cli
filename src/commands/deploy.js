@@ -1,5 +1,6 @@
 /* eslint no-unused-vars: 2 */
 
+import path from 'path';
 import chalk from 'chalk';
 import execa from 'execa';
 import Listr from 'listr';
@@ -107,7 +108,7 @@ export async function deploy ({
           skipChmod,
           deploymentUid: `${Date.now()}${Math.floor(Math.random() * 1000)}`,
           rootDir: PROJECT_ROOT,
-          assetsDir: typeof SETTINGS.assetsDir === 'undefined' ? 'assets' : false
+          assetsDir: typeof SETTINGS.assetsDir === 'undefined' ? 'assets' : SETTINGS.assetsDir
         });
       }
     },
@@ -203,9 +204,10 @@ export async function deploy ({
       task: async ctx => {
         const resources = await getStackResources({ stackName: ctx.stackName });
         const assetsBucket = resources.find(o => o.LogicalResourceId === 'BucketAssets').PhysicalResourceId;
+        const destinationSuffix = ctx.root === 'api' ? '/assets/' : '';
         await s3Uploader({
-          source: `${ctx.rootDir}/${ctx.assetsDir}`,
-          destination: `${assetsBucket}/assets/`
+          source: path.resolve(`${ctx.rootDir}/${ctx.assetsDir}`),
+          destination: `${assetsBucket}${destinationSuffix}`
         });
       }
     }
