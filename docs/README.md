@@ -41,7 +41,7 @@ $ dawson deploy
   * [1.1 installing](#11-installing)
   * [1.2 package.json and entry point](#12-packagejson-and-entry-point)
   * [1.3 the dawson CLI](#13-the-dawson-cli)
-  * [1.4 templates, *under the hood*](#14-templates-under-the-hood)
+  * [1.4 Templates and built-in Resources](#14-templates-and-built-in-resources)
   * [1.5 working with *stage*s](#15-working-with-stages)
   * [1.6 deployment speed](#16-deployment-speed)
 - [2. Working with functions](#2-working-with-functions)
@@ -65,9 +65,10 @@ $ dawson deploy
   * [`pre-deploy`](#pre-deploy)
   * [`post-deploy`](#post-deploy)
   * [`ignore`](#ignore)
-  * [`root`](#cloudfrontrootorigin)
+  * [`root`](#root)
   * [`route53`](#route53)
   * [`cloudfront`](#cloudfront)
+  * [`assetsDir`](#assetsdir)
   * [5.1 SSL/TLS Certificates](#51-ssltls-certificates)
 - [6. Working with the Template](#6-working-with-the-template)
   * [6.1 Adding custom resources](#61-adding-custom-resources)
@@ -133,16 +134,30 @@ dawson ships a few commands that you should use to manage your application, here
 `$ dawson describe` list all of the Resources that have been deployed  
 `$ dawson dev` starts a **development server**  
 
-## 1.4 templates, *under the hood*
-When you run the `$ dawson deploy` command, dawson reads your file's contents and constructs a (*JSON*) description of the AWS infrastructure that needs to be created (functions, API endpoints, etc...). Such description is called **Template**. The Template is then uploaded to AWS, which performs the actual deploy. AWS takes care of creating resources, calculating changes and to perform the actual deployment. 
+## 1.4 Templates and built-in Resources
+When you run the `$ dawson deploy` command, dawson reads your file's contents and constructs a (*JSON*) description of the AWS infrastructure that needs to be created (functions, API endpoints, etc...). Such description is called **Template**. The Template is then uploaded to AWS, which performs the actual deploy. AWS takes care of creating resources, calculating changes and to perform the actual deployment.  
+
+> Some Template components respects the NODE_ENV variable. Set `NODE_ENV = production` when deploying to a production environment. For example, stages deployed with `NODE_ENV = production` cannot be used with `$ dawson dev`.
 
 **The description will contain the following Resources:**
 
-- each Function, defined as an [AWS Lambda Function](https://aws.amazon.com/lambda/faqs/)  
-- an [API Gateway HTTP Endpoint](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-create-api-step-by-step.html), linked to each function (if a `path` is set)  
-- one [S3 Bucket](https://docs.aws.amazon.com/AmazonS3/latest/dev/UsingBucket.html) is created and your static assets (html, css, js,...) are uploaded there; dawson calls it `BucketAssets`  
-- a [CloudFront Distribution](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html) (*like a CDN*) is created and is configured to serve the static assets from S3 and the API Endpoints from API Gateway; dawson calls it `WWWDistribution`  
-- *other support resources*
+- one [API Gateway REST API](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-apigateway-restapi.html)
+    - plus, one [API Gateway Stage](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-apigateway-stage.html)
+    - plus, one [API Gateway Deployment](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-apigateway-deployment.html)
+    - plus, one [API Gateway Account](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-apigateway-account.html) (plus one Execution Role)
+- one *Public Assets* [S3 Bucket](https://docs.aws.amazon.com/AmazonS3/latest/dev/UsingBucket.html) is created and your **static assets** (css, js, images, html, ...) are uploaded there; dawson calls it **`BucketAssets`**. Content of this bucket is *public-read*able.  
+- one [CloudFront Distribution](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html) (*like a CDN*) is created and is configured to serve the static assets from the S3 Bucket and the API Endpoints from API Gateway; dawson calls it **`DistributionWWW`**  
+    - plus, one [AWS ACM Certificate](https://docs.aws.amazon.com/acm/latest/userguide/acm-overview.html) if you have set a Custom Domain (CNAME) - *currently, AWS ACM is not managed via CloudFront due to an AWS limitation*
+    - plus, one [Route53 RecordSet](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-recordset.html) if you have specified a hostedZoneId
+    - plus, one [AWS WAF WebACL](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-waf-webacl.html) ([pricing](https://aws.amazon.com/waf/pricing/)) if you deploy with `NODE_ENV = production`
+- for each function that you *export*:
+    - an [AWS Lambda Function](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-function.html)  
+        - an [IAM Role](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html) and [IAM Policy](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-policy.html) (Execution Role)
+        - a [Lambda Permission](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-permission.html) (to allow API Gateway to call this Function)
+    - *[if the function's path is specified]* an [API Gateway HTTP Endpoint](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-create-api-step-by-step.html)
+        - the related [Model](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-apigateway-model.html), [Method](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-apigateway-method.html), [Resource](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-apigateway-resource.html),  [Authorizer*](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-apigateway-authorizer.html)
+- [user-defined Resources](#61-adding-custom-resources)
+- dawson's support Resources, in a separate stack - *one for each Region that has at least one stage*
 
 *Reference architecture:*
 ![](https://rawgit.com/dawson-org/dawson-cli/images/architecture.png)
@@ -547,6 +562,7 @@ If the default settings does not fit your use case, you can configure dawson's b
       "default": "Z187MLBSXQKXXX"
     },
     "root": "api",
+    "assetsDir": "assets",
     "cloudfront": {
       "default": true,
       "production": "myapp.com",
@@ -589,6 +605,16 @@ This option controls the [behaviour](https://docs.aws.amazon.com/AmazonCloudFron
   * if `"api"` (typically for *APIs* or *Server-Rendered pages*), all requests are forwarded to your APIs, except requests starting with `/assets` which are served using the S3 Assets Bucket contents.  
   When forwarding requests to the S3 Assets Bucket, the `/assets` prefix will not be stripped: you need to have an `assets` folder at top level in your bucket. At the opposite, when forwarding requests to your API, the `/prod` prefix will be stripped (because it references API Gateway's Stage).  
   On startup, the development server prints these mappings so you can check that you've properly configured everything.
+
+## `assetsDir`
+**Required**: no | **Type**: `string|boolean` | **Default**: `"assets"`  
+**Use for**: Specifying the path to the folder containing public assets (if any)
+
+Specify a path, relative to the package.json directory, in which public assets (css, img, js, etc.) are located. Dawson recursively uploads file and folders (except hidden files) to the `BucketAssets`.
+By default, if this property is not specified, dawson expects to find public assets in the `__dirname + /assets/` folder.  
+Another common value for this property might be something like `frontend/dist/` if you have a build process in place.  
+The folder must exist when dawson start.  
+Specify `false` to skip deploying assets.  
 
 ## `route53`
 **Required**: no | **Type**: `Object<string:string|boolean>` | **Default**: `{}`  
