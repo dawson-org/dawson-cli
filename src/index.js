@@ -10,7 +10,7 @@ import yargs from 'yargs';
 
 import loadConfig, { initConfig } from './config';
 import pkg from '../package.json';
-import { enableDebug, error, log } from './logger';
+import { enableDebug, error, log, debug } from './logger';
 import { run as deployRun } from './commands/deploy';
 import { run as describeRun } from './commands/describe';
 import { run as logRun } from './commands/log';
@@ -174,4 +174,6 @@ if (!argv.help && !argv.version) {
     log('  ', new Date().toLocaleString().gray);
     log('');
   }
+
+  debug('Command:', process.argv);
 }
