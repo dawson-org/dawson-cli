@@ -23,7 +23,7 @@ import { createProxyServer } from 'http-proxy';
 import { createServer } from 'http';
 import { oneLine, stripIndent } from 'common-tags';
 import { parse } from 'url';
-import { flatten, pickBy } from 'lodash';
+import { flatten, pickBy, mapKeys } from 'lodash';
 
 import createError from '../libs/error';
 import loadConfig, { AWS_REGION, validateDocker } from '../config';
@@ -239,12 +239,16 @@ async function processAPIRequest (
   if (runner.api.redirects) {
     expectedResponseContentType = 'text/plain';
   }
+  const headers = mapKeys(
+    pickBy(req.headers, (v, k) =>
+      WHITELISTED_HEADERS.includes(k.toLowerCase())),
+    (v, k) => k.toLowerCase()
+  );
   const event = {
     params: {
       path: { ...(runner.pathParams || {}) },
       querystring,
-      header: pickBy(req.headers, (v, k) =>
-        WHITELISTED_HEADERS.includes(k.toLowerCase()))
+      header: headers
     },
     body,
     meta: { expectedResponseContentType }
