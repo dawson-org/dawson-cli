@@ -23,7 +23,7 @@ import { createProxyServer } from 'http-proxy';
 import { createServer } from 'http';
 import { oneLine, stripIndent } from 'common-tags';
 import { parse } from 'url';
-import { flatten } from 'lodash';
+import { flatten, pickBy } from 'lodash';
 
 import createError from '../libs/error';
 import loadConfig, { AWS_REGION, validateDocker } from '../config';
@@ -34,6 +34,7 @@ import {
   getStackResources
 } from '../libs/aws/cfn-get-stack-info-helpers';
 import { templateStackName } from '../factories/cloudformation';
+import { WHITELISTED_HEADERS } from '../factories/cf_cloudfront';
 import { templateLambdaRoleName } from '../factories/cf_lambda';
 
 const sts = new AWS.STS({});
@@ -241,7 +242,8 @@ async function processAPIRequest (
     params: {
       path: { ...(runner.pathParams || {}) },
       querystring,
-      header: req.headers
+      header: pickBy(req.headers, (v, k) =>
+        WHITELISTED_HEADERS.includes(k.toLowerCase()))
     },
     body,
     meta: { expectedResponseContentType }
