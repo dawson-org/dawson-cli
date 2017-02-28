@@ -196,13 +196,6 @@ function validateSystem () {
       `install the 'zip' command using operating system's package manager`
     ];
   }
-  const yarnResult = execIfExists('yarn', ['help']);
-  if (yarnResult.status !== 0) {
-    return [
-      `yarn is a required dependency but the yarn binary was not found: ${yarnResult.error.message}`,
-      `install the yarn package manager using '$ npm install -g yarn'`
-    ];
-  }
   return true;
 }
 
@@ -388,7 +381,6 @@ export default function loadConfig (rootDir = process.cwd()) {
         `,
         solution: stripIndent`
         $ npm install --save-dev babel-preset-dawson
-        $ yarn add --dev babel-preset-dawson
         `
       }).toFormattedString());
       process.exit(1);
