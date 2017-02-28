@@ -61,7 +61,8 @@ export async function deploy ({
   dangerDeleteResources = false,
   skipAcmCertificate = false,
   verbose = false,
-  skipChmod = false
+  skipChmod = false,
+  skipCloudformation = false
 }) {
   const {
     API_DEFINITIONS,
@@ -130,6 +131,7 @@ export async function deploy ({
     },
     {
       title: 'creating bundle',
+      skip: () => skipCloudformation,
       task: ctx => {
         return taskUploadZip({
           ...ctx
@@ -155,7 +157,7 @@ export async function deploy ({
     },
     {
       title: 'removing stack policy',
-      skip: ctx => !ctx.dangerDeleteResources,
+      skip: ctx => skipCloudformation || !ctx.dangerDeleteResources,
       task: async (ctx) => {
         const { dangerDeleteResources, stackName } = ctx;
         await taskRemoveStackPolicy({ dangerDeleteResources, stackName });
@@ -163,6 +165,7 @@ export async function deploy ({
     },
     {
       title: 'requesting changeset',
+      skip: () => skipCloudformation,
       task: async (ctx) => {
         const { stackName, cfParams } = ctx;
         const updateRequest = await taskRequestStackUpdate({ stackName, cfParams });
@@ -171,7 +174,7 @@ export async function deploy ({
     },
     {
       title: 'waiting for stack update to complete',
-      skip: ctx => ctx.stackChangesetEmpty === true,
+      skip: ctx => skipCloudformation || ctx.stackChangesetEmpty === true,
       task: ctx => {
         const { stackName } = ctx;
         return observerForUpdateCompleted({ stackName });
@@ -179,7 +182,7 @@ export async function deploy ({
     },
     {
       title: 'setting stack policy',
-      skip: ctx => !ctx.dangerDeleteResources,
+      skip: ctx => skipCloudformation || !ctx.dangerDeleteResources,
       task: async (ctx) => {
         const { dangerDeleteResources, stackName } = ctx;
         await taskRestoreStackPolicy({ dangerDeleteResources, stackName });
@@ -224,7 +227,8 @@ export function run (argv) {
     skipAcmCertificate: argv['skip-acm'],
     appStage: argv.stage,
     verbose: argv.verbose,
-    skipChmod: argv['skip-chmod']
+    skipChmod: argv['skip-chmod'],
+    skipCloudformation: argv['skip-cloudformation']
   })
   .catch(err => {
     if (err.isDawsonError) {
