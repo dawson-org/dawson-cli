@@ -163,9 +163,10 @@ function validateDawsonConfig (dawson, rootDir) {
     if (!existsSync(resolvedAssetsPath)) {
       return [
         `Path specified by 'assetsDir' does not exist.`,
-        `Directory does not exist: '${resolvedAssetsPath}',
+        stripIndent`
+        Directory does not exist: '${resolvedAssetsPath}',
         either create this directory, set the correct value for the 'assetsDir' property
-        in package.json, or set 'assetsDir' to false if you're not using static assets`
+        in package.json, or set 'assetsDir' to false if you're not using static assets.`
       ];
     }
   }
