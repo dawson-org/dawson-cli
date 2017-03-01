@@ -30,6 +30,9 @@ $ export AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... AWS_REGION=...
 $ dawson deploy
 ```
 
+Check out the [examples repository](https://github.com/dawson-org/dawson-examples)!
+
+
 # Table of Contents
 
 <!-- toc -->
@@ -92,6 +95,8 @@ Create an IAM user with `AdministratorAccess` permissions (be sure to create an 
 
 > Since we use the `aws-sdk-js`, any other method of setting credentials should work and can be used (e.g. EC2 Instance Role).
 
+> The CloudFormation Stack will contain IAM Roles, so dawson will request a stack creation using CAPABILITY_IAM; since you may need to add named IAM Resources, we have included CAPABILITY_NAMED_IAM by default. IAM is managed only via CloudFront and we're not creating any other resource outside of the Template.
+
 ## 0.2 obtaining AWS Credentials: long version for AWS beginners
 
 1. create an Amazon Web Services Account or login into an existing account
@@ -120,7 +125,14 @@ You write your app's code and then dawson takes care of building, packing, uploa
 
 ## 1.1 installing
 you should install dawson using npm or yarn: `npm install -g dawson` or `yarn global add dawson`. You should then be able to run a `dawson --help` command.  
-You're kindly invited to keep dawson up-to-date, starting with `v1.0.0` we will never introduce backwards-incompatible changes between non-major versions, following strict [SemVer](http://semver.org).
+You're kindly invited to keep dawson up-to-date, starting with `v1.0.0` we will never introduce backwards-incompatible changes between non-major versions, following strict [SemVer](http://semver.org).  
+
+There are some system prerequisites; the following binaries must be available:
+
+* `npm`
+* `zip`
+* `docker` (for running the development server)
+
 
 ## 1.2 package.json and entry point
 dawson reads the contents of a file named `api.js` in your current working directory. You should write (or just `export`) your functions in this `api.js` file.  
