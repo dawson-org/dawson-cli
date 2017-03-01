@@ -158,8 +158,9 @@ function validateDawsonConfig (dawson, rootDir) {
     ];
   }
 
-  if (dawson.assetsDir) {
-    const resolvedAssetsPath = `${rootDir}/${dawson.assetsDir}`;
+  const assetsDir = typeof dawson.assetsDir === 'undefined' ? 'assets' : dawson.assetsDir;
+  if (assetsDir) {
+    const resolvedAssetsPath = `${rootDir}/${assetsDir}`;
     if (!existsSync(resolvedAssetsPath)) {
       return [
         `Path specified by 'assetsDir' does not exist.`,
