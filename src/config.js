@@ -209,14 +209,14 @@ export function validateDocker () {
   }
 }
 
-function validatePackageJSON (source, rootDir) {
-  if (!source.name) {
+function validatePackageJSON (name, settings, rootDir) {
+  if (!name) {
     return [
       'You have not specified a `name` field in your package.json.',
       `Please check the documentation: https://dawson.sh/docs.html`
     ];
   }
-  return validateDawsonConfig(source.dawson, rootDir);
+  return validateDawsonConfig(settings, rootDir);
 }
 
 function validateBabelRc (rootDir) {
@@ -328,6 +328,9 @@ export default function loadConfig (rootDir = process.cwd()) {
     process.exit(1);
   }
 
+  const appName = requiredPkgJson.name;
+  const settings = requiredPkgJson.dawson || {};
+
   if (!requiredPkgJson.name) {
     console.error(createError({
       kind: 'Missing app name',
@@ -423,7 +426,7 @@ export default function loadConfig (rootDir = process.cwd()) {
     process.exit(1);
   }
 
-  const pkgJsonValidationResult = validatePackageJSON(requiredPkgJson, rootDir);
+  const pkgJsonValidationResult = validatePackageJSON(appName, settings, rootDir);
   if (pkgJsonValidationResult !== true) {
     console.error(createError({
       kind: `dawson configuration error`,
@@ -455,9 +458,6 @@ export default function loadConfig (rootDir = process.cwd()) {
     process.exit(1);
   }
 
-  const appName = requiredPkgJson.name;
-  const settings = requiredPkgJson.dawson || {};
-
   const getCloudFrontSettings = ({ appStage }) => {
     if (!settings.cloudfront) {
       return true;
@@ -471,7 +471,6 @@ export default function loadConfig (rootDir = process.cwd()) {
   return {
     API_DEFINITIONS: requiredApi,
     APP_NAME: appName,
-    PKG_JSON: requiredPkgJson,
     PROJECT_ROOT: rootDir,
     SETTINGS: settings,
     getCloudFrontSettings,
