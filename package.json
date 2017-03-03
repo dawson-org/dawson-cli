@@ -15,7 +15,8 @@
     "prepublish": "npm run clean && npm run compile",
     "pre-commit": "npm run lint",
     "coverage-report": "nyc report --check-coverage --functions 100 --lines 100 --statements 100 --reporter=lcov",
-    "test": "npm run lint && nyc ava src/**/*.spec.js && npm run coverage-report"
+    "test-python": "cd src/python && pip install -r requirements-dev.txt && bash runtests.sh",
+    "test": "npm run lint && nyc ava src/**/*.spec.js && npm run coverage-report && npm run test-python"
   },
   "engines": {
     "node": ">=6"
