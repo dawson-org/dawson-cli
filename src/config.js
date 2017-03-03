@@ -39,7 +39,8 @@ const APP_CONFIGURATION_PROPERTIES = [
   'ignore',
   'cloudfront',
   'route53',
-  'cloudfrontRootOrigin'
+  'root',
+  'assetsDir'
 ];
 
 const FUNCTION_CONFIGURATION_SCHEMA = {
@@ -58,18 +59,14 @@ const FUNCTION_CONFIGURATION_SCHEMA = {
       if (val === '') {
         return;
       }
-      if (!/^[a-zA-Z0-9/{}]+$/.test(val)) {
-        // we use paths to determine API Gateway's Resource names,
-        // which must match /[a-zA-Z0-9]+/. We may eventually
-        // change the way we determine resource names (e.g. stripping
-        // non matching chars).
-        return new Error(`path should match regexp [a-zA-Z0-9/{}]+`);
+      if (!/^[^#?]+$/.test(val)) {
+        return new Error(`path cannot contain # or ? (see https://tools.ietf.org/html/rfc3986#section-3.3)`);
       }
       if (val[0] === '/' || val[val.length - 1] === '/') {
         return new Error(`path should not begin or end with a '/'`);
       }
       if (!val.split(/\//g).every(token => /^{[^?#]+}$/.test(token) || /^[^?#{}]+$/.test(token))) {
-        return new Error(`path part eiter must start and end with a curly brace or must not contain any curly brace, and it cannot contain two consecutive slashes`);
+        return new Error(`path part either must start and end with a curly brace or must not contain any curly brace, and it cannot contain two consecutive slashes`);
       }
     },
     authorizer: Type.func,
@@ -118,7 +115,7 @@ let requiredApi;
 function validateCloudFrontConfig (cloudfront) {
   const message = [
     `The value of the 'cloudfront' property in your package.json is invalid.`,
-    `Please check the documentation: https://github.com/dawson-org/dawson-cli/wiki/`
+    `Please check the documentation: https://dawson.sh/docs.html`
   ];
   if (typeof cloudfront === 'undefined') { return true; }
   if (typeof cloudfront !== 'object') {
@@ -136,7 +133,7 @@ function validateCloudFrontConfig (cloudfront) {
 function validateRoute53Config (route53) {
   const message = [
     `The value of the 'route53' property in your package.json is invalid (expected object<string>).`,
-    `Please check the documentation: https://github.com/dawson-org/dawson-cli/wiki/`
+    `Please check the documentation: https://dawson.sh/docs.html`
   ];
   if (typeof route53 === 'undefined') { return true; }
   if (typeof route53 !== 'object') {
@@ -149,7 +146,7 @@ function validateRoute53Config (route53) {
   return true;
 }
 
-function validateDawsonConfig (dawson) {
+function validateDawsonConfig (dawson, rootDir) {
   let currentPropertyName;
   if (!Object.keys(dawson).every(key => {
     currentPropertyName = key;
@@ -157,8 +154,22 @@ function validateDawsonConfig (dawson) {
   })) {
     return [
       `Encountered an unknown property 'dawson.${currentPropertyName}' in package.json`,
-      `Please check the documentation: https://github.com/dawson-org/dawson-cli/wiki/`
+      `Please check the documentation: https://dawson.sh/docs.html`
     ];
+  }
+
+  const assetsDir = typeof dawson.assetsDir === 'undefined' ? 'assets' : dawson.assetsDir;
+  if (assetsDir) {
+    const resolvedAssetsPath = `${rootDir}/${assetsDir}`;
+    if (!existsSync(resolvedAssetsPath)) {
+      return [
+        `Path specified by 'assetsDir' does not exist.`,
+        stripIndent`
+        Directory does not exist: '${resolvedAssetsPath}',
+        either create this directory, set the correct value for the 'assetsDir' property
+        in package.json, or set 'assetsDir' to false if you're not using static assets.`
+      ];
+    }
   }
 
   const cloudfrontIsValid = validateCloudFrontConfig(dawson.cloudfront);
@@ -186,13 +197,6 @@ function validateSystem () {
       `install the 'zip' command using operating system's package manager`
     ];
   }
-  const yarnResult = execIfExists('yarn', ['help']);
-  if (yarnResult.status !== 0) {
-    return [
-      `yarn is a required dependency but the yarn binary was not found: ${yarnResult.error.message}`,
-      `install the yarn package manager using '$ npm install -g yarn'`
-    ];
-  }
   return true;
 }
 
@@ -206,14 +210,14 @@ export function validateDocker () {
   }
 }
 
-function validatePackageJSON (source) {
-  if (!source.name) {
+function validatePackageJSON (name, settings, rootDir) {
+  if (!name) {
     return [
       'You have not specified a `name` field in your package.json.',
-      `Please check the documentation: https://github.com/dawson-org/dawson-cli/wiki/`
+      `Please check the documentation: https://dawson.sh/docs.html`
     ];
   }
-  return validateDawsonConfig(source.dawson);
+  return validateDawsonConfig(settings, rootDir);
 }
 
 function validateBabelRc (rootDir) {
@@ -240,7 +244,7 @@ function validateAPI (source) {
   if (source.customTemplateFragment && typeof source.customTemplateFragment !== 'function') {
     return [
       `if 'customTemplateFragment' is defined, it must be a 'function', not '${typeof source.customTemplateFragment}'`,
-      `Refer to the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/`
+      `Refer to the documentation for more info: https://dawson.sh/docs.html`
     ];
   }
 
@@ -266,7 +270,7 @@ function validateAPI (source) {
   } catch (e) {
     return [
       `Invalid function configuration for ${current}: ${e.message}`,
-      `Check the api property of this function. Refer to the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/`
+      `Check the api property of this function. Refer to the documentation for more info: https://dawson.sh/docs.html`
     ];
   }
 
@@ -277,13 +281,13 @@ function validateAPI (source) {
         if (typeof source[authorizerName] !== 'function') {
           return [
             `Authorizer '${authorizerName}' should be exported from api.js`,
-            `Check the api property of this function. Refer to the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/`
+            `Check the api property of this function. Refer to the documentation for more info: https://dawson.sh/docs.html`
           ];
         }
         if (source[authorizerName].api.path !== false) {
           return [
             `Authorizer '${authorizerName}' should have api.path === false`,
-            `Check the api property of this function. Refer to the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/`
+            `Check the api property of this function. Refer to the documentation for more info: https://dawson.sh/docs.html`
           ];
         }
       }
@@ -291,7 +295,7 @@ function validateAPI (source) {
   } catch (e) {
     return [
       `Invalid function configuration for ${current}: ${e.message}`,
-      `Check the api property of this function. Refer to the documentation for more info: https://github.com/dawson-org/dawson-cli/wiki/`
+      `Check the api property of this function. Refer to the documentation for more info: https://dawson.sh/docs.html`
     ];
   }
 
@@ -324,6 +328,9 @@ export default function loadConfig (rootDir = process.cwd()) {
     }).toFormattedString());
     process.exit(1);
   }
+
+  const appName = requiredPkgJson.name;
+  const settings = requiredPkgJson.dawson || {};
 
   if (!requiredPkgJson.name) {
     console.error(createError({
@@ -378,7 +385,6 @@ export default function loadConfig (rootDir = process.cwd()) {
         `,
         solution: stripIndent`
         $ npm install --save-dev babel-preset-dawson
-        $ yarn add --dev babel-preset-dawson
         `
       }).toFormattedString());
       process.exit(1);
@@ -421,7 +427,7 @@ export default function loadConfig (rootDir = process.cwd()) {
     process.exit(1);
   }
 
-  const pkgJsonValidationResult = validatePackageJSON(requiredPkgJson);
+  const pkgJsonValidationResult = validatePackageJSON(appName, settings, rootDir);
   if (pkgJsonValidationResult !== true) {
     console.error(createError({
       kind: `dawson configuration error`,
@@ -453,9 +459,6 @@ export default function loadConfig (rootDir = process.cwd()) {
     process.exit(1);
   }
 
-  const appName = requiredPkgJson.name;
-  const settings = requiredPkgJson.dawson || {};
-
   const getCloudFrontSettings = ({ appStage }) => {
     if (!settings.cloudfront) {
       return true;
@@ -469,7 +472,6 @@ export default function loadConfig (rootDir = process.cwd()) {
   return {
     API_DEFINITIONS: requiredApi,
     APP_NAME: appName,
-    PKG_JSON: requiredPkgJson,
     PROJECT_ROOT: rootDir,
     SETTINGS: settings,
     getCloudFrontSettings,

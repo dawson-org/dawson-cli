@@ -2,6 +2,18 @@ import { templateAPIID } from './cf_apig';
 import { templateAssetsBucketName } from './cf_s3';
 import { debug } from '../logger';
 
+export const WHITELISTED_HEADERS = [
+  'authorization',
+  'accept',
+  'accept-language',
+  'content-type',
+  'origin',
+  'referer',
+  'access-control-request-headers',
+  'access-control-request-method',
+  'token'
+];
+
 // WebACL
 //
 
@@ -64,7 +76,7 @@ export function templateCloudfrontDistribution (
     alias,
     acmCertificateArn,
     skipAcmCertificate,
-    cloudfrontRootOrigin
+    root
   }
 ) {
   const aliasesConfig = {};
@@ -137,15 +149,7 @@ export function templateCloudfrontDistribution (
     TargetOriginId: 'api',
     ForwardedValues: {
       QueryString: 'true',
-      Headers: [
-        'Authorization',
-        'Accept',
-        'Content-Type',
-        'Origin',
-        'Referer',
-        'Access-Control-Request-Headers',
-        'Access-Control-Request-Method'
-      ]
+      Headers: WHITELISTED_HEADERS
     },
     ViewerProtocolPolicy: 'allow-all',
     MinTTL: '0',
@@ -157,7 +161,7 @@ export function templateCloudfrontDistribution (
   let otherCB;
   let defaultRootObject;
   let CustomErrorResponses;
-  if (cloudfrontRootOrigin === 'assets') {
+  if (root === 'assets') {
     delete s3CB.PathPattern; // serve root from s3
     apiCB.PathPattern = 'prod/*'; // serve api from api/
     delete apiOrigin.OriginPath; // do not add trailing prod/ when fwding api

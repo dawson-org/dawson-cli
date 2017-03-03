@@ -10,9 +10,14 @@ You can use `dawson` to build and deploy backend code and infrastructure for sin
 
 ```js
 // api.js
-export function greet (event) {
+
+import pug from 'pug';
+const template = pug.compileFile('template.pug');
+
+export async function greet (event) {
     const name = event.params.path.name
-    return `Hello ${name}, you look awesome!`
+    const age = await getUserAge(name);
+    return template({ name, age });
 }
 greet.api = {
     path: 'greet/{name}'
@@ -20,19 +25,22 @@ greet.api = {
 ```
 ```bash
 $ npm install -g dawson
+$ export AWS_REGION=... AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=...
 $ dawson deploy
 ```
 
 ## Documentation
 [Getting Started Guide, API & CLI Documentation](https://github.com/dawson-org/dawson-cli/blob/master/docs/README.md)
 
+## Examples
+[Examples & Reference Apps](https://github.com/dawson-org/dawson-examples)
 
 ## About
-dawson lets you to deploy your Node.js apps on Amazon Web Services. It requires **no boilerplate**: no `init` command, no configuration files. Just write your functions and deploy!
+dawson lets you to deploy your serverless Node.js apps on [Amazon Web Services](https://aws.amazon.com). It requires **no boilerplate**, no `init` command and no configuration files. Just write your functions and deploy!
 
-You can write your functions in ES2016, ES2017, using async-await or using experimental features, like you whish. Just include a `.babelrc` and dawson will **compile** your code with [babel](https://babeljs.io) before deploying it. Your Lambda functions can be **`async`** and return **Promises**. There's also **built-in authorization support** via [API Gateway Custom Authorizers](https://docs.aws.amazon.com/apigateway/latest/developerguide/use-custom-authorizer.html).
+You can write your functions using the latest JavaScript version ([`babel-preset-latest`](https://babeljs.io/docs/plugins/preset-latest/)), including async-await, object-rest-spread etc. Functions can be **`async`** and can return **Promises**. There's also **built-in authorization support** via [API Gateway Custom Authorizers](https://docs.aws.amazon.com/apigateway/latest/developerguide/use-custom-authorizer.html).
 
-Each function has its **own IAM Role**, so you can define [fine-graned IAM Policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#grant-least-privilege).  
+Each function has its **own IAM Execution Role**, so you can define [fine-graned IAM Policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#grant-least-privilege).  
 dawson offers first-class support for **Single Page Applications**: a **CloudFront** Distribution will be deployed in front of your app, correctly mapping assets and the API origin, so you don't have to worry about CORS. An [AWS WAF](https://aws.amazon.com/waf/) WebACL can also be attached to CloudFront.
 
 dawson **does not bundle** your app with webpack, browserify or rollup, so you'll never have to deal [with](https://github.com/aws/aws-sdk-js/issues/603) [weird](https://github.com/substack/brfs) [things](https://stackoverflow.com/questions/32253362/how-do-i-build-a-single-js-file-for-aws-lambda-nodejs-runtime). Your app's `devDependencies` are stripped out while deploying, keeping the bundle ZIP small.
@@ -42,7 +50,7 @@ dawson uses **pure CloudFormation templates**, following the [infrastructure-as-
 Finally, dawson will automatically **support HTTPS** for custom domains thanks to [AWS ACM](https://aws.amazon.com/acm/). Also, if you use [Route53](https://aws.amazon.com/route53/) your **DNS Zone** can be automatically updated.
 
 #### CLI
-Using the dawson command you can **deploy** the infrastructure, **inspect logs** (in real time, like `tail -f`) and spin up a **development server** which will simulate CloudFront and API Gateway, so your development environment will be almost identical to the production one.
+Using the dawson command you can **deploy** the infrastructure, **inspect logs** (in real time, like `tail -f`) and spin up a full **development server** so you can run your all locally in an environment will be almost identical to production's. The development server can also run functions locally in response to real AWS Events (S3 Events, DynamoDB Triggers etc.).
 
 ```bash
 $ dawson deploy # deploy your app
@@ -56,11 +64,6 @@ $ dawson dev # start a development server
 ![https://raw.githubusercontent.com/dawson-org/dawson-cli/images/architecture.png](https://raw.githubusercontent.com/dawson-org/dawson-cli/images/architecture.png)
 
 *(additionally for each region you'll deploy to, `dawson` uses a support stack with an S3 Bucket to store Lambda ZIP bundles and CloudFormation templates)*
-
-
-## Demo
-TODO
-
 
 ## Changelog
 A changelog is maintained in the [Releases page](https://github.com/dawson-org/dawson-cli/releases).

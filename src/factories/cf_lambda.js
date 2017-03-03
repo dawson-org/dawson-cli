@@ -171,7 +171,8 @@ export function templateLambda (
     policyStatements,
     runtime = 'nodejs4.3',
     environment = {},
-    devInstrument
+    devInstrument,
+    appStage
   }
 ) {
   const code = zipS3Location
@@ -188,6 +189,7 @@ export function templateLambda (
     prefixedEnvironment[prefixedEnvKey] = environment[envKey];
   });
   prefixedEnvironment.NODE_ENV = process.env.NODE_ENV || 'development';
+  prefixedEnvironment.DAWSON_STAGE = appStage;
 
   const devInstrumentProperties = getDevInstrumentProperties({
     lambdaName,
