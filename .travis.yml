@@ -1,3 +1,10 @@
 language: node_js
 node_js:
   - "node"
+addons:
+  apt:
+    packages:
+      - python-virtualenv
+before_script:
+  - virtualenv venv
+  - source venv/bin/activate
