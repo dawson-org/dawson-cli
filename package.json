@@ -41,7 +41,7 @@
     "hard-rejection": "^1.0.0",
     "http-proxy": "^1.14.0",
     "indent-string": "^3.0.0",
-    "listr": "^0.10.0",
+    "listr": "^0.11.0",
     "listr-verbose-renderer": "^0.3.0",
     "lodash": "^4.17.2",
     "minimatch": "^3.0.3",
