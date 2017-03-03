@@ -5,3 +5,10 @@ before_install:
   - pip install --user codecov
 after_success:
   - npm run coverage
+addons:
+  apt:
+    packages:
+      - python-virtualenv
+before_script:
+  - virtualenv venv
+  - source venv/bin/activate
