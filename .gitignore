@@ -9,3 +9,4 @@ npm-debug.log*
 .DS_Store
 dist
 .nyc_output
+*.pyc
