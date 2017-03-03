@@ -18,6 +18,37 @@ module.exports[`primary template builder`] = {
         }
       }
     },
+    "BucketAssetsPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "BucketAssets"
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:GetObject"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:s3:::",
+                    {
+                      "Ref": "BucketAssets"
+                    },
+                    "/*"
+                  ]
+                ]
+              },
+              "Principal": "*"
+            }
+          ]
+        }
+      }
+    },
     "API": {
       "Type": "AWS::ApiGateway::RestApi",
       "Properties": {
@@ -238,13 +269,15 @@ module.exports[`primary template builder`] = {
               "ForwardedValues": {
                 "QueryString": "true",
                 "Headers": [
-                  "Authorization",
-                  "Accept",
-                  "Content-Type",
-                  "Origin",
-                  "Referer",
-                  "Access-Control-Request-Headers",
-                  "Access-Control-Request-Method"
+                  "authorization",
+                  "accept",
+                  "accept-language",
+                  "content-type",
+                  "origin",
+                  "referer",
+                  "access-control-request-headers",
+                  "access-control-request-method",
+                  "token"
                 ]
               },
               "ViewerProtocolPolicy": "allow-all",
@@ -377,6 +410,37 @@ module.exports[`primary template builder`] = {
           WebsiteConfiguration: {
             ErrorDocument: `index.html`,
             IndexDocument: `index.html`
+          }
+        }
+      },
+      BucketAssetsPolicy: {
+        Type: `AWS::S3::BucketPolicy`,
+        Properties: {
+          Bucket: {
+            Ref: `BucketAssets`
+          },
+          PolicyDocument: {
+            Statement: [
+              {
+                Action: [
+                  `s3:GetObject`
+                ],
+                Effect: `Allow`,
+                Resource: {
+                  'Fn::Join': [
+                    ``,
+                    [
+                      `arn:aws:s3:::`,
+                      {
+                        Ref: `BucketAssets`
+                      },
+                      `/*`
+                    ]
+                  ]
+                },
+                Principal: `*`
+              }
+            ]
           }
         }
       },
@@ -604,13 +668,15 @@ module.exports[`primary template builder`] = {
                 ForwardedValues: {
                   QueryString: `true`,
                   Headers: [
-                    `Authorization`,
-                    `Accept`,
-                    `Content-Type`,
-                    `Origin`,
-                    `Referer`,
-                    `Access-Control-Request-Headers`,
-                    `Access-Control-Request-Method`
+                    `authorization`,
+                    `accept`,
+                    `accept-language`,
+                    `content-type`,
+                    `origin`,
+                    `referer`,
+                    `access-control-request-headers`,
+                    `access-control-request-method`,
+                    `token`
                   ]
                 },
                 ViewerProtocolPolicy: `allow-all`,
@@ -749,6 +815,37 @@ module.exports[`primary template builder with cloudfront disabled`] = {
         "WebsiteConfiguration": {
           "ErrorDocument": "index.html",
           "IndexDocument": "index.html"
+        }
+      }
+    },
+    "BucketAssetsPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "BucketAssets"
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:GetObject"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:s3:::",
+                    {
+                      "Ref": "BucketAssets"
+                    },
+                    "/*"
+                  ]
+                ]
+              },
+              "Principal": "*"
+            }
+          ]
         }
       }
     },
@@ -953,8 +1050,8 @@ module.exports[`primary template builder with cloudfront disabled`] = {
           ],
           "PassthroughBehavior": "NEVER",
           "RequestTemplates": {
-            "application/x-www-form-urlencoded": "#set($allParams = $input.params())\\n{\\n  \\"params\\" : {\\n    #foreach($type in $allParams.keySet())\\n    #set($params = $allParams.get($type))\\n    \\"$type\\" : {\\n      #foreach($paramName in $params.keySet())\\n      \\"$paramName\\" : \\"$util.escapeJavaScript($params.get($paramName))\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    }\\n    #if($foreach.hasNext),#end\\n    #end\\n  },\\n  \\"context\\" : {\\n    \\"apiId\\": \\"$context.apiId\\",\\n    \\"authorizer\\": {\\n      #foreach($property in $context.authorizer.keySet())\\n      \\"$property\\": \\"$context.authorizer.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"httpMethod\\": \\"$context.httpMethod\\",\\n    \\"identity\\": {\\n      #foreach($property in $context.identity.keySet())\\n      \\"$property\\": \\"$context.identity.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"requestId\\": \\"$context.requestId\\",\\n    \\"resourceId\\": \\"$context.resourceId\\",\\n    \\"resourcePath\\": \\"$context.resourcePath\\",\\n    \\"stage\\": \\"$context.stage\\"\\n  },\\n  \\"body\\": $input.json('$'),\\n  \\"meta\\": {\\n    \\"expectedResponseContentType\\": \\"text/html\\"\\n  }\\n}",
-            "application/json": "#set($allParams = $input.params())\\n{\\n  \\"params\\" : {\\n    #foreach($type in $allParams.keySet())\\n    #set($params = $allParams.get($type))\\n    \\"$type\\" : {\\n      #foreach($paramName in $params.keySet())\\n      \\"$paramName\\" : \\"$util.escapeJavaScript($params.get($paramName))\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    }\\n    #if($foreach.hasNext),#end\\n    #end\\n  },\\n  \\"context\\" : {\\n    \\"apiId\\": \\"$context.apiId\\",\\n    \\"authorizer\\": {\\n      #foreach($property in $context.authorizer.keySet())\\n      \\"$property\\": \\"$context.authorizer.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"httpMethod\\": \\"$context.httpMethod\\",\\n    \\"identity\\": {\\n      #foreach($property in $context.identity.keySet())\\n      \\"$property\\": \\"$context.identity.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"requestId\\": \\"$context.requestId\\",\\n    \\"resourceId\\": \\"$context.resourceId\\",\\n    \\"resourcePath\\": \\"$context.resourcePath\\",\\n    \\"stage\\": \\"$context.stage\\"\\n  },\\n  \\"body\\": $input.json('$'),\\n  \\"meta\\": {\\n    \\"expectedResponseContentType\\": \\"text/html\\"\\n  }\\n}"
+            "application/x-www-form-urlencoded": "#set($allParams = $input.params())\\n{\\n  \\"params\\" : {\\n    #foreach($type in $allParams.keySet())\\n    #set($params = $allParams.get($type))\\n    \\"$type\\" : {\\n      #foreach($paramName in $params.keySet())\\n      #if($type == \\"header\\")\\n      \\"$paramName.toLowerCase()\\" : \\"$util.escapeJavaScript($params.get($paramName))\\"\\n      #else\\n      \\"$paramName\\" : \\"$util.escapeJavaScript($params.get($paramName))\\"\\n      #end\\n      #if($foreach.hasNext),#end\\n      #end\\n    }\\n    #if($foreach.hasNext),#end\\n    #end\\n  },\\n  \\"context\\" : {\\n    \\"apiId\\": \\"$context.apiId\\",\\n    \\"authorizer\\": {\\n      #foreach($property in $context.authorizer.keySet())\\n      \\"$property\\": \\"$context.authorizer.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"httpMethod\\": \\"$context.httpMethod\\",\\n    \\"identity\\": {\\n      #foreach($property in $context.identity.keySet())\\n      \\"$property\\": \\"$context.identity.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"requestId\\": \\"$context.requestId\\",\\n    \\"resourceId\\": \\"$context.resourceId\\",\\n    \\"resourcePath\\": \\"$context.resourcePath\\",\\n    \\"stage\\": \\"$context.stage\\"\\n  },\\n  \\"body\\": $input.json('$'),\\n  \\"meta\\": {\\n    \\"expectedResponseContentType\\": \\"text/html\\"\\n  }\\n}",
+            "application/json": "#set($allParams = $input.params())\\n{\\n  \\"params\\" : {\\n    #foreach($type in $allParams.keySet())\\n    #set($params = $allParams.get($type))\\n    \\"$type\\" : {\\n      #foreach($paramName in $params.keySet())\\n      #if($type == \\"header\\")\\n      \\"$paramName.toLowerCase()\\" : \\"$util.escapeJavaScript($params.get($paramName))\\"\\n      #else\\n      \\"$paramName\\" : \\"$util.escapeJavaScript($params.get($paramName))\\"\\n      #end\\n      #if($foreach.hasNext),#end\\n      #end\\n    }\\n    #if($foreach.hasNext),#end\\n    #end\\n  },\\n  \\"context\\" : {\\n    \\"apiId\\": \\"$context.apiId\\",\\n    \\"authorizer\\": {\\n      #foreach($property in $context.authorizer.keySet())\\n      \\"$property\\": \\"$context.authorizer.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"httpMethod\\": \\"$context.httpMethod\\",\\n    \\"identity\\": {\\n      #foreach($property in $context.identity.keySet())\\n      \\"$property\\": \\"$context.identity.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"requestId\\": \\"$context.requestId\\",\\n    \\"resourceId\\": \\"$context.resourceId\\",\\n    \\"resourcePath\\": \\"$context.resourcePath\\",\\n    \\"stage\\": \\"$context.stage\\"\\n  },\\n  \\"body\\": $input.json('$'),\\n  \\"meta\\": {\\n    \\"expectedResponseContentType\\": \\"text/html\\"\\n  }\\n}"
           },
           "Type": "AWS",
           "Uri": {
@@ -1124,6 +1221,37 @@ module.exports[`primary template builder with cloudfront disabled`] = {
           WebsiteConfiguration: {
             ErrorDocument: `index.html`,
             IndexDocument: `index.html`
+          }
+        }
+      },
+      BucketAssetsPolicy: {
+        Type: `AWS::S3::BucketPolicy`,
+        Properties: {
+          Bucket: {
+            Ref: `BucketAssets`
+          },
+          PolicyDocument: {
+            Statement: [
+              {
+                Action: [
+                  `s3:GetObject`
+                ],
+                Effect: `Allow`,
+                Resource: {
+                  'Fn::Join': [
+                    ``,
+                    [
+                      `arn:aws:s3:::`,
+                      {
+                        Ref: `BucketAssets`
+                      },
+                      `/*`
+                    ]
+                  ]
+                },
+                Principal: `*`
+              }
+            ]
           }
         }
       },
@@ -1344,7 +1472,11 @@ $errorMessageObj.response`
     #set($params = $allParams.get($type))
     "$type" : {
       #foreach($paramName in $params.keySet())
+      #if($type == "header")
+      "$paramName.toLowerCase()" : "$util.escapeJavaScript($params.get($paramName))"
+      #else
       "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
+      #end
       #if($foreach.hasNext),#end
       #end
     }
@@ -1383,7 +1515,11 @@ $errorMessageObj.response`
     #set($params = $allParams.get($type))
     "$type" : {
       #foreach($paramName in $params.keySet())
+      #if($type == "header")
+      "$paramName.toLowerCase()" : "$util.escapeJavaScript($params.get($paramName))"
+      #else
       "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
+      #end
       #if($foreach.hasNext),#end
       #end
     }
@@ -1590,6 +1726,37 @@ module.exports[`primary template builder with a method using an authorizer`] = {
         "WebsiteConfiguration": {
           "ErrorDocument": "index.html",
           "IndexDocument": "index.html"
+        }
+      }
+    },
+    "BucketAssetsPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "BucketAssets"
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:GetObject"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:s3:::",
+                    {
+                      "Ref": "BucketAssets"
+                    },
+                    "/*"
+                  ]
+                ]
+              },
+              "Principal": "*"
+            }
+          ]
         }
       }
     },
@@ -1812,8 +1979,8 @@ module.exports[`primary template builder with a method using an authorizer`] = {
           ],
           "PassthroughBehavior": "NEVER",
           "RequestTemplates": {
-            "application/x-www-form-urlencoded": "#set($allParams = $input.params())\\n{\\n  \\"params\\" : {\\n    #foreach($type in $allParams.keySet())\\n    #set($params = $allParams.get($type))\\n    \\"$type\\" : {\\n      #foreach($paramName in $params.keySet())\\n      \\"$paramName\\" : \\"$util.escapeJavaScript($params.get($paramName))\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    }\\n    #if($foreach.hasNext),#end\\n    #end\\n  },\\n  \\"context\\" : {\\n    \\"apiId\\": \\"$context.apiId\\",\\n    \\"authorizer\\": {\\n      #foreach($property in $context.authorizer.keySet())\\n      \\"$property\\": \\"$context.authorizer.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"httpMethod\\": \\"$context.httpMethod\\",\\n    \\"identity\\": {\\n      #foreach($property in $context.identity.keySet())\\n      \\"$property\\": \\"$context.identity.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"requestId\\": \\"$context.requestId\\",\\n    \\"resourceId\\": \\"$context.resourceId\\",\\n    \\"resourcePath\\": \\"$context.resourcePath\\",\\n    \\"stage\\": \\"$context.stage\\"\\n  },\\n  \\"body\\": $input.json('$'),\\n  \\"meta\\": {\\n    \\"expectedResponseContentType\\": \\"text/html\\"\\n  }\\n}",
-            "application/json": "#set($allParams = $input.params())\\n{\\n  \\"params\\" : {\\n    #foreach($type in $allParams.keySet())\\n    #set($params = $allParams.get($type))\\n    \\"$type\\" : {\\n      #foreach($paramName in $params.keySet())\\n      \\"$paramName\\" : \\"$util.escapeJavaScript($params.get($paramName))\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    }\\n    #if($foreach.hasNext),#end\\n    #end\\n  },\\n  \\"context\\" : {\\n    \\"apiId\\": \\"$context.apiId\\",\\n    \\"authorizer\\": {\\n      #foreach($property in $context.authorizer.keySet())\\n      \\"$property\\": \\"$context.authorizer.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"httpMethod\\": \\"$context.httpMethod\\",\\n    \\"identity\\": {\\n      #foreach($property in $context.identity.keySet())\\n      \\"$property\\": \\"$context.identity.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"requestId\\": \\"$context.requestId\\",\\n    \\"resourceId\\": \\"$context.resourceId\\",\\n    \\"resourcePath\\": \\"$context.resourcePath\\",\\n    \\"stage\\": \\"$context.stage\\"\\n  },\\n  \\"body\\": $input.json('$'),\\n  \\"meta\\": {\\n    \\"expectedResponseContentType\\": \\"text/html\\"\\n  }\\n}"
+            "application/x-www-form-urlencoded": "#set($allParams = $input.params())\\n{\\n  \\"params\\" : {\\n    #foreach($type in $allParams.keySet())\\n    #set($params = $allParams.get($type))\\n    \\"$type\\" : {\\n      #foreach($paramName in $params.keySet())\\n      #if($type == \\"header\\")\\n      \\"$paramName.toLowerCase()\\" : \\"$util.escapeJavaScript($params.get($paramName))\\"\\n      #else\\n      \\"$paramName\\" : \\"$util.escapeJavaScript($params.get($paramName))\\"\\n      #end\\n      #if($foreach.hasNext),#end\\n      #end\\n    }\\n    #if($foreach.hasNext),#end\\n    #end\\n  },\\n  \\"context\\" : {\\n    \\"apiId\\": \\"$context.apiId\\",\\n    \\"authorizer\\": {\\n      #foreach($property in $context.authorizer.keySet())\\n      \\"$property\\": \\"$context.authorizer.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"httpMethod\\": \\"$context.httpMethod\\",\\n    \\"identity\\": {\\n      #foreach($property in $context.identity.keySet())\\n      \\"$property\\": \\"$context.identity.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"requestId\\": \\"$context.requestId\\",\\n    \\"resourceId\\": \\"$context.resourceId\\",\\n    \\"resourcePath\\": \\"$context.resourcePath\\",\\n    \\"stage\\": \\"$context.stage\\"\\n  },\\n  \\"body\\": $input.json('$'),\\n  \\"meta\\": {\\n    \\"expectedResponseContentType\\": \\"text/html\\"\\n  }\\n}",
+            "application/json": "#set($allParams = $input.params())\\n{\\n  \\"params\\" : {\\n    #foreach($type in $allParams.keySet())\\n    #set($params = $allParams.get($type))\\n    \\"$type\\" : {\\n      #foreach($paramName in $params.keySet())\\n      #if($type == \\"header\\")\\n      \\"$paramName.toLowerCase()\\" : \\"$util.escapeJavaScript($params.get($paramName))\\"\\n      #else\\n      \\"$paramName\\" : \\"$util.escapeJavaScript($params.get($paramName))\\"\\n      #end\\n      #if($foreach.hasNext),#end\\n      #end\\n    }\\n    #if($foreach.hasNext),#end\\n    #end\\n  },\\n  \\"context\\" : {\\n    \\"apiId\\": \\"$context.apiId\\",\\n    \\"authorizer\\": {\\n      #foreach($property in $context.authorizer.keySet())\\n      \\"$property\\": \\"$context.authorizer.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"httpMethod\\": \\"$context.httpMethod\\",\\n    \\"identity\\": {\\n      #foreach($property in $context.identity.keySet())\\n      \\"$property\\": \\"$context.identity.get($property)\\"\\n      #if($foreach.hasNext),#end\\n      #end\\n    },\\n    \\"requestId\\": \\"$context.requestId\\",\\n    \\"resourceId\\": \\"$context.resourceId\\",\\n    \\"resourcePath\\": \\"$context.resourcePath\\",\\n    \\"stage\\": \\"$context.stage\\"\\n  },\\n  \\"body\\": $input.json('$'),\\n  \\"meta\\": {\\n    \\"expectedResponseContentType\\": \\"text/html\\"\\n  }\\n}"
           },
           "Type": "AWS",
           "Uri": {
@@ -2099,6 +2266,37 @@ module.exports[`primary template builder with a method using an authorizer`] = {
           }
         }
       },
+      BucketAssetsPolicy: {
+        Type: `AWS::S3::BucketPolicy`,
+        Properties: {
+          Bucket: {
+            Ref: `BucketAssets`
+          },
+          PolicyDocument: {
+            Statement: [
+              {
+                Action: [
+                  `s3:GetObject`
+                ],
+                Effect: `Allow`,
+                Resource: {
+                  'Fn::Join': [
+                    ``,
+                    [
+                      `arn:aws:s3:::`,
+                      {
+                        Ref: `BucketAssets`
+                      },
+                      `/*`
+                    ]
+                  ]
+                },
+                Principal: `*`
+              }
+            ]
+          }
+        }
+      },
       API: {
         Type: `AWS::ApiGateway::RestApi`,
         Properties: {
@@ -2334,7 +2532,11 @@ $errorMessageObj.response`
     #set($params = $allParams.get($type))
     "$type" : {
       #foreach($paramName in $params.keySet())
+      #if($type == "header")
+      "$paramName.toLowerCase()" : "$util.escapeJavaScript($params.get($paramName))"
+      #else
       "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
+      #end
       #if($foreach.hasNext),#end
       #end
     }
@@ -2373,7 +2575,11 @@ $errorMessageObj.response`
     #set($params = $allParams.get($type))
     "$type" : {
       #foreach($paramName in $params.keySet())
+      #if($type == "header")
+      "$paramName.toLowerCase()" : "$util.escapeJavaScript($params.get($paramName))"
+      #else
       "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
+      #end
       #if($foreach.hasNext),#end
       #end
     }

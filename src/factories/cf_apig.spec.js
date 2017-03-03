@@ -25,7 +25,11 @@ const requestTemplatePartial = contentType => {
     #set($params = $allParams.get($type))
     "$type" : {
       #foreach($paramName in $params.keySet())
+      #if($type == "header")
+      "$paramName.toLowerCase()" : "$util.escapeJavaScript($params.get($paramName))"
+      #else
       "$paramName" : "$util.escapeJavaScript($params.get($paramName))"
+      #end
       #if($foreach.hasNext),#end
       #end
     }
@@ -133,6 +137,69 @@ test('templateResourceHelper', t => {
   };
   const actual = templateResourceHelper({ resourcePath: 'foo/bar' });
   t.deepEqual(sortObject(expected), sortObject(actual));
+});
+
+test('templateResourceHelper with non-alphanum path', t => {
+  const expected = {
+    resourceName: 'Bar',
+    templateResourcePartial: {
+      ResourceBar: {
+        Properties: {
+          ParentId: { Ref: 'ResourceBoo' },
+          PathPart: 'bar',
+          RestApiId: { Ref: 'API' }
+        },
+        Type: 'AWS::ApiGateway::Resource'
+      },
+      ResourceBoo: {
+        Properties: {
+          ParentId: { 'Fn::GetAtt': ['API', 'RootResourceId'] },
+          PathPart: 'bo$o',
+          RestApiId: { Ref: 'API' }
+        },
+        Type: 'AWS::ApiGateway::Resource'
+      }
+    }
+  };
+  const actual = templateResourceHelper({ resourcePath: 'bo$o/bar' });
+  t.deepEqual(sortObject(expected), sortObject(actual));
+});
+
+test('templateResourceHelper with non-alphanum path is ok', t => {
+  const expected = {
+    resourceName: 'Bar2',
+    templateResourcePartial: {
+      ResourceBar2: {
+        Properties: {
+          ParentId: { Ref: 'ResourceBoo' },
+          PathPart: 'bar2',
+          RestApiId: { Ref: 'API' }
+        },
+        Type: 'AWS::ApiGateway::Resource'
+      },
+      ResourceBoo: {
+        Properties: {
+          ParentId: { 'Fn::GetAtt': ['API', 'RootResourceId'] },
+          PathPart: 'bo$o',
+          RestApiId: { Ref: 'API' }
+        },
+        Type: 'AWS::ApiGateway::Resource'
+      }
+    }
+  };
+  const actual = templateResourceHelper({ resourcePath: 'bo$o/bar2' });
+  t.deepEqual(sortObject(expected), sortObject(actual));
+});
+
+test('templateResourceHelper with non-alphanum path cannot overlap existing path part', t => {
+  // internal algorithm maps the path /fo^o to an API Gateway Resource
+  // named 'Foo', which conflicts with the Resource Name mapped for
+  // 'fo$o' above.
+  t.throws(() => templateResourceHelper({ resourcePath: 'bo^o/bar' }));
+});
+
+test('path parts in braces cannot contain non-alphanum characters', t => {
+  t.throws(() => templateResourceHelper({ resourcePath: 'bo$o/bar/{foo%}' }));
 });
 
 test('templateResourceHelper with named params', t => {
