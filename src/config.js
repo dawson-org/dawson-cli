@@ -312,7 +312,7 @@ export function initConfig (argv) {
   }
 }
 
-function getFunctions (rootDir) {
+function describeApi (rootDir) {
   try {
     if (existsSync(`${rootDir}/api.js`)) {
       debug('Detected language: JavaScript');
@@ -376,7 +376,7 @@ export default function loadConfig (rootDir = process.cwd()) {
     process.exit(1);
   }
 
-  requiredApi = getFunctions(rootDir);
+  requiredApi = describeApi(rootDir);
 
   const apiValidationResult = validateAPI(requiredApi);
   if (apiValidationResult !== true) {
