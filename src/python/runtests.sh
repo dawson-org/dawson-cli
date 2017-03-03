@@ -1,0 +1,1 @@
+nosetests --with-coverage --verbosity=2
