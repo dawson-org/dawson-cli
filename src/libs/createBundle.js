@@ -56,12 +56,12 @@ function writeIndex ({ indexFileContents, indexFileExtension }) {
   );
 }
 
-async function zipRoot ({ tempZipFile, excludeList, PROJECT_ROOT }) {
+async function zipRoot ({ tempZipFile, excludeList, rootDir }) {
   const excludeArg = '--exclude ' +
     [...excludeList, '.git', '.AppleDouble'].map(i => `\\*${i}\\*`).join(' ');
   await execa.shell(
     `cd .dawson-dist && zip -8 -r ${tempZipFile} . ${excludeArg}`,
-    { cwd: PROJECT_ROOT, maxBuffer: EXEC_MAX_OUTERR_BUFFER_SIZE }
+    { cwd: rootDir, maxBuffer: EXEC_MAX_OUTERR_BUFFER_SIZE }
   );
   const { size } = await stat(tempZipFile);
   const sizeMB = `${Math.floor(size / 1000000.0)}MB`;
@@ -93,41 +93,52 @@ async function uploadS3 ({ bucketName, uuid, tempZipFile, tempZipFileSize }) {
 }
 
 function getFileExtension (language) {
-  if (language === LANGUAGE_JS_LATEST) {
-    return 'js';
+  switch (language) {
+    case LANGUAGE_JS_LATEST:
+      return 'js';
+    default:
+      throw LANGUAGE_INVALID_ERR;
   }
 }
 
-export default function taskCreateBundle (
-  {
-    bucketName,
-    appStageName,
-    excludeList = [],
-    stackName,
-    noUpload = false,
-    onlyCompile = false,
-    skipChmod = false
-  },
-  result
-) {
-  const { PROJECT_ROOT, API_DEFINITIONS, SETTINGS, language } = loadConfig();
+export default function taskCreateBundle (args, result) {
   return new Listr([
     {
       title: 'configuring',
       task: ctx => {
+        const {
+          API_DEFINITIONS,
+          language,
+          PROJECT_ROOT,
+          SETTINGS
+        } = loadConfig();
+
         if (!SUPPORTED_LANGUAGES.includes(language)) {
           throw LANGUAGE_INVALID_ERR;
         }
+
+        const {
+          appStageName,
+          bucketName,
+          excludeList = [],
+          noUpload = false,
+          onlyCompile = false,
+          skipChmod = false,
+          stackName
+        } = args;
+
         Object.assign(ctx, {
+          apiDefinitions: API_DEFINITIONS,
           bucketName,
           excludeList,
-          uuid: `${appStageName}-bundle`,
-          stackName,
+          ignore: SETTINGS.ignore,
+          language,
           noUpload,
           onlyCompile,
-          ignore: SETTINGS.ignore,
+          rootDir: PROJECT_ROOT,
           skipChmod,
-          language
+          stackName,
+          uuid: `${appStageName}-bundle`
         });
       }
     },
@@ -142,8 +153,11 @@ export default function taskCreateBundle (
     { title: 'compiling',
       task: ctx => {
         const { language } = ctx;
-        if (language === LANGUAGE_JS_LATEST) {
-          return jsCompile(ctx);
+        switch (language) {
+          case LANGUAGE_JS_LATEST:
+            return jsCompile(ctx);
+          default:
+            throw LANGUAGE_INVALID_ERR;
         }
       }
     },
@@ -152,19 +166,26 @@ export default function taskCreateBundle (
       skip: ctx => ctx.onlyCompile,
       task: ctx => {
         const { language } = ctx;
-        if (language === LANGUAGE_JS_LATEST) {
-          return jsInstallDeps({ skipChmod: ctx.skipChmod });
+        switch (language) {
+          case LANGUAGE_JS_LATEST:
+            return jsInstallDeps({ skipChmod: ctx.skipChmod });
+          default:
+            throw LANGUAGE_INVALID_ERR;
         }
       }
     },
     {
       title: 'creating index file',
       task: async ctx => {
-        const { stackName, language } = ctx;
+        const { stackName, language, apiDefinitions } = ctx;
         const indexFileExtension = getFileExtension(language);
         let indexFileContents;
-        if (language === LANGUAGE_JS_LATEST) {
-          indexFileContents = await jsCreateIndex(API_DEFINITIONS, stackName);
+        switch (language) {
+          case LANGUAGE_JS_LATEST:
+            indexFileContents = await jsCreateIndex(apiDefinitions, stackName);
+            break;
+          default:
+            throw LANGUAGE_INVALID_ERR;
         }
         await writeIndex({ indexFileContents, indexFileExtension });
       }
@@ -173,11 +194,11 @@ export default function taskCreateBundle (
       title: 'creating zip archive',
       skip: ctx => ctx.noUpload || ctx.onlyCompile,
       task: async ctx => {
-        const { tempZipFile, excludeList } = ctx;
+        const { tempZipFile, excludeList, rootDir } = ctx;
         const { tempZipFileSize } = await zipRoot({
           tempZipFile,
           excludeList,
-          PROJECT_ROOT
+          rootDir
         });
         Object.assign(ctx, { tempZipFileSize });
       }

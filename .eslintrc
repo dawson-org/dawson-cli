@@ -6,6 +6,7 @@
   ],
   "rules": {
     "no-template-curly-in-string": 0,
-    "object-curly-spacing": [1, "always"]
+    "object-curly-spacing": [1, "always"],
+    "no-shadow": 2
   }
 }

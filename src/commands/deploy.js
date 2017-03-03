@@ -58,59 +58,75 @@ async function taskRestoreStackPolicy ({ dangerDeleteResources, stackName }) {
   }
 }
 
-export async function deploy ({
-  appStage,
-  dangerDeleteResources = false,
-  skipAcmCertificate = false,
-  verbose = false,
-  skipChmod = false,
-  skipCloudformation = false
-}) {
-  const {
-    API_DEFINITIONS,
-    SETTINGS,
-    APP_NAME,
-    PROJECT_ROOT,
-    getCloudFrontSettings,
-    getHostedZoneId
-  } = loadConfig();
-  const cloudfrontStagesMap = SETTINGS.cloudfront;
-  const root = SETTINGS.root || 'api';
-
-  if (dangerDeleteResources) {
+export async function deploy (args) {
+  if (args.dangerDeleteResources) {
     danger(stripIndent`
-      DANGER: You have used the '--danger-delete-resources' so, as part of this stack update
-      your DynamoDB Tables and/or S3 Buckets may be deleted, including all of its content.`);
+      \n
+      DANGER: You have used the '--danger-delete-resources' flag so, as part of this stack update
+      your DynamoDB Tables and/or S3 Buckets may be deleted, including all of its content.
+      \n
+    `);
   }
 
   const tasks = new Listr([
     {
-      title: 'running pre-deploy hook',
-      skip: () => !SETTINGS['pre-deploy'],
-      task: () => execa.shell(SETTINGS['pre-deploy'])
-    },
-    {
       title: 'validating configuration',
       task: ctx => {
+        const {
+          API_DEFINITIONS,
+          APP_NAME,
+          getCloudFrontSettings,
+          getHostedZoneId,
+          PROJECT_ROOT,
+          SETTINGS
+        } = loadConfig();
+
+        const {
+          appStage,
+          dangerDeleteResources = false,
+          skipAcmCertificate = false,
+          skipChmod = false,
+          skipCloudformation = false
+        } = args;
+
+        const assetsDir = typeof SETTINGS.assetsDir === 'undefined' ? 'assets' : SETTINGS.assetsDir;
+        const cloudfrontSettings = getCloudFrontSettings({ appStage });
+        const cloudfrontStagesMap = SETTINGS.cloudfront;
+        const deploymentUid = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+        const hooks = {
+          preDeploy: SETTINGS['pre-deploy'],
+          postDeploy: SETTINGS['post-deploy']
+        };
+        const hostedZoneId = getHostedZoneId({ appStage });
+        const root = SETTINGS.root || 'api';
+        const stackName = templateStackName({ appName: APP_NAME, stage: appStage });
+
         Object.assign(ctx, {
           API_DEFINITIONS,
-          cloudfrontSettings: getCloudFrontSettings({ appStage }),
-          dangerDeleteResources,
-          skipAcmCertificate,
-          hostedZoneId: getHostedZoneId({ appStage }),
-          stackName: templateStackName({ appName: APP_NAME, stage: appStage }),
-          stageName: 'prod',
-          appStage,
-          root: root,
-          ignore: SETTINGS.ignore,
-          cloudfrontConfigMap: cloudfrontStagesMap,
           appName: APP_NAME,
-          skipChmod,
-          deploymentUid: `${Date.now()}${Math.floor(Math.random() * 1000)}`,
+          appStage,
+          assetsDir,
+          cloudfrontConfigMap: cloudfrontStagesMap,
+          cloudfrontSettings,
+          dangerDeleteResources,
+          deploymentUid,
+          hooks,
+          hostedZoneId,
+          ignore: SETTINGS.ignore,
+          root: root,
           rootDir: PROJECT_ROOT,
-          assetsDir: typeof SETTINGS.assetsDir === 'undefined' ? 'assets' : SETTINGS.assetsDir
+          skipAcmCertificate,
+          skipChmod,
+          skipCloudformation,
+          stackName,
+          stageName: 'prod'
         });
       }
+    },
+    {
+      title: 'running pre-deploy hook',
+      skip: ctx => !ctx.hooks.preDeploy,
+      task: ctx => execa.shell(ctx.hooks.preDeploy)
     },
     {
       title: 'checking prerequisites',
@@ -119,16 +135,16 @@ export async function deploy ({
           {
             title: 'validating ACM SSL/TLS Certificate',
             skip: ({ cloudfrontSettings, skipAcmCertificate }) => (typeof cloudfrontSettings !== 'string' || skipAcmCertificate === true),
-            task: async (ctx) => {
-              const { acmCertificateArn } = await taskRequestACMCert(ctx);
-              Object.assign(ctx, { acmCertificateArn });
+            task: async (prereqCtx) => {
+              const { acmCertificateArn } = await taskRequestACMCert(prereqCtx);
+              Object.assign(prereqCtx, { acmCertificateArn });
             }
           },
           {
             title: 'updating support stack',
-            task: async (ctx) => {
-              const { supportBucketName } = await updateSupportStack(ctx);
-              Object.assign(ctx, { supportBucketName });
+            task: async (prereqCtx) => {
+              const { supportBucketName } = await updateSupportStack(prereqCtx);
+              Object.assign(prereqCtx, { supportBucketName });
             }
           }
         ], { concurrent: true });
@@ -136,7 +152,7 @@ export async function deploy ({
     },
     {
       title: 'creating bundle',
-      skip: () => skipCloudformation,
+      skip: ctx => ctx.skipCloudformation,
       task: ctx => {
         return taskUploadZip({
           ...ctx
@@ -162,7 +178,7 @@ export async function deploy ({
     },
     {
       title: 'removing stack policy',
-      skip: ctx => skipCloudformation || !ctx.dangerDeleteResources,
+      skip: ctx => ctx.skipCloudformation || !ctx.dangerDeleteResources,
       task: async (ctx) => {
         const { dangerDeleteResources, stackName } = ctx;
         await taskRemoveStackPolicy({ dangerDeleteResources, stackName });
@@ -170,7 +186,7 @@ export async function deploy ({
     },
     {
       title: 'requesting changeset',
-      skip: () => skipCloudformation,
+      skip: ctx => ctx.skipCloudformation,
       task: async (ctx) => {
         const { stackName, cfParams } = ctx;
         const updateRequest = await taskRequestStackUpdate({ stackName, cfParams });
@@ -179,7 +195,7 @@ export async function deploy ({
     },
     {
       title: 'waiting for stack update to complete',
-      skip: ctx => skipCloudformation || ctx.stackChangesetEmpty === true,
+      skip: ctx => ctx.skipCloudformation || ctx.stackChangesetEmpty === true,
       task: ctx => {
         const { stackName } = ctx;
         return observerForUpdateCompleted({ stackName });
@@ -187,7 +203,7 @@ export async function deploy ({
     },
     {
       title: 'setting stack policy',
-      skip: ctx => skipCloudformation || !ctx.dangerDeleteResources,
+      skip: ctx => ctx.skipCloudformation || !ctx.dangerDeleteResources,
       task: async (ctx) => {
         const { dangerDeleteResources, stackName } = ctx;
         await taskRestoreStackPolicy({ dangerDeleteResources, stackName });
@@ -195,8 +211,8 @@ export async function deploy ({
     },
     {
       title: 'running post-deploy hook',
-      skip: () => !SETTINGS['post-deploy'],
-      task: () => execa.shell(SETTINGS['post-deploy'])
+      skip: ctx => !ctx.hooks.postDeploy,
+      task: ctx => execa.shell(ctx.hooks.postDeploy)
     },
     {
       title: 'uploading assets',
@@ -212,7 +228,7 @@ export async function deploy ({
       }
     }
   ], {
-    renderer: verbose ? verboseRenderer : undefined
+    renderer: args.verbose ? verboseRenderer : undefined
   });
 
   return tasks.run()
