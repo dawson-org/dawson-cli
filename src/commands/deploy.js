@@ -1,10 +1,12 @@
 /* eslint no-unused-vars: 2 */
 
+import path from 'path';
 import chalk from 'chalk';
 import execa from 'execa';
 import Listr from 'listr';
 import verboseRenderer from 'listr-verbose-renderer';
 import { stripIndent } from 'common-tags';
+import s3Uploader from 's3-recursive-uploader';
 
 import loadConfig from '../config';
 import taskCreateBundle from '../libs/createBundle';
@@ -18,7 +20,7 @@ import createOrUpdateStack from '../libs/aws/cfn-create-or-update-stack';
 import { templateStackName, buildCreateStackParams } from '../factories/cloudformation';
 import { observerForUpdateCompleted } from '../libs/aws/cfn-update-observer';
 import { removeStackPolicy, restoreStackPolicy } from '../libs/aws/cfn-stack-policy-helpers';
-import { getStackOutputs } from '../libs/aws/cfn-get-stack-info-helpers';
+import { getStackOutputs, getStackResources } from '../libs/aws/cfn-get-stack-info-helpers';
 
 function taskUploadZip ({ supportBucketName, appStage, stackName, ignore, skipChmod }, ctx) {
   return taskCreateBundle({
@@ -61,17 +63,19 @@ export async function deploy ({
   dangerDeleteResources = false,
   skipAcmCertificate = false,
   verbose = false,
-  skipChmod = false
+  skipChmod = false,
+  skipCloudformation = false
 }) {
   const {
     API_DEFINITIONS,
     SETTINGS,
     APP_NAME,
+    PROJECT_ROOT,
     getCloudFrontSettings,
     getHostedZoneId
   } = loadConfig();
   const cloudfrontStagesMap = SETTINGS.cloudfront;
-  const cloudfrontRootOrigin = SETTINGS.cloudfrontRootOrigin || 'api';
+  const root = SETTINGS.root || 'api';
 
   if (dangerDeleteResources) {
     danger(stripIndent`
@@ -97,12 +101,14 @@ export async function deploy ({
           stackName: templateStackName({ appName: APP_NAME, stage: appStage }),
           stageName: 'prod',
           appStage,
-          cloudfrontRootOrigin: cloudfrontRootOrigin,
+          root: root,
           ignore: SETTINGS.ignore,
           cloudfrontConfigMap: cloudfrontStagesMap,
           appName: APP_NAME,
           skipChmod,
-          deploymentUid: `${Date.now()}${Math.floor(Math.random() * 1000)}`
+          deploymentUid: `${Date.now()}${Math.floor(Math.random() * 1000)}`,
+          rootDir: PROJECT_ROOT,
+          assetsDir: typeof SETTINGS.assetsDir === 'undefined' ? 'assets' : SETTINGS.assetsDir
         });
       }
     },
@@ -130,6 +136,7 @@ export async function deploy ({
     },
     {
       title: 'creating bundle',
+      skip: () => skipCloudformation,
       task: ctx => {
         return taskUploadZip({
           ...ctx
@@ -155,7 +162,7 @@ export async function deploy ({
     },
     {
       title: 'removing stack policy',
-      skip: ctx => !ctx.dangerDeleteResources,
+      skip: ctx => skipCloudformation || !ctx.dangerDeleteResources,
       task: async (ctx) => {
         const { dangerDeleteResources, stackName } = ctx;
         await taskRemoveStackPolicy({ dangerDeleteResources, stackName });
@@ -163,6 +170,7 @@ export async function deploy ({
     },
     {
       title: 'requesting changeset',
+      skip: () => skipCloudformation,
       task: async (ctx) => {
         const { stackName, cfParams } = ctx;
         const updateRequest = await taskRequestStackUpdate({ stackName, cfParams });
@@ -171,7 +179,7 @@ export async function deploy ({
     },
     {
       title: 'waiting for stack update to complete',
-      skip: ctx => ctx.stackChangesetEmpty === true,
+      skip: ctx => skipCloudformation || ctx.stackChangesetEmpty === true,
       task: ctx => {
         const { stackName } = ctx;
         return observerForUpdateCompleted({ stackName });
@@ -179,7 +187,7 @@ export async function deploy ({
     },
     {
       title: 'setting stack policy',
-      skip: ctx => !ctx.dangerDeleteResources,
+      skip: ctx => skipCloudformation || !ctx.dangerDeleteResources,
       task: async (ctx) => {
         const { dangerDeleteResources, stackName } = ctx;
         await taskRestoreStackPolicy({ dangerDeleteResources, stackName });
@@ -189,6 +197,19 @@ export async function deploy ({
       title: 'running post-deploy hook',
       skip: () => !SETTINGS['post-deploy'],
       task: () => execa.shell(SETTINGS['post-deploy'])
+    },
+    {
+      title: 'uploading assets',
+      skip: ctx => !ctx.assetsDir,
+      task: async ctx => {
+        const resources = await getStackResources({ stackName: ctx.stackName });
+        const assetsBucket = resources.find(o => o.LogicalResourceId === 'BucketAssets').PhysicalResourceId;
+        const destinationSuffix = ctx.root === 'api' ? '/assets/' : '';
+        await s3Uploader({
+          source: path.resolve(`${ctx.rootDir}/${ctx.assetsDir}`),
+          destination: `${assetsBucket}${destinationSuffix}`
+        });
+      }
     }
   ], {
     renderer: verbose ? verboseRenderer : undefined
@@ -224,7 +245,8 @@ export function run (argv) {
     skipAcmCertificate: argv['skip-acm'],
     appStage: argv.stage,
     verbose: argv.verbose,
-    skipChmod: argv['skip-chmod']
+    skipChmod: argv['skip-chmod'],
+    skipCloudformation: argv['skip-cloudformation']
   })
   .catch(err => {
     if (err.isDawsonError) {

@@ -10,7 +10,7 @@ import yargs from 'yargs';
 
 import loadConfig, { initConfig } from './config';
 import pkg from '../package.json';
-import { enableDebug, error, log } from './logger';
+import { enableDebug, error, log, debug } from './logger';
 import { run as deployRun } from './commands/deploy';
 import { run as describeRun } from './commands/describe';
 import { run as logRun } from './commands/log';
@@ -35,6 +35,9 @@ const argv = yargs
       .boolean('skip-acm')
       .default('skip-acm', false)
       .describe('skip-acm', 'Skip ACM SSL/TLS Certificate validation')
+      .boolean('skip-cloudformation')
+      .default('skip-cloudformation', false)
+      .describe('skip-cloudformation', 'Do not update the CloudFormation template')
       .boolean('skip-chmod')
       .default('skip-chmod', false)
       .describe('skip-chmod', 'Do not run chmod -Rf a+rw .dawson-dist after installing dependencies (RTFM)')
@@ -161,14 +164,16 @@ if (!argv.help && !argv.version) {
   }
 
   initConfig(argv);
-  const { PKG_JSON } = loadConfig();
+  const { APP_NAME } = loadConfig();
 
   if (!argv.shell && !argv['output-name'] && !argv['resource-id']) {
     process.stdout.write('\x1B[2J\x1B[0f');
     log('');
     log('   dawson'.bold.blue, 'v' + pkg.version);
-    log('  ', PKG_JSON.name.yellow.dim.bold, '↣', AWS.config.region.yellow.dim.bold, '↣', argv.stage.yellow.bold);
+    log('  ', APP_NAME.yellow.dim.bold, '↣', AWS.config.region.yellow.dim.bold, '↣', argv.stage.yellow.bold);
     log('  ', new Date().toLocaleString().gray);
     log('');
   }
+
+  debug('Command:', process.argv);
 }
