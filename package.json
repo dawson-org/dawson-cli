@@ -19,7 +19,8 @@
     "coverage-coveralls": "nyc report --reporter=text-lcov | coveralls",
     "coverage-codecov": "nyc report --reporter=text-lcov > coverage.lcov && codecov",
     "coverage": "npm run coverage-coveralls && npm run coverage-codecov",
-    "test": "npm run lint && nyc ava src/**/*.spec.js",
+    "test-python": "cd src/python && pip install -r requirements-dev.txt && bash runtests.sh",
+    "test": "npm run lint && nyc ava src/**/*.spec.js && npm run test-python",
     "commit": "git-cz"
   },
   "engines": {
