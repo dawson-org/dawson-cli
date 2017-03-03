@@ -7,7 +7,7 @@ function getRunnerCode (name, apiConfig) {
     // if we are not running from the development server, just execute normally...
     return 'return runner(event, context);';
   }
-  
+
   // when devInstrument is true, we send every incoming event
   // to an SQS Queue, so that the development server can receive
   // the event and execute the corresponding function
@@ -50,8 +50,6 @@ function getWrappingCode (apis, name) {
         // __ping events are used by the keep-alive logic (to prevent Lambda's cooling)
         return callback(null, '"pong__"');
       }
-
-      context.dawsonDescribeOutputs = dawsonDescribeOutputs; // unused and undocumented, can be removed (see below)
 
       // require the main api.js file and get this function's handler
       const runner = require('./api').${name};
@@ -107,35 +105,6 @@ export default function createIndex (apis, stackName) {
     require('babel-polyfill');
 
     const stackName = '${stackName}';
-    var stackOutputs = null;
-
-    /* below: unused and undocumented, can be removed */
-    function dawsonDescribeOutputs() {
-      if (!stackOutputs) {
-        const AWS = require('aws-sdk');
-        const cloudformation = new AWS.CloudFormation({});
-        const params = {
-          StackName: stackName,
-        };
-        return cloudformation.describeStacks(params).promise()
-        .then(result => {
-          const outputs = result.Stacks[0].Outputs;
-          const ret = {};
-          outputs.forEach(output => {
-            ret[output.OutputKey] = output.OutputValue;
-          });
-          stackOutputs = ret;
-          return ret;
-        })
-        .catch(err => {
-          console.error(\`Error describing stack ${stackName}\`, err.message, err.stack);
-          throw err;
-        });
-      } else {
-        return Promise.resolve(stackOutputs);
-      }
-    }
-    /* ^^^^ */
 
     ${exportedFunctions.join('\n\n')}
   `;
