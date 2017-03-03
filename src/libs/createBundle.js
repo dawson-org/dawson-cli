@@ -6,6 +6,7 @@ import Listr from 'listr';
 import promisify from 'es6-promisify';
 import temp from 'temp';
 import path from 'path';
+import { oneLine } from 'common-tags';
 
 import createIndex from './createIndex';
 import loadConfig, { BABEL_CONFIG } from '../config';
@@ -53,16 +54,36 @@ async function createTempFiles () {
 }
 
 function compile ({ ignore }) {
-  const babelPath = path.join(__dirname, '..', '..', 'node_modules', '.bin', 'babel');
-  debug('Babel path =', babelPath);
-  return execa(babelPath, makeBabelArgs(ignore));
+  try {
+    // == attempt 1 ==
+    // dawson is installed globally (yarn/npm) or locally with yarn
+    // (yarn does not hoist .bin to the top)
+    const babelPath = path.join(__dirname, '..', '..', 'node_modules', '.bin', 'babel');
+    debug('Babel attempt #1 with path =', babelPath);
+    return execa(babelPath, makeBabelArgs(ignore));
+  } catch (e) {
+    if (e.message.indexOf('ENOENT') === -1) {
+      throw e;
+    }
+    // == attempt 2 ==
+    // dawson is installed locally with npm
+    // (npm does hoist .bin to the top)
+    const babelPath = path.join(process.cwd(), 'node_modules', '.bin', 'babel');
+    debug('Babel attempt #2 with path =', babelPath);
+    return execa(babelPath, makeBabelArgs(ignore));
+  }
 }
 
 function install ({ skipChmod }) {
   return execa.shell(
-    `cd .dawson-dist && yarn add babel-cli babel-polyfill babel-preset-env babel-plugin-transform-object-rest-spread && yarn ${skipChmod
-      ? ''
-      : '&& chmod -Rf a+rX .'}`
+    oneLine`
+      cd .dawson-dist &&
+      NODE_ENV=production npm install --production babel-cli babel-polyfill babel-preset-env
+               babel-plugin-transform-object-rest-spread &&
+      NODE_ENV=production npm install --production
+      ${skipChmod
+        ? ''
+        : '&& chmod -Rf a+rX .'}`
   );
 }
 
@@ -78,7 +99,7 @@ async function zipRoot ({ tempZipFile, excludeList, PROJECT_ROOT }) {
   const excludeArg = '--exclude ' +
     [...excludeList, '.git', '.AppleDouble'].map(i => `\\*${i}\\*`).join(' ');
   await execa.shell(
-    `cd .dawson-dist && zip -r ${tempZipFile} . ${excludeArg}`,
+    `cd .dawson-dist && zip -8 -r ${tempZipFile} . ${excludeArg}`,
     { cwd: PROJECT_ROOT, maxBuffer: EXEC_MAX_OUTERR_BUFFER_SIZE }
   );
   const { size } = await stat(tempZipFile);

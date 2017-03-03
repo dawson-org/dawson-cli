@@ -178,7 +178,7 @@ function taskCreateCloudFrontTemplate (
     cloudfrontSettings,
     acmCertificateArn,
     skipAcmCertificate,
-    cloudfrontRootOrigin
+    root
   }
 ) {
   const cloudfrontCustomDomain = typeof cloudfrontSettings === 'string'
@@ -191,7 +191,7 @@ function taskCreateCloudFrontTemplate (
       alias: cloudfrontCustomDomain,
       acmCertificateArn,
       skipAcmCertificate,
-      cloudfrontRootOrigin
+      root
     })
     : {};
   return { cloudfrontCustomDomain, cloudfrontPartial };
@@ -231,7 +231,7 @@ export default function generateTemplate (
     acmCertificateArn,
     API_DEFINITIONS,
     appStage,
-    cloudfrontRootOrigin,
+    root,
     cloudfrontSettings,
     hostedZoneId,
     skipAcmCertificate,
@@ -290,7 +290,7 @@ export default function generateTemplate (
     cloudfrontSettings,
     acmCertificateArn,
     skipAcmCertificate,
-    cloudfrontRootOrigin
+    root
   });
 
   const { route53Enabled, route53Partial } = taskCreateRoute53Template({ // eslint-disable-line no-unused-vars

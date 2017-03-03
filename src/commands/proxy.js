@@ -23,7 +23,7 @@ import { createProxyServer } from 'http-proxy';
 import { createServer } from 'http';
 import { oneLine, stripIndent } from 'common-tags';
 import { parse } from 'url';
-import { flatten } from 'lodash';
+import { flatten, pickBy, mapKeys } from 'lodash';
 
 import createError from '../libs/error';
 import loadConfig, { AWS_REGION, validateDocker } from '../config';
@@ -34,6 +34,7 @@ import {
   getStackResources
 } from '../libs/aws/cfn-get-stack-info-helpers';
 import { templateStackName } from '../factories/cloudformation';
+import { WHITELISTED_HEADERS } from '../factories/cf_cloudfront';
 import { templateLambdaRoleName } from '../factories/cf_lambda';
 
 const sts = new AWS.STS({});
@@ -110,8 +111,8 @@ function apiCallback (res, runner, responseError, responseData) {
   }
   if (
     runner.api.redirects &&
-      responseData.response &&
-      responseData.response.Location
+    responseData.response &&
+    responseData.response.Location
   ) {
     const location = responseData.response.Location;
     res.writeHead(307, { 'Content-Type': 'text/plain', Location: location });
@@ -156,11 +157,12 @@ async function runDockerContainer (
     );
     const assumedRoleCredentials = await assumeRole(resources, runner);
     credentialsCache.set(runner, assumedRoleCredentials);
-    setTimeout(() => credentialsCache.delete(runner), (CREDENTIALS_DURATION_SECONDS - 600) * 1000);
-  } else {
-    log(
-      `   [STS] using cached credentials for Lambda '${runner.name}'`
+    setTimeout(
+      () => credentialsCache.delete(runner),
+      (CREDENTIALS_DURATION_SECONDS - 600) * 1000
     );
+  } else {
+    log(`   [STS] using cached credentials for Lambda '${runner.name}'`);
   }
   const credentials = credentialsCache.get(runner);
   const envVariables = getEnvVariables(outputs);
@@ -237,11 +239,16 @@ async function processAPIRequest (
   if (runner.api.redirects) {
     expectedResponseContentType = 'text/plain';
   }
+  const headers = mapKeys(
+    pickBy(req.headers, (v, k) =>
+      WHITELISTED_HEADERS.includes(k.toLowerCase())),
+    (v, k) => k.toLowerCase()
+  );
   const event = {
     params: {
       path: { ...(runner.pathParams || {}) },
       querystring,
-      header: req.headers
+      header: headers
     },
     body,
     meta: { expectedResponseContentType }
@@ -325,6 +332,7 @@ function runAuthorizer (
   // https://docs.aws.amazon.com/apigateway/latest/developerguide/use-custom-authorizer.html
   // @TODO: correctly handle 401, 403, 500 response as described in the documentation
 
+  debug('Authorizer event', event);
   const token = event.params.header.token;
   log(`   🔒 Invoking authorizer, token = ${util.inspect(token)}`.yellow.dim);
 
@@ -355,8 +363,8 @@ function runAuthorizer (
     {
       succeed: ({ policyDocument, principalId, context }) => {
         if (
-          !Object.values(context).every(val =>
-            ['number', 'string', 'boolean'].includes(typeof val))
+          !Object.values(context)
+            .every(val => ['number', 'string', 'boolean'].includes(typeof val))
         ) {
           throw new Error(
             'Authorizer Error: augmented context values can only be of type number, string or boolean.'
@@ -375,8 +383,8 @@ function runAuthorizer (
           !policyDocument.Statement.find(
             item =>
               item.Effect === 'Allow' &&
-                item.Action === 'execute-api:Invoke' &&
-                item.Resource === 'arn:fake'
+              item.Action === 'execute-api:Invoke' &&
+              item.Resource === 'arn:fake'
           )
         ) {
           fail(
@@ -407,7 +415,7 @@ function runAuthorizer (
 }
 
 function requestForAPI (req, SETTINGS) {
-  if (SETTINGS.cloudfrontRootOrigin === 'assets') {
+  if (SETTINGS.root === 'assets') {
     return req.url.startsWith('/prod');
   } else {
     return !req.url.startsWith('/assets');
@@ -416,7 +424,7 @@ function requestForAPI (req, SETTINGS) {
 
 function parseAPIUrl (req, SETTINGS) {
   let urlString;
-  if (SETTINGS.cloudfrontRootOrigin === 'assets') {
+  if (SETTINGS.root === 'assets') {
     urlString = req.url.replace('/prod', '');
   } else {
     urlString = req.url;
@@ -427,7 +435,7 @@ function parseAPIUrl (req, SETTINGS) {
 
 function parseAssetsUrlString (req, SETTINGS) {
   let urlString;
-  if (SETTINGS.cloudfrontRootOrigin !== 'assets') {
+  if (SETTINGS.root !== 'assets') {
     urlString = req.url.replace('/assets', '');
   } else {
     urlString = req.url;
@@ -459,15 +467,20 @@ function createBundle ({ stage, stackName, onlyCompile = false, skipChmod }) {
   });
 }
 
-function handleIncomingSQSMessage ({ stage, queueUrl, runner, outputs, resources, PROJECT_ROOT, message }) {
+function handleIncomingSQSMessage (
+  { stage, queueUrl, runner, outputs, resources, PROJECT_ROOT, message }
+) {
   const body = message.Body;
   const receiptHandle = message.ReceiptHandle;
   const event = JSON.parse(body);
-  runDockerContainer(
-    { stage, runner, event, outputs, resources, PROJECT_ROOT },
-    (runner, error, result) => {
-      log(`* Event handling by dev server is completed`.dim);
-      sqs.deleteMessage({
+  runDockerContainer({ stage, runner, event, outputs, resources, PROJECT_ROOT }, (
+    runner,
+    error,
+    result
+  ) => {
+    log(`* Event handling by dev server is completed`.dim);
+    sqs
+      .deleteMessage({
         QueueUrl: queueUrl,
         ReceiptHandle: receiptHandle
       })
@@ -477,27 +490,38 @@ function handleIncomingSQSMessage ({ stage, queueUrl, runner, outputs, resources
         log(`======= Log Fragment End =======\n`.dim);
       })
       .catch(e => {
-        log(`* Cleanup failed, message could not have been removed from the Queue`, e);
+        log(
+          `* Cleanup failed, message could not have been removed from the Queue`,
+          e
+        );
       });
-    }
-  );
+  });
 }
 
-function handleIncomingSQSMessages ({ stage, queueUrl, runner, outputs, resources, PROJECT_ROOT }) {
-  sqs.receiveMessage({
-    QueueUrl: queueUrl,
-    WaitTimeSeconds: 20,
-    VisibilityTimeout: 30
-  })
-  .promise()
-  .then(data => {
-    if (data.Messages && data.Messages.length > 0) {
-      data.Messages.forEach(message => handleIncomingSQSMessage(
-        { stage, queueUrl, runner, outputs, resources, PROJECT_ROOT, message }
-      ));
-    }
-    return handleIncomingSQSMessages(...arguments);
-  });
+function handleIncomingSQSMessages (
+  { stage, queueUrl, runner, outputs, resources, PROJECT_ROOT }
+) {
+  sqs
+    .receiveMessage({
+      QueueUrl: queueUrl,
+      WaitTimeSeconds: 20,
+      VisibilityTimeout: 30
+    })
+    .promise()
+    .then(data => {
+      if (data.Messages && data.Messages.length > 0) {
+        data.Messages.forEach(message => handleIncomingSQSMessage({
+          stage,
+          queueUrl,
+          runner,
+          outputs,
+          resources,
+          PROJECT_ROOT,
+          message
+        }));
+      }
+      return handleIncomingSQSMessages(...arguments);
+    });
 }
 
 function startQueuePolling ({ stage, outputs, resources, PROJECT_ROOT }) {
@@ -510,7 +534,14 @@ function startQueuePolling ({ stage, outputs, resources, PROJECT_ROOT }) {
       return true;
     }
     const queueUrl = findQueueURL(resources, runner);
-    handleIncomingSQSMessages({ stage, queueUrl, runner, outputs, resources, PROJECT_ROOT });
+    handleIncomingSQSMessages({
+      stage,
+      queueUrl,
+      runner,
+      outputs,
+      resources,
+      PROJECT_ROOT
+    });
   });
 }
 
@@ -551,9 +582,9 @@ export function run (argv) {
 
     if (
       req.headers['content-type'] &&
-        !['application/json', 'application/x-www-form-urlencoded'].includes(
-          req.headers['content-type']
-        )
+      !['application/json', 'application/x-www-form-urlencoded'].includes(
+        req.headers['content-type']
+      )
     ) {
       res.writeHead(415);
       res.write('Unsupported media type');
@@ -581,8 +612,8 @@ export function run (argv) {
       };
       if (
         req.method === 'GET' ||
-          req.method === 'OPTIONS' ||
-          req.method === 'HEAD'
+        req.method === 'OPTIONS' ||
+        req.method === 'HEAD'
       ) {
         next();
         return;
@@ -669,26 +700,20 @@ export function run (argv) {
                 .catch(e => {
                   throw createError({
                     kind: 'Failed to describe CloudFormation Stack',
-                    reason: (
-                      `dawson could not find a CloudFormation stack for your app.`
-                    ),
-                    detailedReason: (
-                      stripIndent`
+                    reason: `dawson could not find a CloudFormation stack for your app.`,
+                    detailedReason: stripIndent`
                     The stack named '${stackName}' (stage: ${stage}, region: ${AWS_REGION})
                     cannot be described.
                     AWS Error: "${e.message}"
                     If this is the first time you are using this app,
                     you just need to run $ dawson deploy
-                  `
-                    ),
-                    solution: (
-                      stripIndent`
+                  `,
+                    solution: stripIndent`
                     * deploy this app / stage (check AWS_STAGE or --stage)
                     * use the correct AWS Account (check AWS_PROFILE, AWS_ACCESS_KEY_ID)
                     * use the correct region (check AWS_REGION)
                     * check the 'name' property in your package.json
                   `
-                    )
                   });
                 })
                 .then(([_outputs, _resources]) => {
@@ -715,16 +740,12 @@ export function run (argv) {
                 } catch (e) {
                   throw createError({
                     kind: 'Missing resources',
-                    reason: (
-                      `Function '${runner.name}' has not yet been deployed.`
-                    ),
-                    detailedReason: (
-                      stripIndent`
+                    reason: `Function '${runner.name}' has not yet been deployed.`,
+                    detailedReason: stripIndent`
                     dawson couldn't find any IAM Role to use when executing this function.
                     This happens when you're invoking a function that has never been deployed before.
                     Before a function can be executed, it must have been deployed at least once.
-                  `
-                    ),
+                  `,
                     solution: 'execute $ dawson deploy, wait for the deploy to complete and then run this command again.'
                   });
                 }
@@ -750,16 +771,12 @@ export function run (argv) {
                 } catch (e) {
                   throw createError({
                     kind: 'Missing resources',
-                    reason: (
-                      `Function '${runner.name}' has not yet been fully deployed.`
-                    ),
-                    detailedReason: (
-                      stripIndent`
+                    reason: `Function '${runner.name}' has not yet been fully deployed.`,
+                    detailedReason: stripIndent`
                     dawson couldn't find a Queue to poll for events to execute this function with.
                     This happens when you're invoking a function that has never been deployed before
                     or because you have changed the devInstrument api property without deploying.
-                  `
-                    ),
+                  `,
                     solution: 'execute $ dawson deploy, wait for the deploy to complete and then run this command again.'
                   });
                 }
