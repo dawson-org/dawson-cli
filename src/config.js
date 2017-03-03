@@ -17,6 +17,7 @@ import { existsSync } from 'fs';
 import { stripIndent } from 'common-tags';
 
 import createError from './libs/error';
+import { LANGUAGE_JS_LATEST } from './libs/createBundle';
 import { debug } from './logger';
 
 // Language-specific bindings
@@ -114,6 +115,7 @@ const FUNCTION_CONFIGURATION_SCHEMA = {
 
 let requiredPkgJson;
 let requiredApi;
+let language;
 
 function validateCloudFrontConfig (cloudfront) {
   const message = [
@@ -315,8 +317,11 @@ export function initConfig (argv) {
 function describeApi (rootDir) {
   try {
     if (existsSync(`${rootDir}/api.js`)) {
-      debug('Detected language: JavaScript');
-      return jsDescribeApi({ rootDir });
+      debug('Detected language:', LANGUAGE_JS_LATEST);
+      return {
+        language: LANGUAGE_JS_LATEST,
+        requiredApi: jsDescribeApi({ rootDir })
+      };
     } else {
       console.error(createError({
         kind: 'Cannot find an app entry point',
@@ -376,7 +381,9 @@ export default function loadConfig (rootDir = process.cwd()) {
     process.exit(1);
   }
 
-  requiredApi = describeApi(rootDir);
+  const describeApiResult = describeApi(rootDir);
+  language = describeApiResult.language;
+  requiredApi = describeApiResult.requiredApi;
 
   const apiValidationResult = validateAPI(requiredApi);
   if (apiValidationResult !== true) {
@@ -435,6 +442,7 @@ export default function loadConfig (rootDir = process.cwd()) {
     APP_NAME: appName,
     PROJECT_ROOT: rootDir,
     SETTINGS: settings,
+    language,
     getCloudFrontSettings,
     getHostedZoneId: ({ appStage }) => settings.route53 ? settings.route53[appStage] : null
   };

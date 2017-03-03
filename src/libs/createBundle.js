@@ -5,24 +5,13 @@ import fs from 'fs';
 import Listr from 'listr';
 import promisify from 'es6-promisify';
 import temp from 'temp';
-import path from 'path';
-import { oneLine } from 'common-tags';
 
-import createIndex from './createIndex';
-import loadConfig, { BABEL_CONFIG } from '../config';
+import loadConfig from '../config';
 import { debug } from '../logger';
 
-const makeBabelArgs = (ignore = []) => ([
-  '.',
-  '--out-dir',
-  '.dawson-dist/',
-  '--ignore',
-  `node_modules,${ignore.join(',')}`,
-  (BABEL_CONFIG.babelrc === false) ? '--no-babelrc' : null,
-  '--presets',
-  BABEL_CONFIG.presets.map(p => Array.isArray(p) ? p[0] : p).join(','), // only preset names, without config
-  '--copy-files'
-].filter(Boolean));
+import jsCompile from './language-javascript-latest/compile';
+import jsInstallDeps from './language-javascript-latest/installDeps';
+import jsCreateIndex from './language-javascript-latest/createIndex';
 
 const s3 = new AWS.S3({});
 const writeFile = promisify(fs.writeFile.bind(fs));
@@ -30,6 +19,10 @@ const stat = promisify(fs.stat.bind(fs));
 
 const EXEC_MAX_OUTERR_BUFFER_SIZE = 1 * 1024 * 1024 * 1024;
 const S3_ZIP_PREFIX = 'lambda-sources';
+
+export const LANGUAGE_JS_LATEST = 'javascript-latest';
+const SUPPORTED_LANGUAGES = [LANGUAGE_JS_LATEST];
+const LANGUAGE_INVALID_ERR = new Error(`dawson internal error, unknown language in taskCreateBundle.`);
 
 // --- handles temporary files and deletes them on exit ---
 const TEMP_FILES = [];
@@ -53,43 +46,11 @@ async function createTempFiles () {
   return { tempZipFile };
 }
 
-function compile ({ ignore }) {
-  try {
-    // == attempt 1 ==
-    // dawson is installed globally (yarn/npm) or locally with yarn
-    // (yarn does not hoist .bin to the top)
-    const babelPath = path.join(__dirname, '..', '..', 'node_modules', '.bin', 'babel');
-    debug('Babel attempt #1 with path =', babelPath);
-    return execa(babelPath, makeBabelArgs(ignore));
-  } catch (e) {
-    if (e.message.indexOf('ENOENT') === -1) {
-      throw e;
-    }
-    // == attempt 2 ==
-    // dawson is installed locally with npm
-    // (npm does hoist .bin to the top)
-    const babelPath = path.join(process.cwd(), 'node_modules', '.bin', 'babel');
-    debug('Babel attempt #2 with path =', babelPath);
-    return execa(babelPath, makeBabelArgs(ignore));
-  }
-}
-
-function install ({ skipChmod }) {
-  return execa.shell(
-    oneLine`
-      cd .dawson-dist &&
-      NODE_ENV=production npm install --production babel-cli babel-polyfill babel-preset-env
-               babel-plugin-transform-object-rest-spread &&
-      NODE_ENV=production npm install --production
-      ${skipChmod
-        ? ''
-        : '&& chmod -Rf a+rX .'}`
-  );
-}
-
-function writeIndex ({ indexFileContents }) {
+function writeIndex ({ indexFileContents, indexFileExtension }) {
+  const indexFileName = `/.dawson-dist/dawsonindex.${indexFileExtension}`;
+  debug('writing Lambda index to', indexFileName);
   return writeFile(
-    process.cwd() + '/.dawson-dist/dawsonindex.js',
+    process.cwd() + indexFileName,
     indexFileContents,
     { encoding: 'utf8' }
   );
@@ -131,6 +92,12 @@ async function uploadS3 ({ bucketName, uuid, tempZipFile, tempZipFileSize }) {
   return { zipS3Location };
 }
 
+function getFileExtension (language) {
+  if (language === LANGUAGE_JS_LATEST) {
+    return 'js';
+  }
+}
+
 export default function taskCreateBundle (
   {
     bucketName,
@@ -143,11 +110,14 @@ export default function taskCreateBundle (
   },
   result
 ) {
-  const { PROJECT_ROOT, API_DEFINITIONS, SETTINGS } = loadConfig();
+  const { PROJECT_ROOT, API_DEFINITIONS, SETTINGS, language } = loadConfig();
   return new Listr([
     {
       title: 'configuring',
       task: ctx => {
+        if (!SUPPORTED_LANGUAGES.includes(language)) {
+          throw LANGUAGE_INVALID_ERR;
+        }
         Object.assign(ctx, {
           bucketName,
           excludeList,
@@ -156,7 +126,8 @@ export default function taskCreateBundle (
           noUpload,
           onlyCompile,
           ignore: SETTINGS.ignore,
-          skipChmod
+          skipChmod,
+          language
         });
       }
     },
@@ -168,18 +139,34 @@ export default function taskCreateBundle (
         Object.assign(ctx, { tempZipFile });
       }
     },
-    { title: 'compiling', task: compile },
+    { title: 'compiling',
+      task: ctx => {
+        const { language } = ctx;
+        if (language === LANGUAGE_JS_LATEST) {
+          return jsCompile(ctx);
+        }
+      }
+    },
     {
       title: 'installing dependencies',
       skip: ctx => ctx.onlyCompile,
-      task: ctx => install({ skipChmod: ctx.skipChmod })
+      task: ctx => {
+        const { language } = ctx;
+        if (language === LANGUAGE_JS_LATEST) {
+          return jsInstallDeps({ skipChmod: ctx.skipChmod });
+        }
+      }
     },
     {
       title: 'creating index file',
       task: async ctx => {
-        const { stackName } = ctx;
-        const indexFileContents = await createIndex(API_DEFINITIONS, stackName);
-        await writeIndex({ indexFileContents });
+        const { stackName, language } = ctx;
+        const indexFileExtension = getFileExtension(language);
+        let indexFileContents;
+        if (language === LANGUAGE_JS_LATEST) {
+          indexFileContents = await jsCreateIndex(API_DEFINITIONS, stackName);
+        }
+        await writeIndex({ indexFileContents, indexFileExtension });
       }
     },
     {
