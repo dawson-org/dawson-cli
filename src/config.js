@@ -13,11 +13,14 @@ require('babel-register')(BABEL_CONFIG);
 import AWS from 'aws-sdk';
 import execa from 'execa';
 import Type from 'prop-types';
-import { inspect } from 'util';
 import { existsSync } from 'fs';
 import { stripIndent } from 'common-tags';
 
 import createError from './libs/error';
+import { debug } from './logger';
+
+// Language-specific bindings
+import jsDescribeApi from './libs/language-javascript-latest/describeApi';
 
 export const AWS_REGION = AWS.config.region;
 export const RESERVED_FUCTION_NAMES = ['customTemplateFragment', 'processCFTemplate'];
@@ -309,6 +312,36 @@ export function initConfig (argv) {
   }
 }
 
+function getFunctions (rootDir) {
+  try {
+    if (existsSync(`${rootDir}/api.js`)) {
+      debug('Detected language: JavaScript');
+      return jsDescribeApi({ rootDir });
+    } else {
+      console.error(createError({
+        kind: 'Cannot find an app entry point',
+        reason: 'There is no api file in the current directory',
+        detailedReason: stripIndent`
+          One of this files should exist:
+          - ${rootDir}/api.js
+          `,
+        solution: stripIndent`
+          * verify that you have an api.js in the current directory
+          * if the file exists, verify its permissions
+          `
+      }).toFormattedString());
+      process.exit(1);
+    }
+  } catch (e) {
+    if (typeof e.toFormattedString === 'function') {
+      console.error(e.toFormattedString());
+      process.exit(1);
+    }
+    console.error('dawson internal error while parsing config'.red.bold);
+    throw e;
+  }
+}
+
 export default function loadConfig (rootDir = process.cwd()) {
   try {
     requiredPkgJson = require(rootDir + '/package.json');
@@ -343,79 +376,7 @@ export default function loadConfig (rootDir = process.cwd()) {
     process.exit(1);
   }
 
-  try {
-    requiredApi = require(rootDir + '/api');
-  } catch (e) {
-    if (e._babel) {
-      console.error(createError({
-        kind: 'Babel parse error',
-        reason: 'Your code contains an error and could not be parsed by babel',
-        detailedReason: e.message + '\n' + e.codeFrame,
-        solution: stripIndent`
-        * check your babel configuration, you may need a syntax plugin if you are
-          using an experimental syntax
-        * check the syntax of the api.js file by running it with 'babel-node --presets babel-preset-dawson'
-        `
-      }).toFormattedString());
-      process.exit(1);
-    }
-    if (e.message.match(/cannot find module.*\/api'$/i)) {
-      console.error(createError({
-        kind: 'Cannot find api.js',
-        reason: 'There is no api.js file in the current directory',
-        detailedReason: stripIndent`
-          You are running this command from '${rootDir}' which does not
-          contain an api.js file as required by dawson.
-        `,
-        solution: stripIndent`
-        * check if the file exists by running 'stat ${rootDir}/api.js'
-        * run dawson from the correct folder
-        * check file permissions on api.js
-        `
-      }).toFormattedString());
-      process.exit(1);
-    }
-    if (e.message.match(/Couldn't find preset "(.*?)" relative to/i)) {
-      console.error(createError({
-        kind: 'Missing babel dependencies',
-        reason: 'Some babel presets or plugins could not be loaded',
-        detailedReason: stripIndent`
-          Please install babel-preset-dawson.
-          Babel's error message is: '${e.message}'
-        `,
-        solution: stripIndent`
-        $ npm install --save-dev babel-preset-dawson
-        `
-      }).toFormattedString());
-      process.exit(1);
-    }
-    if (e instanceof SyntaxError) {
-      console.error(createError({
-        kind: 'Node.js error: SyntaxError',
-        reason: 'Your code contains a SyntaxError and could not be executed by node',
-        detailedReason: 'Your file has been transpiled with babel but node is not able to execute it\n\n' + inspect(e),
-        solution: stripIndent`
-        * check your babel configuration, if you are using non-'latest' features
-          you may need to include the appropriate transform plugin
-        * check the babel documentation: https://babeljs.io/docs/plugins/
-        * check the syntax of the api.js file by running it with 'babel-node'
-        `
-      }).toFormattedString());
-      process.exit(1);
-    }
-    // RangeError, ReferenceError, TypeError
-    console.error(createError({
-      kind: `Node.js error: ${e.name}`,
-      reason: `Your code thrown a ${e.name} and could not be executed by node`,
-      detailedReason: '' + inspect(e),
-      solution: stripIndent`
-        * you are accessing an undeclared variable, try to lint your code
-        * you are running code at top-level in your api.js or in any file that it requires
-          and such code thrown a ${e.name}. Move that code into a function
-        `
-    }).toFormattedString());
-    process.exit(1);
-  }
+  requiredApi = getFunctions(rootDir);
 
   const apiValidationResult = validateAPI(requiredApi);
   if (apiValidationResult !== true) {
