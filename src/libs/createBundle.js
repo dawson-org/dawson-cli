@@ -11,7 +11,6 @@ import os from 'os';
 const IS_WINDOWS = os.platform() === 'win32';
 
 import loadConfig from '../config';
-import { debug } from '../logger';
 import { debug, DEBUG_LEVEL } from '../logger';
 
 import jsCompile from './language-javascript-latest/compile';
