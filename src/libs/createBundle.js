@@ -12,6 +12,7 @@ const IS_WINDOWS = os.platform() === 'win32';
 
 import loadConfig from '../config';
 import { debug } from '../logger';
+import { debug, DEBUG_LEVEL } from '../logger';
 
 import jsCompile from './language-javascript-latest/compile';
 import jsInstallDeps from './language-javascript-latest/installDeps';
@@ -47,6 +48,10 @@ function writeIndex ({ indexFileContents, indexFileExtension }) {
 async function zipRoot ({ tempZipFile, excludeList, rootDir }) {
   const excludeArg = '--exclude ' +
     [...excludeList, '.git', '.AppleDouble'].map(i => `\\*${i}\\*`).join(' ');
+  const spawnOpts = {
+    cwd: rootDir,
+    maxBuffer: EXEC_MAX_OUTERR_BUFFER_SIZE
+  };
   if (IS_WINDOWS) {
     const rootDirWindows = rootDir.replace(/\\/g, '/');
     const zipCmd = `bash -c "cd .dawson-dist && zip -8 -r ../.dawson-dist.zip . ${excludeArg}"`;
@@ -58,11 +63,14 @@ async function zipRoot ({ tempZipFile, excludeList, rootDir }) {
       ${zipCmd}
     `;
     debug('[windows-compat] zipping using docker:', zipDockerCmd);
-    await execa.shell(zipDockerCmd, { cwd: rootDir, maxBuffer: EXEC_MAX_OUTERR_BUFFER_SIZE });
+    if (DEBUG_LEVEL) {
+      spawnOpts.stdio = 'inherit';
+    }
+    await execa.shell(zipDockerCmd, spawnOpts);
   } else {
     debug('zipping using system\'s built-in command');
     const zipCmd = `cd .dawson-dist && zip -8 -r ${tempZipFile} . ${excludeArg}`;
-    await execa.shell(zipCmd, { cwd: rootDir, maxBuffer: EXEC_MAX_OUTERR_BUFFER_SIZE });
+    await execa.shell(zipCmd, spawnOpts);
   }
   const { size } = await stat(tempZipFile);
   const sizeMB = `${Math.floor(size / 1000000.0)}MB`;

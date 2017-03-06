@@ -5,7 +5,7 @@ import path from 'path';
 import os from 'os';
 const IS_WINDOWS = os.platform() === 'win32';
 
-import { debug } from '../../logger';
+import { debug, DEBUG_LEVEL } from '../../logger';
 
 export default function install ({ skipChmod, rootDir }) {
   if (IS_WINDOWS) {
@@ -15,14 +15,19 @@ export default function install ({ skipChmod, rootDir }) {
     // and only root can access
     const sourceDir = path.resolve(rootDir, '.dawson-dist').replace(/\\/g, '/');
     // docker uses unix paths (see https://forums.docker.com/t/volume-mounts-in-windows-does-not-work/10693/6)
+    // also, drive sharing must be enabled in the docker settings ui
 
     const dockerCmd = oneLine`
       docker run
         dawsonorg/install-deps:javascript-latest
         -v "${sourceDir}":/dawson-dist
     `;
-    debug('[windows-compat] installindg deps using docker:', dockerCmd);
-    return execa.shell(dockerCmd);
+    debug('[windows-compat] installing deps using docker:', dockerCmd);
+    const opts = {};
+    if (DEBUG_LEVEL) {
+      opts.stdio = 'inherit';
+    }
+    return execa.shell(dockerCmd, opts);
   }
   // if you modify the build commands below, be sure to update the Docker image too
   debug('installing deps using system\'s npm');
