@@ -9,7 +9,7 @@ PYTHON_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(PYTHON_FOLDER)
 
 # functions to unit-test
-from require import extract_functions, generate_config, output, main
+from require import extract_functions, generate_config, output, main, RUNTIME
 
 class TestFunctionAnalyzer(TestCase):
     """ Python Function Analyzer Tests """
@@ -25,6 +25,10 @@ class TestFunctionAnalyzer(TestCase):
         self.assertEqual(expected_configs, len(configs))
         for config in configs:
             json.dumps(config)  # should not raise!
+            self.assertIsNotNone(config['name'])
+            self.assertIsNotNone(config['api'])
+            self.assertTrue(isinstance(config['api']['path'], basestring))
+            self.assertEqual(config['api']['runtime'], RUNTIME)
 
 
     def test_nothing(self):
