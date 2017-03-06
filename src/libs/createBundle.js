@@ -165,10 +165,11 @@ export default function taskCreateBundle (args, result) {
       title: 'installing dependencies',
       skip: ctx => ctx.onlyCompile,
       task: ctx => {
-        const { language } = ctx;
+        const { language, skipChmod, rootDir } = ctx;
+        // keep after "compiling" step
         switch (language) {
           case LANGUAGE_JS_LATEST:
-            return jsInstallDeps({ skipChmod: ctx.skipChmod });
+            return jsInstallDeps({ skipChmod, rootDir });
           default:
             throw LANGUAGE_INVALID_ERR;
         }
