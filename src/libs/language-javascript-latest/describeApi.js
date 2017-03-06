@@ -1,4 +1,5 @@
 import { inspect } from 'util';
+import path from 'path';
 import { stripIndent } from 'common-tags';
 import createError from '../error';
 
@@ -28,7 +29,7 @@ export default function ({ rootDir }) {
           contain an api.js file as required by dawson.
         `,
         solution: stripIndent`
-        * check if the file exists by running 'stat ${rootDir}/api.js'
+        * check if the file exists at ${path.join(rootDir, 'api.js')}
         * run dawson from the correct folder
         * check file permissions on api.js
         `
