@@ -48,10 +48,11 @@ async function zipRoot ({ tempZipFile, excludeList, rootDir }) {
   const excludeArg = '--exclude ' +
     [...excludeList, '.git', '.AppleDouble'].map(i => `\\*${i}\\*`).join(' ');
   if (IS_WINDOWS) {
+    const rootDirWindows = rootDir.replace(/\\/g, '/');
     const zipCmd = `bash -c "cd .dawson-dist && zip -8 -r ../.dawson-dist.zip . ${excludeArg}"`;
     const zipDockerCmd = oneLine`
       docker run
-        -v ${rootDir}:/dawson-dist
+        -v "${rootDirWindows}":/dawson-dist
         -w /dawson-dist
       dawsonorg/create-bundle:latest
       ${zipCmd}
