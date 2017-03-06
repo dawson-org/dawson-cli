@@ -5,6 +5,7 @@ import sys
 
 # append current folder (parent process')
 sys.path.append(".")
+RUNTIME = "python2.7"
 
 def main():
     """ Import api file and print configuration to stdin """
@@ -41,6 +42,7 @@ def generate_config(functions):
         except AttributeError:
             continue  # not every function is a Function
         else:
+            config['runtime'] = RUNTIME
             yield {
                 'name': fname,
                 'api': config,
