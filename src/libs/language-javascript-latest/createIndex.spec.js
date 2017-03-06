@@ -8,47 +8,21 @@ test('createIndex', t => {
   const expected = `require('babel-polyfill');
 
 const stackName = 'barapp';
-var stackOutputs = null;
-
-function dawsonDescribeOutputs() {
-  if (!stackOutputs) {
-    const AWS = require('aws-sdk');
-    const cloudformation = new AWS.CloudFormation({});
-    const params = {
-      StackName: stackName
-    };
-    return cloudformation
-      .describeStacks(params)
-      .promise()
-      .then(result => {
-        const outputs = result.Stacks[0].Outputs;
-        const ret = {};
-        outputs.forEach(output => {
-          ret[output.OutputKey] = output.OutputValue;
-        });
-        stackOutputs = ret;
-        return ret;
-      })
-      .catch(err => {
-        console.error(\`Error describing stack barapp\`, err.message, err.stack);
-        throw err;
-      });
-  } else {
-    return Promise.resolve(stackOutputs);
-  }
-}
 
 module.exports.helloWorld = function(event, context, callback) {
   if (event.__ping) {
+    // __ping events are used by the keep-alive logic (to prevent Lambda's cooling)
     return callback(null, '"pong__"');
   }
-  context.dawsonDescribeOutputs = dawsonDescribeOutputs;
+
+  // require the main api.js file and get this function's handler
   const runner = require('./api').helloWorld;
   Promise.resolve()
     .then(function() {
       return runner(event, context);
     })
     .then(function(data) {
+      // prepare response for api-gateway and auto stringify JSON if responseContentType is application/json
       if (
         event.meta &&
         event.meta.expectedResponseContentType.indexOf('application/json') !==
@@ -85,9 +59,11 @@ module.exports.helloWorld = function(event, context, callback) {
 
 module.exports.myEventHandler = function(event, context, callback) {
   if (event.__ping) {
+    // __ping events are used by the keep-alive logic (to prevent Lambda's cooling)
     return callback(null, '"pong__"');
   }
-  context.dawsonDescribeOutputs = dawsonDescribeOutputs;
+
+  // require the main api.js file and get this function's handler
   const runner = require('./api').myEventHandler;
   Promise.resolve()
     .then(function() {
@@ -118,7 +94,7 @@ module.exports.myEventHandler = function(event, context, callback) {
       });
     })
     .then(function(data) {
-      // this function has not been called via API Gateway, we return the value as-is
+      // else, if this function has no "path" configured, we return the value as-is
       return callback(null, data);
     })
     .catch(function(err) {

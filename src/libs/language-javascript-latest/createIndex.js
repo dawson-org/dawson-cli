@@ -4,8 +4,13 @@ import prettier from 'prettier';
 function getRunnerCode (name, apiConfig) {
   if (apiConfig.devInstrument !== true ||
       process.env.DAWSON_DEV_PROXY === 'yes') {
+    // if we are not running from the development server, just execute normally...
     return 'return runner(event, context);';
   }
+
+  // when devInstrument is true, we send every incoming event
+  // to an SQS Queue, so that the development server can receive
+  // the event and execute the corresponding function
   const logicalLambdaName = `${name[0].toUpperCase()}${name.slice(1)}`;
   return stripIndent`
     return new Promise((resolve, reject) => {
@@ -34,15 +39,19 @@ function getRunnerCode (name, apiConfig) {
 function getWrappingCode (apis, name) {
   const apiConfig = apis[name].api;
   if (!apiConfig) {
+    // this is not a function to be uploaded
+    // (e.g.: processCFTemplate, customTemplateFragment, ...)
     return;
   }
   const hasEndpoint = apiConfig.path !== false;
   const body = stripIndent`
     module.exports.${name} = function (event, context, callback) {
       if (event.__ping) {
+        // __ping events are used by the keep-alive logic (to prevent Lambda's cooling)
         return callback(null, '"pong__"');
       }
-      context.dawsonDescribeOutputs = dawsonDescribeOutputs;
+
+      // require the main api.js file and get this function's handler
       const runner = require('./api').${name};
       Promise.resolve()
       .then(function () {
@@ -51,13 +60,14 @@ function getWrappingCode (apis, name) {
       .then(function (data) {
         ${hasEndpoint
     ? stripIndent`
+            // prepare response for api-gateway and auto stringify JSON if responseContentType is application/json
             if (event.meta && event.meta.expectedResponseContentType.indexOf('application/json') !== -1) {
               return callback(null, { response: JSON.stringify(data) });
             }
             callback(null, { response: data });
           `
     : stripIndent`
-            // this function has not been called via API Gateway, we return the value as-is
+            // else, if this function has no "path" configured, we return the value as-is
             return callback(null, data);
           `}
       })
@@ -95,36 +105,10 @@ export default function createIndex (apis, stackName) {
     require('babel-polyfill');
 
     const stackName = '${stackName}';
-    var stackOutputs = null;
-
-    function dawsonDescribeOutputs() {
-      if (!stackOutputs) {
-        const AWS = require('aws-sdk');
-        const cloudformation = new AWS.CloudFormation({});
-        const params = {
-          StackName: stackName,
-        };
-        return cloudformation.describeStacks(params).promise()
-        .then(result => {
-          const outputs = result.Stacks[0].Outputs;
-          const ret = {};
-          outputs.forEach(output => {
-            ret[output.OutputKey] = output.OutputValue;
-          });
-          stackOutputs = ret;
-          return ret;
-        })
-        .catch(err => {
-          console.error(\`Error describing stack ${stackName}\`, err.message, err.stack);
-          throw err;
-        });
-      } else {
-        return Promise.resolve(stackOutputs);
-      }
-    }
 
     ${exportedFunctions.join('\n\n')}
   `;
+
   code = prettier.format(code, {
     printWidth: 80,
     singleQuote: true,
