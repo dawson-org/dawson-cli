@@ -17,6 +17,7 @@ import { existsSync } from 'fs';
 import { stripIndent } from 'common-tags';
 
 import path from 'path';
+import os from 'os';
 
 import createError from './libs/error';
 import { LANGUAGE_JS_LATEST } from './libs/createBundle';
@@ -197,12 +198,15 @@ function execIfExists (...args) {
 }
 
 function validateSystem () {
-  const zipResult = execIfExists('zip', ['--help']);
-  if (zipResult.status !== 0) {
-    return [
-      `zip is a required dependency but the zip binary was not found: ${zipResult.error.message}`,
-      `install the 'zip' command using operating system's package manager`
-    ];
+  if (os.platform() !== 'win32') {
+    const zipResult = execIfExists('zip', ['--help']);
+    if (zipResult.status !== 0) {
+      return [
+        `zip is a required dependency but the zip binary was not found: ${zipResult.error.message}`,
+        `install the 'zip' command using operating system's package manager`
+      ];
+    }
+    return true;
   }
   return true;
 }
