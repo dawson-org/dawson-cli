@@ -19,7 +19,7 @@
     "coverage-coveralls": "nyc report --reporter=text-lcov | coveralls",
     "coverage-codecov": "nyc report --reporter=text-lcov > coverage.lcov && codecov",
     "coverage": "npm run coverage-coveralls && npm run coverage-codecov",
-    "test-python": "cd src/python && pip install -r requirements-dev.txt && bash runtests.sh",
+    "test-python": "cd src/libs/language-python/api-parser && pip install -r requirements-dev.txt && bash runtests.sh",
     "test": "npm run lint && nyc ava src/**/*.spec.js && npm run test-python",
     "commit": "git-cz"
   },
@@ -96,7 +96,17 @@
       "src/libs/**/createIndex.js"
     ],
     "exclude": [
+<<<<<<< c69bb2e3d4190d28199df090d54f230a94b513b7
       "**/*.spec.js"
+=======
+      "**/*.spec.js",
+      "src/logger.js",
+      "src/config.js",
+      "src/libs/createBundle.js",
+      "src/libs/**/compile.js",
+      "src/libs/**/describeApi.js",
+      "src/libs/**/installDeps.js"
+>>>>>>> updates test commands
     ],
     "require": [
       "babel-register"
