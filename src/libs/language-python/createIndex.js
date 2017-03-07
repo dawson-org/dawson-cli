@@ -77,7 +77,7 @@ function getWrappingCode (apis, name) {
         return result
         `}
 
-      except Exception, err:
+      except Exception as err:
         try:
           # Promise rejections should be Errors containing a JSON-stringified 'message property'
           # which contains the error information to be displayed.
@@ -85,10 +85,10 @@ function getWrappingCode (apis, name) {
           # and a generic HTTP 500 error will be exposed
           json.loads(err.message);
           print 'Lambda will terminate with error', err.message
-          raise Exception(err.message)
-        except ValueError, jsonErr:
+          raise
+        except ValueError as jsonErr:
           print 'Unhandled error will be swallowed and reported as HTTP 500:'
-          print err
+          print '%r' % err
           opaqueError = {
             'unhandled': True,
             'message': 'Unhandled internal error',
