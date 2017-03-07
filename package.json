@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "scripts": {
     "clean": "rm -rf dist/",
-    "compile": "babel -s true --source-maps inline -d dist/ src/ --ignore *.AppleDouble*",
+    "compile": "babel -s true --source-maps inline -d dist/ src/ --ignore *.AppleDouble* --copy-files",
     "link:watch": "nodemon -w src -x npm -- run lint-link",
     "format": "prettier-eslint --write src/**/*.js",
     "lint": "eslint src/**/*.js",
