@@ -66,7 +66,7 @@ function getWrappingCode (apis, name) {
           ? `
         # prepare response for api-gateway and auto stringify JSON if responseContentType is application/json
         if event.get('meta') and 'application/json' in event.get('meta').get('expectedResponseContentType'):
-          return callback(null, { 'response': json.dumps(result) })
+          return { 'response': json.dumps(result) }
 
         return {
           'response': result
