@@ -43,6 +43,16 @@ const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
 const credentialsCache = new WeakMap();
 const CREDENTIALS_DURATION_SECONDS = 3600;
 
+function getDockerImage (runtime) {
+  if (!runtime) {
+    return 'lambci/lambda:nodejs6.10';
+  }
+  if (runtime === 'python2.7') {
+    return 'lambci/lambda:python2.7';
+  }
+  throw new Error(`dawson internal error: cannot determine which image to use for runtime "${runtime}".`);
+}
+
 function findApi ({ method, pathname, API_DEFINITIONS }) {
   let found = null;
   Object.keys(API_DEFINITIONS).forEach(name => {
@@ -169,10 +179,11 @@ async function runDockerContainer (
   }
   const credentials = credentialsCache.get(runner);
   const envVariables = getEnvVariables(outputs, runner.api.excludeEnv);
+  const dockerImage = getDockerImage(runner.api.runtime);
   try {
     log(`\n======= Log Fragment Begin for «${runner.name.bold}» =======`.dim);
     const invokeResult = dockerLambda({
-      dockerImage: 'lambci/lambda:nodejs6.10',
+      dockerImage,
       event,
       taskDir: `${PROJECT_ROOT}/.dawson-dist`,
       handler: `dawsonindex.${runner.name}`,
