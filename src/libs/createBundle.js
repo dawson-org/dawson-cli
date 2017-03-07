@@ -13,6 +13,10 @@ import jsCompile from './language-javascript-latest/compile';
 import jsInstallDeps from './language-javascript-latest/installDeps';
 import jsCreateIndex from './language-javascript-latest/createIndex';
 
+import pyCompile from './language-python/compile';
+import pyInstallDeps from './language-python/installDeps';
+import pyCreateIndex from './language-python/createIndex';
+
 const s3 = new AWS.S3({});
 const writeFile = promisify(fs.writeFile.bind(fs));
 const stat = promisify(fs.stat.bind(fs));
@@ -21,10 +25,9 @@ const EXEC_MAX_OUTERR_BUFFER_SIZE = 1 * 1024 * 1024 * 1024;
 const S3_ZIP_PREFIX = 'lambda-sources';
 
 export const LANGUAGE_JS_LATEST = 'javascript-latest';
-const SUPPORTED_LANGUAGES = [LANGUAGE_JS_LATEST];
-const LANGUAGE_INVALID_ERR = new Error(
-  `dawson internal error, unknown language in taskCreateBundle.`
-);
+export const LANGUAGE_PYTHON = 'python';
+const SUPPORTED_LANGUAGES = [LANGUAGE_JS_LATEST, LANGUAGE_PYTHON];
+const LANGUAGE_INVALID_ERR = new Error(`dawson internal error, unknown language in taskCreateBundle.`);
 
 // --- handles temporary files and deletes them on exit ---
 const TEMP_FILES = [];
@@ -96,6 +99,8 @@ function getFileExtension (language) {
   switch (language) {
     case LANGUAGE_JS_LATEST:
       return 'js';
+    case LANGUAGE_PYTHON:
+      return 'py';
     default:
       throw LANGUAGE_INVALID_ERR;
   }
@@ -157,6 +162,8 @@ export default function taskCreateBundle (args, result) {
         switch (language) {
           case LANGUAGE_JS_LATEST:
             return jsCompile(ctx);
+          case LANGUAGE_PYTHON:
+            return pyCompile(ctx);
           default:
             throw LANGUAGE_INVALID_ERR;
         }
@@ -166,10 +173,12 @@ export default function taskCreateBundle (args, result) {
       title: 'installing dependencies',
       skip: ctx => ctx.onlyCompile,
       task: ctx => {
-        const { language } = ctx;
+        const { language, skipChmod, rootDir } = ctx;
         switch (language) {
           case LANGUAGE_JS_LATEST:
-            return jsInstallDeps({ skipChmod: ctx.skipChmod });
+            return jsInstallDeps({ skipChmod, rootDir });
+          case LANGUAGE_PYTHON:
+            return pyInstallDeps({ skipChmod, rootDir });
           default:
             throw LANGUAGE_INVALID_ERR;
         }
@@ -184,6 +193,9 @@ export default function taskCreateBundle (args, result) {
         switch (language) {
           case LANGUAGE_JS_LATEST:
             indexFileContents = await jsCreateIndex(apiDefinitions, stackName);
+            break;
+          case LANGUAGE_PYTHON:
+            indexFileContents = await pyCreateIndex(apiDefinitions, stackName);
             break;
           default:
             throw LANGUAGE_INVALID_ERR;
