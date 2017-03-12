@@ -84,7 +84,7 @@ function getWrappingCode (apis, name) {
           # If the property is not valid JSON, the error is not exposed to the client
           # and a generic HTTP 500 error will be exposed
           json.loads(err.message);
-          print 'Lambda will terminate with error', err.message
+          print 'Lambda will terminate with error %r' % err
           raise
         except ValueError as jsonErr:
           print 'Unhandled error will be swallowed and reported as HTTP 500:'
@@ -92,7 +92,7 @@ function getWrappingCode (apis, name) {
           opaqueError = {
             'unhandled': True,
             'message': 'Unhandled internal error',
-            'httpStatus': 500
+            'httpStatus': 500,
           };
           raise Exception(json.dumps(opaqueError))
   `;
