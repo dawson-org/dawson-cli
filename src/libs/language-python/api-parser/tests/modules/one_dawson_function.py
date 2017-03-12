@@ -6,5 +6,5 @@ def myfunction(event, context):
     return "Hello world"
 
 myfunction.api = {
-    "path": "/test"
+    "path": "test"
 }

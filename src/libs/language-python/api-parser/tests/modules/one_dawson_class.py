@@ -14,7 +14,7 @@ class MyClass(dict):
     """
 
     api = {
-        "path": "/test"
+        "path": "test"
     }
 
     def __init__(self, event, context):

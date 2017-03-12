@@ -11,6 +11,6 @@ def another_function():
 
 # this configuration is not JSON-serializable
 myfunction.api = {
-    "path": "/test",
+    "path": "test",
     "parameter": another_function,
 }

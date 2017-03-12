@@ -6,7 +6,7 @@ def myfunction(event, context):
     return "Hello Function"
 
 myfunction.api = {
-    "path": "/test"
+    "path": "test"
 }
 
 def myfunction2(event, context):
@@ -15,5 +15,5 @@ def myfunction2(event, context):
     return "Hello world 2"
 
 myfunction2.api = {
-    "path": "/test2"
+    "path": "test2"
 }
