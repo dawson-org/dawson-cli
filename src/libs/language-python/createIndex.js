@@ -7,39 +7,25 @@ function getRunnerCode (name, apiConfig) {
   if (apiConfig.devInstrument !== true ||
       process.env.DAWSON_DEV_PROXY === 'yes') {
     // if we are not running from the development server, just execute normally...
-    return `${name}Runner(event, context)`;
+    return `result = ${name}Runner(event, context)`;
   }
 
   // when devInstrument is true, we send every incoming event
   // to an SQS Queue, so that the development server can receive
   // the event and execute the corresponding function
-  throw new Error(`devInstrument is not implemented for the python runtime`);
-  /*
-  // reference Node.js implementation:
   const logicalLambdaName = `${name[0].toUpperCase()}${name.slice(1)}`;
   return stripIndent`
-    return new Promise((resolve, reject) => {
-      console.log('devInstrument: will handle this event');
-      const AWS = require('aws-sdk');
-      const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
-      const queueUrl = process.env.DAWSONInstrument_Queue_${logicalLambdaName};
-      const message = JSON.stringify(event);
-      sqs.sendMessage({
-        QueueUrl: queueUrl,
-        MessageBody: message
-      })
-      .promise()
-      .then(data => {
-        console.log('devInstrument: message publish OK', data.MessageId);
-        return callback(null);
-      })
-      .catch(e => {
-        console.log('devInstrument: error publishing to Queue', queueUrl, message);
-        return callback(e);
-      });
-    });
+    import boto3, os
+    print('devInstrument: will handle this event');
+    client = boto3.client('sqs')
+    queueUrl = os.environ.get('DAWSONInstrument_Queue_${logicalLambdaName}')
+    result = client.send_message(
+        QueueUrl=queueUrl,
+        MessageBody=json.dumps(event),
+    )
+    print('devInstrument: message publish response')
+    print(result)
   `;
-  */
 }
 
 function getWrappingCode (apis, name) {
@@ -55,12 +41,12 @@ function getWrappingCode (apis, name) {
     from api import ${name} as ${name}Runner
 
     def ${name}(event, context):
-      if (event.get('__ping')):
+      if event.get('__ping'):
         # __ping events are used by the keep-alive logic (to prevent Lambda's cooling)
         return '"pong__"'
 
       try:
-        result = ${getRunnerCode(name, apiConfig)}
+        ${getRunnerCode(name, apiConfig)}
 
         ${hasEndpoint
           ? `
