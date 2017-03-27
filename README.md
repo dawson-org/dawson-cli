@@ -106,6 +106,7 @@ In case you have an issue, make sure you have updated to the latest version (e.g
 ## Related
 * https://serverless.com/
 * https://github.com/apex/apex
+* https://claudiajs.com/
 * https://www.terraform.io/
 * https://github.com/awslabs/chalice
 * https://github.com/Miserlou/Zappa
