@@ -137,7 +137,6 @@ function apiCallback (res, runner, responseError, responseData) {
   }
   log(`======= Log Fragment End =======\n`.dim);
   res.end();
-  return;
 }
 
 function getEnvVariables (outputs) {
@@ -596,7 +595,7 @@ export function run (argv) {
       const url = parseAPIUrl(req, SETTINGS);
       const pathname = url.pathname;
       const querystring = qs.parse(url.query);
-      let rawBody = new Buffer('');
+      let rawBody = Buffer.from([]);
       let jsonBody = {};
       const next = () => {
         processAPIRequest(req, res, {

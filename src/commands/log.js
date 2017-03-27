@@ -3,8 +3,6 @@ import indentString from 'indent-string';
 import moment from 'moment';
 import prettyjson from 'prettyjson';
 
-const cwlogs = new AWS.CloudWatchLogs({});
-
 import { error, log, title } from '../logger';
 import loadConfig from '../config';
 
@@ -28,6 +26,7 @@ export function filterAndPrint (
     .resolve()
     .then(() => {
       const filter = requestId ? { filterPattern: `"${requestId}"` } : {};
+      const cwlogs = new AWS.CloudWatchLogs({});
       return cwlogs
         .filterLogEvents({
           logGroupName: `/aws/lambda/${awsLambdaName}`,
