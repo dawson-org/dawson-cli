@@ -1,0 +1,78 @@
+{
+  "projectName": "dawson",
+  "projectOwner": "lusentis",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": true,
+  "contributors": [
+    {
+      "login": "lusentis",
+      "name": "Simone Lusenti",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/950086?v=3",
+      "profile": "http://www.plasticpanda.com",
+      "contributions": [
+        "question",
+        "blog",
+        "bug",
+        "code",
+        "doc",
+        "example",
+        "infra",
+        "plugin",
+        "review",
+        "talk",
+        "test",
+        "tool",
+        "tutorial"
+      ]
+    },
+    {
+      "login": "alexcasalboni",
+      "name": "Alex Casalboni",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/2457588?v=3",
+      "profile": "https://blog.alexcasalboni.com/",
+      "contributions": [
+        "question",
+        "bug",
+        "code",
+        "example",
+        "talk",
+        "test",
+        "tool"
+      ]
+    },
+    {
+      "login": "Giaco9",
+      "name": "Giacomo Consonni",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/4239892?v=3",
+      "profile": "https://github.com/Giaco9",
+      "contributions": [
+        "code",
+        "doc",
+        "plugin"
+      ]
+    },
+    {
+      "login": "lcasartelli",
+      "name": "Luca Casartelli",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/2690781?v=3",
+      "profile": "https://github.com/lcasartelli",
+      "contributions": [
+        "code",
+        "doc"
+      ]
+    },
+    {
+      "login": "chrismatheson",
+      "name": "Chris Matheson",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/420915?v=3",
+      "profile": "http://chrismatheson.github.io",
+      "contributions": [
+        "bug",
+        "doc"
+      ]
+    }
+  ]
+}
