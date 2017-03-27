@@ -596,7 +596,7 @@ A shell command to execute before starting the deployment. If command exits with
 
 ## `post-deploy`
 **Required**: no | **Type**: `string` | **Default**: `undefined`  
-**Use for**: Specifying a bash command to run before the deployment begins
+**Use for**: Specifying a bash command to run after the deployment ends.
 
 A shell command to run after the deployment has been successfully completed.
 
