@@ -474,8 +474,8 @@ function handleIncomingSQSMessage (
   const receiptHandle = message.ReceiptHandle;
   const event = JSON.parse(body);
   runDockerContainer({ stage, runner, event, outputs, resources, PROJECT_ROOT }, (
-    runner,
-    error,
+    _runner,
+    _error,
     result
   ) => {
     log(`* Event handling by dev server is completed`.dim);
@@ -651,8 +651,8 @@ export function run (argv) {
           cacheControl: false,
           root: pathModule.join(PROJECT_ROOT, assetsPath)
         })
-          .on('error', error => {
-            res.writeHead(error.status || 500);
+          .on('error', (sendError) => {
+            res.writeHead(sendError.status || 500);
             const message = `Resource not found (root: ${pathModule.join(
               PROJECT_ROOT,
               assetsPath

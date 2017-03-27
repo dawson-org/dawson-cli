@@ -61,7 +61,7 @@ export function filterAndPrint (
 
         let msgToPrint;
         if (/^\d\d\d\d-\d\d-\d\dT/.test(message)) {
-          const requestId = message.substr(25, 36);
+          const messageRequestId = message.substr(25, 36);
           const restMessage = message.substr(62);
           let restMessageColorized;
           try {
@@ -71,10 +71,10 @@ export function filterAndPrint (
               dashColor: 'white',
               stringColor: 'white'
             });
-          } catch (e) {
+          } catch (jsonParseError) {
             restMessageColorized = restMessage;
           }
-          msgToPrint = `\n    ${requestId.bold.cyan}\n${indentString(
+          msgToPrint = `\n    ${messageRequestId.bold.cyan}\n${indentString(
             restMessageColorized,
             4
           )}`;

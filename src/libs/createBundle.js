@@ -5,24 +5,13 @@ import fs from 'fs';
 import Listr from 'listr';
 import promisify from 'es6-promisify';
 import temp from 'temp';
-import path from 'path';
-import { oneLine } from 'common-tags';
 
-import createIndex from './createIndex';
-import loadConfig, { BABEL_CONFIG } from '../config';
+import loadConfig from '../config';
 import { debug } from '../logger';
 
-const makeBabelArgs = (ignore = []) => ([
-  '.',
-  '--out-dir',
-  '.dawson-dist/',
-  '--ignore',
-  `node_modules,${ignore.join(',')}`,
-  (BABEL_CONFIG.babelrc === false) ? '--no-babelrc' : null,
-  '--presets',
-  BABEL_CONFIG.presets.map(p => Array.isArray(p) ? p[0] : p).join(','), // only preset names, without config
-  '--copy-files'
-].filter(Boolean));
+import jsCompile from './language-javascript-latest/compile';
+import jsInstallDeps from './language-javascript-latest/installDeps';
+import jsCreateIndex from './language-javascript-latest/createIndex';
 
 const s3 = new AWS.S3({});
 const writeFile = promisify(fs.writeFile.bind(fs));
@@ -30,6 +19,10 @@ const stat = promisify(fs.stat.bind(fs));
 
 const EXEC_MAX_OUTERR_BUFFER_SIZE = 1 * 1024 * 1024 * 1024;
 const S3_ZIP_PREFIX = 'lambda-sources';
+
+export const LANGUAGE_JS_LATEST = 'javascript-latest';
+const SUPPORTED_LANGUAGES = [LANGUAGE_JS_LATEST];
+const LANGUAGE_INVALID_ERR = new Error(`dawson internal error, unknown language in taskCreateBundle.`);
 
 // --- handles temporary files and deletes them on exit ---
 const TEMP_FILES = [];
@@ -53,54 +46,22 @@ async function createTempFiles () {
   return { tempZipFile };
 }
 
-function compile ({ ignore }) {
-  try {
-    // == attempt 1 ==
-    // dawson is installed globally (yarn/npm) or locally with yarn
-    // (yarn does not hoist .bin to the top)
-    const babelPath = path.join(__dirname, '..', '..', 'node_modules', '.bin', 'babel');
-    debug('Babel attempt #1 with path =', babelPath);
-    return execa(babelPath, makeBabelArgs(ignore));
-  } catch (e) {
-    if (e.message.indexOf('ENOENT') === -1) {
-      throw e;
-    }
-    // == attempt 2 ==
-    // dawson is installed locally with npm
-    // (npm does hoist .bin to the top)
-    const babelPath = path.join(process.cwd(), 'node_modules', '.bin', 'babel');
-    debug('Babel attempt #2 with path =', babelPath);
-    return execa(babelPath, makeBabelArgs(ignore));
-  }
-}
-
-function install ({ skipChmod }) {
-  return execa.shell(
-    oneLine`
-      cd .dawson-dist &&
-      NODE_ENV=production npm install --production babel-cli babel-polyfill babel-preset-env
-               babel-plugin-transform-object-rest-spread &&
-      NODE_ENV=production npm install --production
-      ${skipChmod
-        ? ''
-        : '&& chmod -Rf a+rX .'}`
-  );
-}
-
-function writeIndex ({ indexFileContents }) {
+function writeIndex ({ indexFileContents, indexFileExtension }) {
+  const indexFileName = `/.dawson-dist/dawsonindex.${indexFileExtension}`;
+  debug('writing Lambda index to', indexFileName);
   return writeFile(
-    process.cwd() + '/.dawson-dist/dawsonindex.js',
+    process.cwd() + indexFileName,
     indexFileContents,
     { encoding: 'utf8' }
   );
 }
 
-async function zipRoot ({ tempZipFile, excludeList, PROJECT_ROOT }) {
+async function zipRoot ({ tempZipFile, excludeList, rootDir }) {
   const excludeArg = '--exclude ' +
     [...excludeList, '.git', '.AppleDouble'].map(i => `\\*${i}\\*`).join(' ');
   await execa.shell(
     `cd .dawson-dist && zip -8 -r ${tempZipFile} . ${excludeArg}`,
-    { cwd: PROJECT_ROOT, maxBuffer: EXEC_MAX_OUTERR_BUFFER_SIZE }
+    { cwd: rootDir, maxBuffer: EXEC_MAX_OUTERR_BUFFER_SIZE }
   );
   const { size } = await stat(tempZipFile);
   const sizeMB = `${Math.floor(size / 1000000.0)}MB`;
@@ -131,32 +92,53 @@ async function uploadS3 ({ bucketName, uuid, tempZipFile, tempZipFileSize }) {
   return { zipS3Location };
 }
 
-export default function taskCreateBundle (
-  {
-    bucketName,
-    appStageName,
-    excludeList = [],
-    stackName,
-    noUpload = false,
-    onlyCompile = false,
-    skipChmod = false
-  },
-  result
-) {
-  const { PROJECT_ROOT, API_DEFINITIONS, SETTINGS } = loadConfig();
+function getFileExtension (language) {
+  switch (language) {
+    case LANGUAGE_JS_LATEST:
+      return 'js';
+    default:
+      throw LANGUAGE_INVALID_ERR;
+  }
+}
+
+export default function taskCreateBundle (args, result) {
   return new Listr([
     {
       title: 'configuring',
       task: ctx => {
+        const {
+          API_DEFINITIONS,
+          language,
+          PROJECT_ROOT,
+          SETTINGS
+        } = loadConfig();
+
+        if (!SUPPORTED_LANGUAGES.includes(language)) {
+          throw LANGUAGE_INVALID_ERR;
+        }
+
+        const {
+          appStageName,
+          bucketName,
+          excludeList = [],
+          noUpload = false,
+          onlyCompile = false,
+          skipChmod = false,
+          stackName
+        } = args;
+
         Object.assign(ctx, {
+          apiDefinitions: API_DEFINITIONS,
           bucketName,
           excludeList,
-          uuid: `${appStageName}-bundle`,
-          stackName,
+          ignore: SETTINGS.ignore,
+          language,
           noUpload,
           onlyCompile,
-          ignore: SETTINGS.ignore,
-          skipChmod
+          rootDir: PROJECT_ROOT,
+          skipChmod,
+          stackName,
+          uuid: `${appStageName}-bundle`
         });
       }
     },
@@ -168,29 +150,55 @@ export default function taskCreateBundle (
         Object.assign(ctx, { tempZipFile });
       }
     },
-    { title: 'compiling', task: compile },
+    { title: 'compiling',
+      task: ctx => {
+        const { language } = ctx;
+        switch (language) {
+          case LANGUAGE_JS_LATEST:
+            return jsCompile(ctx);
+          default:
+            throw LANGUAGE_INVALID_ERR;
+        }
+      }
+    },
     {
       title: 'installing dependencies',
       skip: ctx => ctx.onlyCompile,
-      task: ctx => install({ skipChmod: ctx.skipChmod })
+      task: ctx => {
+        const { language } = ctx;
+        switch (language) {
+          case LANGUAGE_JS_LATEST:
+            return jsInstallDeps({ skipChmod: ctx.skipChmod });
+          default:
+            throw LANGUAGE_INVALID_ERR;
+        }
+      }
     },
     {
       title: 'creating index file',
       task: async ctx => {
-        const { stackName } = ctx;
-        const indexFileContents = await createIndex(API_DEFINITIONS, stackName);
-        await writeIndex({ indexFileContents });
+        const { stackName, language, apiDefinitions } = ctx;
+        const indexFileExtension = getFileExtension(language);
+        let indexFileContents;
+        switch (language) {
+          case LANGUAGE_JS_LATEST:
+            indexFileContents = await jsCreateIndex(apiDefinitions, stackName);
+            break;
+          default:
+            throw LANGUAGE_INVALID_ERR;
+        }
+        await writeIndex({ indexFileContents, indexFileExtension });
       }
     },
     {
       title: 'creating zip archive',
       skip: ctx => ctx.noUpload || ctx.onlyCompile,
       task: async ctx => {
-        const { tempZipFile, excludeList } = ctx;
+        const { tempZipFile, excludeList, rootDir } = ctx;
         const { tempZipFileSize } = await zipRoot({
           tempZipFile,
           excludeList,
-          PROJECT_ROOT
+          rootDir
         });
         Object.assign(ctx, { tempZipFileSize });
       }
