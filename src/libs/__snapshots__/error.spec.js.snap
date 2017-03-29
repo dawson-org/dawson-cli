@@ -1,3 +1,5 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
 exports[`creates an error 1`] = `
 "
    [41m[1mExecution Error[22m[49m
