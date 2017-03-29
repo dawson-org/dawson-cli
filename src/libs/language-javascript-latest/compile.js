@@ -24,7 +24,6 @@ export default function compile ({ ignore }) {
     // == attempt 1 ==
     // dawson is installed globally (yarn/npm) or locally with yarn
     // (yarn does not hoist .bin to the top)
-    console.log(makeBabelArgs(ignore));
     const babelPath = path.join(__dirname, '..', '..', '..', 'node_modules', '.bin', 'babel');
     debug('Babel attempt #1 with path =', babelPath);
     return execa(babelPath, makeBabelArgs(ignore));
