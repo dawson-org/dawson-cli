@@ -70,7 +70,9 @@ $ dawson dev # start a development server
 A changelog is maintained in the [Releases page](https://github.com/dawson-org/dawson-cli/releases).
 
 ## Contributing
-[![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=plastic)](https://github.com/Flet/semistandard)  
+[![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=plastic)](https://github.com/Flet/semistandard) 
+[![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)  
+
 Any contribution is very welcome! You may pick an Issue, fork and start working on that. Should you need any guidance or help please ask :)  
 
 We are currently testing only functions that are involved in the Template generation.  
