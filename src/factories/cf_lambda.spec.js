@@ -353,7 +353,7 @@ test('templateLambda with inline codes', t => {
         Code: {
           ZipFile: "module.exports.handler = (event, context, callback) => { callback(null, 'Hooray'); }"
         },
-        Runtime: 'nodejs4.3',
+        Runtime: 'nodejs6.10',
         MemorySize: 1024,
         Timeout: 30,
         Environment: { Variables: { NODE_ENV: 'development', DAWSON_STAGE: 'devel' } }
