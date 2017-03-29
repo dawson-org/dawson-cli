@@ -169,7 +169,7 @@ export function templateLambda (
     inlineCode = LAMBDA_DEMO_INLINE_CODE,
     zipS3Location = null,
     policyStatements,
-    runtime = 'nodejs4.3',
+    runtime = 'nodejs6.10',
     environment = {},
     devInstrument,
     appStage

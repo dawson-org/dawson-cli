@@ -1,7 +1,7 @@
 dawson documentation
 ====================
 
-dawson is a [serverless](https://auth0.com/blog/what-is-serverless/) web framework for Node.js on AWS. dawson uses [AWS CloudFormation](https://aws.amazon.com/cloudformation/), [Amazon CloudFront](https://aws.amazon.com/cloudfront/), [Amazon API Gateway](https://aws.amazon.com/apigateway/) and  [AWS Lambda](https://aws.amazon.com/lambda/) to deploy the backend code and to manage the infrastructure for you. 
+dawson is a [serverless](https://auth0.com/blog/what-is-serverless/) web framework for Node.js on AWS. dawson uses [AWS CloudFormation](https://aws.amazon.com/cloudformation/), [Amazon CloudFront](https://aws.amazon.com/cloudfront/), [Amazon API Gateway](https://aws.amazon.com/apigateway/) and  [AWS Lambda](https://aws.amazon.com/lambda/) to deploy the backend code and to manage the infrastructure for you.
 
 ### Is dawson for me?
 👍 I'm building a single-page app/website with a backend  
@@ -64,6 +64,7 @@ Check out the [examples repository](https://github.com/dawson-org/dawson-example
   * [`policyStatements`](#policystatements)
   * [`redirects`](#redirects)
   * [`devInstrument`](#devinstrument)
+  * [`runtime`](#runtime)
 - [5. Application configuration](#5-application-configuration)
   * [`pre-deploy`](#pre-deploy)
   * [`post-deploy`](#post-deploy)
@@ -115,7 +116,7 @@ export AWS_REGION=...
 
 > You can find more information about AWS IAM Credentials here: https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html#access-keys-and-secret-access-keys
 
-> There are many other ways to set AWS Credentials on your PC, you may refer here for more info: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html 
+> There are many other ways to set AWS Credentials on your PC, you may refer here for more info: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html
 
 ---
 
@@ -342,7 +343,7 @@ dawson hides all uncaught Errors and will not leak any information about it. The
 You may obviously want to return expected (i.e. *Handled*) errors to the client, instead.
 dawson supports custom error responses, using the following model:
 
-Instead of 
+Instead of
 ~~```throw new Error('I wanted to throw a 403 error')```~~ you should write:
 ```js
 throw new Error(JSON.stringify({
@@ -454,7 +455,7 @@ foo.api = {
 
 ## `path`
 **Required**: yes | **Type**: `string`|`boolean`
-**Use for**: Specifying an HTTP path 
+**Use for**: Specifying an HTTP path
 
 The HTTP path to this function, *without* leading and trailing slashes.  
 The path must be unique in your whole app. You may use path parameters placeholder, as in API Gateway, by sorrounding the parameter name with `{}`).  
@@ -464,7 +465,7 @@ If `false`, no API Gateway method will be deployed (see [Function Parameters](./
 
 ## `method`
 **Required**: no | **Type**: `string` | **Default**: `"GET"`  
-**Use for**: Specifying an HTTP Method 
+**Use for**: Specifying an HTTP Method
 
 ## `responseContentType`
 **Required**: no | **Type**: `string` | **Default**: `"text/html"`  
@@ -556,6 +557,20 @@ dawson pipes any [event supported by Lambda](https://docs.aws.amazon.com/lambda/
 
 This option can only be set when `path === false`, as it makes no sense to use this when an API Gateway Endpoint is present.
 
+## `runtime`
+**Required**: no | **Type**: `string` | **Default**: conditional
+**Use for**: overriding the runtime set by dawson
+
+**You should generally avoid using this option**  
+
+You can set this option to a string value which is a valid AWS Lambda Runtime to override the default dawson behavior.
+Current valid values includes:
+
+* `nodejs4.3`
+* `nodejs6.10` (default)
+* `python2.7`
+
+
 ---
 
 # 5. Application configuration
@@ -643,7 +658,7 @@ Keys are *stage names* (see *Working with Stages* above, `"default"` is the defa
   * When the value is `false`, no CloudFront Distribution will be created for that stage.  
   * When the value is `true` (which is the default behaviour for stages not specified in this Object), a CloudFront Distribution will be created without any Alias (CNAME) and can be accessed using the usual https://dNNNNNNNNN.cloudfront.net URL.  
   * When the value is a valid domain name (`"abc.string.com"`), a CloudFront Distribution will be created and `"abc.string.com"` will be set as a Custom Domain Name (aka CNAME, or [Alias (CNAME)](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html)). The CNAME that you specify must be **globally unique in AWS**. If the CNAME specified here is already in use the deployment will fail. *An SSL/TLS certificate might be requested for this domain, see below for details.*
-  
+
 > If changing this setting will result in updating, creating or deleting a CloudFront Distribution, the deployment will take approximately 15-20 minutes.  
 
 > We choose to serve contents only via HTTPS. A TLS certificate might be automatically requested by dawson using AWS ACM. See the next section for details.
@@ -754,4 +769,3 @@ TODO
 ```bash
 $ dawson dev --help
 ```
-
