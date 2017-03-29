@@ -15,7 +15,8 @@
     "prepublish": "npm run clean && npm run compile",
     "pre-commit": "npm run lint",
     "coverage-report": "nyc report --check-coverage --functions 100 --lines 100 --statements 100 --reporter=lcov",
-    "test": "npm run lint && nyc ava src/**/*.spec.js && npm run coverage-report"
+    "test": "npm run lint && nyc ava src/**/*.spec.js && npm run coverage-report",
+    "commit": "git-cz"
   },
   "engines": {
     "node": ">=6"
@@ -61,6 +62,8 @@
   "bin": "dist/index.js",
   "devDependencies": {
     "ava": "github:avajs/ava#make-snapshot-work",
+    "commitizen": "^2.9.6",
+    "cz-conventional-changelog": "^2.0.0",
     "deep-sort-object": "^1.0.1",
     "eslint": "3.18",
     "eslint-config-semistandard": "^8.0.0",
