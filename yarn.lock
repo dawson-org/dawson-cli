@@ -1463,9 +1463,9 @@ dlv@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/dlv/-/dlv-1.1.0.tgz#fee1a7c43f63be75f3f679e85262da5f102764a7"
 
-docker-lambda@^0.9.1:
-  version "0.9.1"
-  resolved "https://registry.yarnpkg.com/docker-lambda/-/docker-lambda-0.9.1.tgz#0e0102449df43dfcc1101fee3fd3e480e19c6b97"
+docker-lambda@^0.12.2:
+  version "0.12.2"
+  resolved "https://registry.yarnpkg.com/docker-lambda/-/docker-lambda-0.12.2.tgz#e26da42e52cf9b59708df80ce1ecd7378e1b01b7"
 
 doctrine@1.5.0, doctrine@^1.2.2:
   version "1.5.0"

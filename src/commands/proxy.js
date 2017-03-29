@@ -182,7 +182,7 @@ async function runDockerContainer (
         ])
         .concat(['--env', `AWS_SESSION_TOKEN=${credentials.SessionToken}`])
         .concat(flatten(envVariables.map(v => ['--env', v]))),
-      spawnOptions: { stdio: ['pipe', 'pipe', process.stdout] }
+      spawnOptions: { encoding: 'utf8', stdio: ['pipe', 'pipe', process.stdout] }
     });
     log(`End of docker run`.dim);
     callback(runner, null, invokeResult);
