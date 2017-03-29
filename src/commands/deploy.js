@@ -47,8 +47,8 @@ async function taskRemoveStackPolicy ({ dangerDeleteResources, stackName }) {
   }
 }
 
-async function taskRequestStackUpdate ({ stackName, cfParams }) {
-  return await createOrUpdateStack({ stackName, cfParams, dryrun: false });
+function taskRequestStackUpdate ({ stackName, cfParams }) {
+  return createOrUpdateStack({ stackName, cfParams, dryrun: false });
 }
 
 async function taskRestoreStackPolicy ({ dangerDeleteResources, stackName }) {
