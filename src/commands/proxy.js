@@ -168,6 +168,7 @@ async function runDockerContainer (
   try {
     log(`\n======= Log Fragment Begin for «${runner.name.bold}» =======`.dim);
     const invokeResult = dockerLambda({
+      dockerImage: 'lambci/lambda:nodejs6.10',
       event,
       taskDir: `${PROJECT_ROOT}/.dawson-dist`,
       handler: `dawsonindex.${runner.name}`,
