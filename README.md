@@ -3,6 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/dawson.svg?maxAge=3600)](https://npm.im/dawson)
 [![Build Status](https://travis-ci.org/dawson-org/dawson-cli.svg?branch=master)](https://travis-ci.org/dawson-org/dawson-cli)
 [![npm dependencies](https://david-dm.org/dawson-org/dawson-cli.svg?maxAge=3600)](https://david-dm.org/dawson-org/dawson-cli)
+[![Greenkeeper badge](https://badges.greenkeeper.io/dawson-org/dawson-cli.svg)](https://greenkeeper.io/) 
 [![Coverage Status](https://coveralls.io/repos/github/dawson-org/dawson-cli/badge.svg)](https://coveralls.io/github/dawson-org/dawson-cli)
 
 dawson is a [serverless](https://auth0.com/blog/what-is-serverless/) web framework for Node.js on AWS ([CloudFormation](https://aws.amazon.com/cloudformation/), [CloudFront](https://aws.amazon.com/cloudfront/), [API Gateway](https://aws.amazon.com/apigateway/), [Lambda](https://aws.amazon.com/lambda/)).  
@@ -76,15 +77,25 @@ Any contribution is very welcome! You may pick an Issue, fork and start working 
 
 We are currently testing only functions that are involved in the Template generation.  
 
+
+### Contributors
+
+Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds/all-contributors#emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+| [<img src="https://avatars0.githubusercontent.com/u/950086?v=3" width="100px;"/><br /><sub>Simone Lusenti</sub>](http://www.plasticpanda.com)<br />💬 📝 [🐛](https://github.com/lusentis/dawson/issues?q=author%3Alusentis) [💻](https://github.com/lusentis/dawson/commits?author=lusentis) [📖](https://github.com/lusentis/dawson/commits?author=lusentis) 💡 🚇 🔌 👀 📢 [⚠️](https://github.com/lusentis/dawson/commits?author=lusentis) 🔧 ✅ | [<img src="https://avatars2.githubusercontent.com/u/2457588?v=3" width="100px;"/><br /><sub>Alex Casalboni</sub>](https://blog.alexcasalboni.com/)<br />💬 [🐛](https://github.com/lusentis/dawson/issues?q=author%3Aalexcasalboni) [💻](https://github.com/lusentis/dawson/commits?author=alexcasalboni) 💡 📢 [⚠️](https://github.com/lusentis/dawson/commits?author=alexcasalboni) 🔧 | [<img src="https://avatars2.githubusercontent.com/u/4239892?v=3" width="100px;"/><br /><sub>Giacomo Consonni</sub>](https://github.com/Giaco9)<br />[💻](https://github.com/lusentis/dawson/commits?author=Giaco9) [📖](https://github.com/lusentis/dawson/commits?author=Giaco9) 🔌 | [<img src="https://avatars2.githubusercontent.com/u/2690781?v=3" width="100px;"/><br /><sub>Luca Casartelli</sub>](https://github.com/lcasartelli)<br />[💻](https://github.com/lusentis/dawson/commits?author=lcasartelli) [📖](https://github.com/lusentis/dawson/commits?author=lcasartelli) | [<img src="https://avatars2.githubusercontent.com/u/420915?v=3" width="100px;"/><br /><sub>Chris Matheson</sub>](http://chrismatheson.github.io)<br />[🐛](https://github.com/lusentis/dawson/issues?q=author%3Achrismatheson) [📖](https://github.com/lusentis/dawson/commits?author=chrismatheson) |
+| :---: | :---: | :---: | :---: | :---: |
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/kentcdodds/all-contributors) specification. Contributions of any kind welcome!
+
 <!-- Contributors START
 Simone_Lusenti lusentis https://twitter.com/Lanzone31 code infra doc tests example
+Alex_Casalboni alexcasalboni https://twitter.com/alex_casalboni code answers
 Giacomo_Consonni giaco9 https://twitter.com/GiacomoConsonni code
 Luca_Casartelli lcasartelli https://twitter.com/CasartelliLuca code doc
+Chris_Matheson chrismatheson https://twitter.com/chrismatheson doc
 Contributors END -->
-<!-- Contributors table START -->
-| [![Simone Lusenti](https://avatars.githubusercontent.com/lusentis?s=100)<br /><sub>Simone Lusenti</sub>](https://twitter.com/Lanzone31)<br />[💻](git@github.com:lusentis/dawson/commits?author=lusentis) 🚇 [📖](git@github.com:lusentis/dawson/commits?author=lusentis) [⚠️](git@github.com:lusentis/dawson/commits?author=lusentis) 💡 | [![Giacomo Consonni](https://avatars.githubusercontent.com/giaco9?s=100)<br /><sub>Giacomo Consonni</sub>](https://twitter.com/GiacomoConsonni)<br />[💻](git@github.com:lusentis/dawson/commits?author=giaco9) | [![Luca Casartelli](https://avatars.githubusercontent.com/lcasartelli?s=100)<br /><sub>Luca Casartelli</sub>](https://twitter.com/CasartelliLuca)<br />[💻](git@github.com:lusentis/dawson/commits?author=lcasartelli) [📖](git@github.com:lusentis/dawson/commits?author=lcasartelli) |
-| :---: | :---: | :---: |
-<!-- Contributors table END -->
 
 ## Support
 In case you have an issue, make sure you have updated to the latest version (e.g.: `npm i dawson@latest`), then:
@@ -97,6 +108,7 @@ In case you have an issue, make sure you have updated to the latest version (e.g
 ## Related
 * https://serverless.com/
 * https://github.com/apex/apex
+* https://claudiajs.com/
 * https://www.terraform.io/
 * https://github.com/awslabs/chalice
 * https://github.com/Miserlou/Zappa
