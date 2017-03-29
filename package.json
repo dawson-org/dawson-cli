@@ -15,7 +15,8 @@
     "prepublish": "npm run clean && npm run compile",
     "pre-commit": "npm run lint",
     "coverage-report": "nyc report --check-coverage --functions 100 --lines 100 --statements 100 --reporter=lcov",
-    "test": "npm run lint && nyc ava src/**/*.spec.js && npm run coverage-report"
+    "test": "npm run lint && nyc ava src/**/*.spec.js && npm run coverage-report",
+    "commit": "git-cz"
   },
   "engines": {
     "node": ">=6"
@@ -23,7 +24,7 @@
   "author": "Simone Lusenti <lusenti.s@gmail.com>",
   "license": "GPL-3.0",
   "dependencies": {
-    "aws-sdk": "^2.7.17",
+    "aws-sdk": "^2.34.0",
     "babel-cli": "^6.14.0",
     "babel-polyfill": "^6.16.0",
     "babel-preset-dawson": "^0.1.0",
@@ -35,9 +36,9 @@
     "common-tags": "^1.3.1",
     "console.table": "^0.8.0",
     "del": "^2.2.2",
-    "docker-lambda": "^0.9.1",
+    "docker-lambda": "^0.12.2",
     "es6-promisify": "^5.0.0",
-    "execa": "^0.6.0",
+    "execa": "^0.6.3",
     "hard-rejection": "^1.0.0",
     "http-proxy": "^1.14.0",
     "indent-string": "^3.0.0",
@@ -45,7 +46,7 @@
     "listr-verbose-renderer": "^0.4.0",
     "lodash": "^4.17.2",
     "minimatch": "^3.0.3",
-    "moment": "^2.17.0",
+    "moment": "^2.18.1",
     "pathmatch": "^0.0.2",
     "prettier": "^0.22.0",
     "prettyjson": "^1.1.3",
@@ -56,11 +57,13 @@
     "temp": "^0.8.3",
     "update-notifier": "^2.0.0",
     "yargs": "^7.0.1",
-    "zen-observable": "^0.4.0"
+    "zen-observable": "^0.5.1"
   },
   "bin": "dist/index.js",
   "devDependencies": {
-    "ava": "https://github.com/lusentis/ava#replace-snapshot",
+    "ava": "github:avajs/ava#make-snapshot-work",
+    "commitizen": "^2.9.6",
+    "cz-conventional-changelog": "^2.0.0",
     "deep-sort-object": "^1.0.1",
     "eslint": "3.18",
     "eslint-config-semistandard": "^8.0.0",
@@ -69,7 +72,8 @@
     "eslint-plugin-node": "^4.2.1",
     "eslint-plugin-promise": "^3.4.0",
     "eslint-plugin-standard": "^2.1.1",
-    "nyc": "^10.1.2",
+    "jest-snapshot": "^19.0.2",
+    "nyc": "^10.2.0",
     "pre-commit": "^1.2.2",
     "prettier-eslint-cli": "^3.1.2",
     "snazzy": "^6.0.0"
