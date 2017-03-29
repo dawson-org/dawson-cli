@@ -1,33 +1,37 @@
-module.exports[`creates cloudformation updateStack params with an inline source`] = {
-  StackName: `bar`,
-  Capabilities: [
-    `CAPABILITY_IAM`,
-    `CAPABILITY_NAMED_IAM`
+exports[`creates cloudformation updateStack params with an inline source 1`] = `
+Object {
+  "Capabilities": Array [
+    "CAPABILITY_IAM",
+    "CAPABILITY_NAMED_IAM",
   ],
-  Tags: [
-    {
-      Key: `createdBy`,
-      Value: `dawson`
-    }
+  "OnFailure": "DO_NOTHING",
+  "StackName": "bar",
+  "StackPolicyBody": "{\"Statement\":[{\"Effect\":\"Deny\",\"Principal\":\"*\",\"Action\":[\"Update:Replace\",\"Update:Delete\"],\"Resource\":\"*\",\"Condition\":{\"StringEquals\":{\"ResourceType\":[\"AWS::DynamoDB::Table\",\"AWS::ApiGateway::RestApi\",\"AWS::CloudFront::Distribution\",\"AWS::S3::Bucket\"]}}},{\"Effect\":\"Allow\",\"Principal\":\"*\",\"Action\":\"Update:*\",\"Resource\":\"*\"}]}",
+  "Tags": Array [
+    Object {
+      "Key": "createdBy",
+      "Value": "dawson",
+    },
   ],
-  TemplateBody: `{"Resources":{},"Outputs":{}}`,
-  StackPolicyBody: `{"Statement":[{"Effect":"Deny","Principal":"*","Action":["Update:Replace","Update:Delete"],"Resource":"*","Condition":{"StringEquals":{"ResourceType":["AWS::DynamoDB::Table","AWS::ApiGateway::RestApi","AWS::CloudFront::Distribution","AWS::S3::Bucket"]}}},{"Effect":"Allow","Principal":"*","Action":"Update:*","Resource":"*"}]}`,
-  OnFailure: `DO_NOTHING`
+  "TemplateBody": "{\"Resources\":{},\"Outputs\":{}}",
 }
+`;
 
-module.exports[`creates cloudformation updateStack params with source from S3`] = {
-  StackName: `bar`,
-  Capabilities: [
-    `CAPABILITY_IAM`,
-    `CAPABILITY_NAMED_IAM`
+exports[`creates cloudformation updateStack params with source from S3 1`] = `
+Object {
+  "Capabilities": Array [
+    "CAPABILITY_IAM",
+    "CAPABILITY_NAMED_IAM",
   ],
-  Tags: [
-    {
-      Key: `createdBy`,
-      Value: `dawson`
-    }
+  "OnFailure": "DO_NOTHING",
+  "StackName": "bar",
+  "StackPolicyBody": "{\"Statement\":[{\"Effect\":\"Deny\",\"Principal\":\"*\",\"Action\":[\"Update:Replace\",\"Update:Delete\"],\"Resource\":\"*\",\"Condition\":{\"StringEquals\":{\"ResourceType\":[\"AWS::DynamoDB::Table\",\"AWS::ApiGateway::RestApi\",\"AWS::CloudFront::Distribution\",\"AWS::S3::Bucket\"]}}},{\"Effect\":\"Allow\",\"Principal\":\"*\",\"Action\":\"Update:*\",\"Resource\":\"*\"}]}",
+  "Tags": Array [
+    Object {
+      "Key": "createdBy",
+      "Value": "dawson",
+    },
   ],
-  TemplateURL: `https://s3....`,
-  StackPolicyBody: `{"Statement":[{"Effect":"Deny","Principal":"*","Action":["Update:Replace","Update:Delete"],"Resource":"*","Condition":{"StringEquals":{"ResourceType":["AWS::DynamoDB::Table","AWS::ApiGateway::RestApi","AWS::CloudFront::Distribution","AWS::S3::Bucket"]}}},{"Effect":"Allow","Principal":"*","Action":"Update:*","Resource":"*"}]}`,
-  OnFailure: `DO_NOTHING`
+  "TemplateURL": "https://s3....",
 }
+`;

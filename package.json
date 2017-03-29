@@ -60,7 +60,7 @@
   },
   "bin": "dist/index.js",
   "devDependencies": {
-    "ava": "https://github.com/lusentis/ava#replace-snapshot",
+    "ava": "github:avajs/ava#make-snapshot-work",
     "deep-sort-object": "^1.0.1",
     "eslint": "3.18",
     "eslint-config-semistandard": "^8.0.0",
