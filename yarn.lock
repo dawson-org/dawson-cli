@@ -311,21 +311,7 @@ ava-init@^0.2.0:
     unique-temp-dir "^1.0.0"
     update-notifier "^1.0.0"
 
-aws-sdk@^2.22.0:
-  version "2.22.0"
-  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.22.0.tgz#f7b67d5ece7e67c36f9d3d55e137872572e5c998"
-  dependencies:
-    buffer "4.9.1"
-    crypto-browserify "1.0.9"
-    jmespath "0.15.0"
-    querystring "0.2.0"
-    sax "1.1.5"
-    url "0.10.3"
-    uuid "3.0.0"
-    xml2js "0.4.15"
-    xmlbuilder "2.6.2"
-
-aws-sdk@^2.34.0:
+aws-sdk@^2.22.0, aws-sdk@^2.34.0:
   version "2.34.0"
   resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.34.0.tgz#bf96fb617aa0e1d8728760ca7f00d46d0d9c685c"
   dependencies:
@@ -4684,6 +4670,6 @@ yargs@~3.10.0:
     decamelize "^1.0.0"
     window-size "0.1.0"
 
-zen-observable@^0.5.0:
+zen-observable@^0.5.1:
   version "0.5.1"
   resolved "https://registry.yarnpkg.com/zen-observable/-/zen-observable-0.5.1.tgz#a2a57908a276b569504f42fdf2fa2f643bc02d72"
