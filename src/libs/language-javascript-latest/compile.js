@@ -3,21 +3,7 @@ import path from 'path';
 import execa from 'execa';
 
 import { debug } from '../../logger';
-import { BABEL_CONFIG } from '../../config';
-
-const makeBabelArgs = (ignore = []) => ([
-  '.',
-  '--out-dir',
-  '.dawson-dist/',
-  '--ignore',
-  `node_modules,${ignore.join(',')}`,
-  (BABEL_CONFIG.babelrc === false) ? '--no-babelrc' : null,
-  '--presets',
-  BABEL_CONFIG.presets.map(p => Array.isArray(p) ? p[0] : p).join(','), // only preset names, without config
-  '--plugins',
-  BABEL_CONFIG.plugins.map(p => Array.isArray(p) ? p[0] : p).join(','), // only plugin names, without config
-  '--copy-files'
-].filter(Boolean));
+import { makeBabelArgs } from './_babelHelpers';
 
 export default function compile ({ ignore }) {
   try {

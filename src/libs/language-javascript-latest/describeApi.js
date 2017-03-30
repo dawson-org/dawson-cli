@@ -2,8 +2,11 @@ import { inspect } from 'util';
 import { stripIndent } from 'common-tags';
 import createError from '../error';
 
+import { registerBabel } from './_babelHelpers';
+
 export default function ({ rootDir }) {
   try {
+    registerBabel();
     const requiredApi = require(rootDir + '/api');
     return requiredApi;
   } catch (e) {
