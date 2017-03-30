@@ -76,7 +76,7 @@ const FUNCTION_CONFIGURATION_SCHEMA = {
       }
       throw new Error(`value of property 'devInstrument' must be a boolean, not '${typeof val}'.`);
     },
-    method: Type.oneOf(['GET', 'POST', 'PUT', 'HEAD', 'DELETE', 'OPTIONS']),
+    method: Type.oneOf(['GET', 'POST', 'PUT', 'HEAD', 'DELETE', 'OPTIONS', 'ANY']),
     policyStatements: Type.arrayOf(Type.shape({
       Effect: Type.string.isRequired,
       Action: Type.oneOfType([
