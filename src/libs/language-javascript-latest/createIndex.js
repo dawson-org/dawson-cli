@@ -4,7 +4,7 @@ import prettier from 'prettier';
 function getRunnerCode (name, apiConfig) {
   if (apiConfig.devInstrument !== true ||
       process.env.DAWSON_DEV_PROXY === 'yes') {
-    // if we are not running from the development server, just execute normally...
+    // if we are running from the development server, just execute normally...
     return 'return runner(event, context);';
   }
 
