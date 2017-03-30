@@ -2,7 +2,17 @@
 // this will compile on-the-fly the `api.js` required below
 // by `require(PROJECT_ROOT + '/api');`
 
-export const BABEL_CONFIG = {
+import path from 'path';
+// Support for `babel` property in project package.json to extend base babel config
+// to add plugins and more presets, etc. React, JSX Transform, Syntax support
+const babelRequiredPkgJson = require(path.join(process.cwd(), 'package.json'));
+// check if key is package.json
+let hasBabelConfigInPkgJson = ('babel' in babelRequiredPkgJson);
+// if key, use that babel config, add babelrc = false
+// else, use default
+export const BABEL_CONFIG = hasBabelConfigInPkgJson ? Object.assign(babelRequiredPkgJson['babel'], {
+  babelrc: false
+}) : {
   // also used in libs/createBundle.js
   presets: ['dawson'],
   babelrc: false
