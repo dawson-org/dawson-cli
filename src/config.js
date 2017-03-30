@@ -1,15 +1,4 @@
 
-// this will compile on-the-fly the `api.js` required below
-// by `require(PROJECT_ROOT + '/api');`
-
-export const BABEL_CONFIG = {
-  // also used in libs/createBundle.js
-  presets: ['dawson'],
-  babelrc: false
-};
-
-require('babel-register')(BABEL_CONFIG);
-
 import AWS from 'aws-sdk';
 import execa from 'execa';
 import Type from 'prop-types';
