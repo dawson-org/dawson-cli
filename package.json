@@ -16,7 +16,7 @@
     "pre-commit": "npm run lint",
     "coverage-upload": "npm run -s coverage-report | coveralls",
     "coverage-report": "nyc report --check-coverage --functions 100 --lines 100 --statements 100 --reporter=text-lcov",
-    "test": "npm run lint && nyc ava src/**/*.spec.js && npm run coverage-report",
+    "test": "npm run lint && nyc ava src/**/*.spec.js",
     "commit": "git-cz"
   },
   "engines": {
