@@ -4,5 +4,5 @@ node_js:
 before_install:
   - pip install --user codecov
 after_success:
-  - codecov
   - npm run coverage-upload
+  - codecov
