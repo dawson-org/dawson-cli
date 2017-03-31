@@ -1,6 +1,5 @@
 ![dawson](https://raw.githubusercontent.com/dawson-org/dawson-cli/images/dawson-logo.png)
 
-[![npm version](https://img.shields.io/npm/v/dawson.svg?maxAge=3600)](https://npm.im/dawson)
 [![Build Status](https://travis-ci.org/dawson-org/dawson-cli.svg?branch=master)](https://travis-ci.org/dawson-org/dawson-cli)
 [![Dependency Status](https://gemnasium.com/badges/github.com/dawson-org/dawson-cli.svg)](https://gemnasium.com/github.com/dawson-org/dawson-cli) 
 [![Greenkeeper badge](https://badges.greenkeeper.io/dawson-org/dawson-cli.svg)](https://greenkeeper.io/) 
@@ -10,6 +9,8 @@
 
 dawson is a [serverless](https://auth0.com/blog/what-is-serverless/) web framework for Node.js on AWS ([CloudFormation](https://aws.amazon.com/cloudformation/), [CloudFront](https://aws.amazon.com/cloudfront/), [API Gateway](https://aws.amazon.com/apigateway/), [Lambda](https://aws.amazon.com/lambda/)).  
 You can use `dawson` to build and deploy backend code and infrastructure for single-page apps + API, pure APIs or server-rendered pages.
+
+[![npm package](https://nodei.co/npm/dawson.png?compact=true)](https://npm.im/dawson)
 
 ```js
 // api.js
@@ -77,7 +78,12 @@ A changelog is maintained in the [Releases page](https://github.com/dawson-org/d
 
 Any contribution is very welcome! You may pick an Issue, fork and start working on that. Should you need any guidance or help please ask :)  
 
-We are currently testing only functions that are involved in the Template generation.  
+### Testing
+
+Run `npm test`.
+
+[![codecov](https://codecov.io/gh/dawson-org/dawson-cli/branch/master/graph/badge.svg)](https://codecov.io/gh/dawson-org/dawson-cli)  
+We are currently testing and targeting 100% coverage for functions that are involved in the template generation (`src/factories/**.js`).  
 
 
 ### Contributors
