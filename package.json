@@ -87,10 +87,12 @@
     ]
   },
   "nyc": {
+    "include": [
+      "src/factories/**.js",
+      "src/libs/**/createIndex.js"
+    ],
     "exclude": [
-      "**/*.spec.js",
-      "src/logger.js",
-      "src/config.js"
+      "**/*.spec.js"
     ],
     "require": [
       "babel-register"
