@@ -4,7 +4,9 @@
 [![Build Status](https://travis-ci.org/dawson-org/dawson-cli.svg?branch=master)](https://travis-ci.org/dawson-org/dawson-cli)
 [![npm dependencies](https://david-dm.org/dawson-org/dawson-cli.svg?maxAge=3600)](https://david-dm.org/dawson-org/dawson-cli)
 [![Greenkeeper badge](https://badges.greenkeeper.io/dawson-org/dawson-cli.svg)](https://greenkeeper.io/) 
-[![Coverage Status](https://coveralls.io/repos/github/dawson-org/dawson-cli/badge.svg)](https://coveralls.io/github/dawson-org/dawson-cli)
+[![Coverage Status](https://coveralls.io/repos/github/dawson-org/dawson-cli/badge.svg)](https://coveralls.io/github/dawson-org/dawson-cli) 
+[![codecov](https://codecov.io/gh/dawson-org/dawson-cli/branch/master/graph/badge.svg)](https://codecov.io/gh/dawson-org/dawson-cli)
+
 
 dawson is a [serverless](https://auth0.com/blog/what-is-serverless/) web framework for Node.js on AWS ([CloudFormation](https://aws.amazon.com/cloudformation/), [CloudFront](https://aws.amazon.com/cloudfront/), [API Gateway](https://aws.amazon.com/apigateway/), [Lambda](https://aws.amazon.com/lambda/)).  
 You can use `dawson` to build and deploy backend code and infrastructure for single-page apps + API, pure APIs or server-rendered pages.
