@@ -14,8 +14,9 @@
     "lint:watch": "nodemon -w src -x npm -- run lint",
     "prepublish": "npm run clean && npm run compile",
     "pre-commit": "npm run lint",
-    "coverage-upload": "npm run -s coverage-report | coveralls",
-    "coverage-report": "nyc report --check-coverage --functions 100 --lines 100 --statements 100 --reporter=text-lcov",
+    "coverage-coveralls": "nyc report --reporter=text-lcov | coveralls",
+    "coverage-codecov": "nyc report --reporter=text-lcov > coverage.lcov && codecov",
+    "coverage": "npm run coverage-coveralls && npm run coverage-codecov",
     "test": "npm run lint && nyc ava src/**/*.spec.js",
     "commit": "git-cz"
   },
