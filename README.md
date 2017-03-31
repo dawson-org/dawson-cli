@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/dawson.svg?maxAge=3600)](https://npm.im/dawson)
 [![Build Status](https://travis-ci.org/dawson-org/dawson-cli.svg?branch=master)](https://travis-ci.org/dawson-org/dawson-cli)
-[![npm dependencies](https://david-dm.org/dawson-org/dawson-cli.svg?maxAge=3600)](https://david-dm.org/dawson-org/dawson-cli)
+[![Dependency Status](https://gemnasium.com/badges/github.com/dawson-org/dawson-cli.svg)](https://gemnasium.com/github.com/dawson-org/dawson-cli) 
 [![Greenkeeper badge](https://badges.greenkeeper.io/dawson-org/dawson-cli.svg)](https://greenkeeper.io/) 
 [![Coverage Status](https://coveralls.io/repos/github/dawson-org/dawson-cli/badge.svg)](https://coveralls.io/github/dawson-org/dawson-cli) 
 [![codecov](https://codecov.io/gh/dawson-org/dawson-cli/branch/master/graph/badge.svg)](https://codecov.io/gh/dawson-org/dawson-cli)
