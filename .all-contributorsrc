@@ -73,6 +73,16 @@
         "bug",
         "doc"
       ]
+    },
+    {
+      "login": "rakistner",
+      "name": "Robert Kistner",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/21061117?v=3",
+      "profile": "https://github.com/rakistner",
+      "contributions": [
+        "bug",
+        "code"
+      ]
     }
   ]
 }
