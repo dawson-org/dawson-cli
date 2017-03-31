@@ -1,6 +1,6 @@
 {
   "name": "dawson",
-  "version": "0.24.0",
+  "version": "0.25.0",
   "description": "Serverless Web Framework for AWS Lambda and API Gateway",
   "repository": "https://github.com/lusentis/dawson",
   "main": "dist/index.js",
@@ -14,8 +14,10 @@
     "lint:watch": "nodemon -w src -x npm -- run lint",
     "prepublish": "npm run clean && npm run compile",
     "pre-commit": "npm run lint",
-    "coverage-report": "nyc report --check-coverage --functions 100 --lines 100 --statements 100 --reporter=text-lcov | coveralls",
-    "test": "npm run lint && nyc ava src/**/*.spec.js && npm run coverage-report",
+    "coverage-coveralls": "nyc report --reporter=text-lcov | coveralls",
+    "coverage-codecov": "nyc report --reporter=text-lcov > coverage.lcov && codecov",
+    "coverage": "npm run coverage-coveralls && npm run coverage-codecov",
+    "test": "npm run lint && nyc ava src/**/*.spec.js",
     "commit": "git-cz"
   },
   "engines": {
@@ -85,10 +87,12 @@
     ]
   },
   "nyc": {
+    "include": [
+      "src/factories/**.js",
+      "src/libs/**/createIndex.js"
+    ],
     "exclude": [
-      "**/*.spec.js",
-      "src/logger.js",
-      "src/config.js"
+      "**/*.spec.js"
     ],
     "require": [
       "babel-register"

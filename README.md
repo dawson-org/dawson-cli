@@ -1,13 +1,16 @@
 ![dawson](https://raw.githubusercontent.com/dawson-org/dawson-cli/images/dawson-logo.png)
 
-[![npm version](https://img.shields.io/npm/v/dawson.svg?maxAge=3600)](https://npm.im/dawson)
 [![Build Status](https://travis-ci.org/dawson-org/dawson-cli.svg?branch=master)](https://travis-ci.org/dawson-org/dawson-cli)
-[![npm dependencies](https://david-dm.org/dawson-org/dawson-cli.svg?maxAge=3600)](https://david-dm.org/dawson-org/dawson-cli)
+[![Dependency Status](https://gemnasium.com/badges/github.com/dawson-org/dawson-cli.svg)](https://gemnasium.com/github.com/dawson-org/dawson-cli) 
 [![Greenkeeper badge](https://badges.greenkeeper.io/dawson-org/dawson-cli.svg)](https://greenkeeper.io/) 
-[![Coverage Status](https://coveralls.io/repos/github/dawson-org/dawson-cli/badge.svg)](https://coveralls.io/github/dawson-org/dawson-cli)
+[![Coverage Status](https://coveralls.io/repos/github/dawson-org/dawson-cli/badge.svg)](https://coveralls.io/github/dawson-org/dawson-cli) 
+[![codecov](https://codecov.io/gh/dawson-org/dawson-cli/branch/master/graph/badge.svg)](https://codecov.io/gh/dawson-org/dawson-cli)
+
 
 dawson is a [serverless](https://auth0.com/blog/what-is-serverless/) web framework for Node.js on AWS ([CloudFormation](https://aws.amazon.com/cloudformation/), [CloudFront](https://aws.amazon.com/cloudfront/), [API Gateway](https://aws.amazon.com/apigateway/), [Lambda](https://aws.amazon.com/lambda/)).  
 You can use `dawson` to build and deploy backend code and infrastructure for single-page apps + API, pure APIs or server-rendered pages.
+
+[![npm package](https://nodei.co/npm/dawson.png?compact=true)](https://npm.im/dawson)
 
 ```js
 // api.js
@@ -75,7 +78,12 @@ A changelog is maintained in the [Releases page](https://github.com/dawson-org/d
 
 Any contribution is very welcome! You may pick an Issue, fork and start working on that. Should you need any guidance or help please ask :)  
 
-We are currently testing only functions that are involved in the Template generation.  
+### Testing
+
+Run `npm test`.
+
+[![codecov](https://codecov.io/gh/dawson-org/dawson-cli/branch/master/graph/badge.svg)](https://codecov.io/gh/dawson-org/dawson-cli)  
+We are currently testing and targeting 100% coverage for functions that are involved in the template generation (`src/factories/**.js`).  
 
 
 ### Contributors
@@ -83,8 +91,8 @@ We are currently testing only functions that are involved in the Template genera
 Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds/all-contributors#emoji-key)):
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-| [<img src="https://avatars0.githubusercontent.com/u/950086?v=3" width="100px;"/><br /><sub>Simone Lusenti</sub>](http://www.plasticpanda.com)<br />💬 📝 [🐛](https://github.com/lusentis/dawson/issues?q=author%3Alusentis) [💻](https://github.com/lusentis/dawson/commits?author=lusentis) [📖](https://github.com/lusentis/dawson/commits?author=lusentis) 💡 🚇 🔌 👀 📢 [⚠️](https://github.com/lusentis/dawson/commits?author=lusentis) 🔧 ✅ | [<img src="https://avatars2.githubusercontent.com/u/2457588?v=3" width="100px;"/><br /><sub>Alex Casalboni</sub>](https://blog.alexcasalboni.com/)<br />💬 [🐛](https://github.com/lusentis/dawson/issues?q=author%3Aalexcasalboni) [💻](https://github.com/lusentis/dawson/commits?author=alexcasalboni) 💡 📢 [⚠️](https://github.com/lusentis/dawson/commits?author=alexcasalboni) 🔧 | [<img src="https://avatars2.githubusercontent.com/u/4239892?v=3" width="100px;"/><br /><sub>Giacomo Consonni</sub>](https://github.com/Giaco9)<br />[💻](https://github.com/lusentis/dawson/commits?author=Giaco9) [📖](https://github.com/lusentis/dawson/commits?author=Giaco9) 🔌 | [<img src="https://avatars2.githubusercontent.com/u/2690781?v=3" width="100px;"/><br /><sub>Luca Casartelli</sub>](https://github.com/lcasartelli)<br />[💻](https://github.com/lusentis/dawson/commits?author=lcasartelli) [📖](https://github.com/lusentis/dawson/commits?author=lcasartelli) | [<img src="https://avatars2.githubusercontent.com/u/420915?v=3" width="100px;"/><br /><sub>Chris Matheson</sub>](http://chrismatheson.github.io)<br />[🐛](https://github.com/lusentis/dawson/issues?q=author%3Achrismatheson) [📖](https://github.com/lusentis/dawson/commits?author=chrismatheson) |
-| :---: | :---: | :---: | :---: | :---: |
+| [<img src="https://avatars0.githubusercontent.com/u/950086?v=3" width="100px;"/><br /><sub>Simone Lusenti</sub>](http://www.plasticpanda.com)<br />💬 📝 [🐛](https://github.com/lusentis/dawson/issues?q=author%3Alusentis) [💻](https://github.com/lusentis/dawson/commits?author=lusentis) [📖](https://github.com/lusentis/dawson/commits?author=lusentis) 💡 🚇 🔌 👀 📢 [⚠️](https://github.com/lusentis/dawson/commits?author=lusentis) 🔧 ✅ | [<img src="https://avatars2.githubusercontent.com/u/2457588?v=3" width="100px;"/><br /><sub>Alex Casalboni</sub>](https://blog.alexcasalboni.com/)<br />💬 [🐛](https://github.com/lusentis/dawson/issues?q=author%3Aalexcasalboni) [💻](https://github.com/lusentis/dawson/commits?author=alexcasalboni) 💡 📢 [⚠️](https://github.com/lusentis/dawson/commits?author=alexcasalboni) 🔧 | [<img src="https://avatars2.githubusercontent.com/u/4239892?v=3" width="100px;"/><br /><sub>Giacomo Consonni</sub>](https://github.com/Giaco9)<br />[💻](https://github.com/lusentis/dawson/commits?author=Giaco9) [📖](https://github.com/lusentis/dawson/commits?author=Giaco9) 🔌 | [<img src="https://avatars2.githubusercontent.com/u/2690781?v=3" width="100px;"/><br /><sub>Luca Casartelli</sub>](https://github.com/lcasartelli)<br />[💻](https://github.com/lusentis/dawson/commits?author=lcasartelli) [📖](https://github.com/lusentis/dawson/commits?author=lcasartelli) | [<img src="https://avatars2.githubusercontent.com/u/420915?v=3" width="100px;"/><br /><sub>Chris Matheson</sub>](http://chrismatheson.github.io)<br />[🐛](https://github.com/lusentis/dawson/issues?q=author%3Achrismatheson) [📖](https://github.com/lusentis/dawson/commits?author=chrismatheson) | [<img src="https://avatars1.githubusercontent.com/u/21061117?v=3" width="100px;"/><br /><sub>Robert Kistner</sub>](https://github.com/rakistner)<br />[🐛](https://github.com/lusentis/dawson/issues?q=author%3Arakistner) [💻](https://github.com/lusentis/dawson/commits?author=rakistner) |
+| :---: | :---: | :---: | :---: | :---: | :---: |
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 This project follows the [all-contributors](https://github.com/kentcdodds/all-contributors) specification. Contributions of any kind welcome!
