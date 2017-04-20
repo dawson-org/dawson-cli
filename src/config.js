@@ -5,6 +5,9 @@ import Type from 'prop-types';
 import { existsSync } from 'fs';
 import { stripIndent } from 'common-tags';
 
+import path from 'path';
+import os from 'os';
+
 import createError from './libs/error';
 import { LANGUAGE_JS_LATEST } from './libs/createBundle';
 import { debug } from './logger';
@@ -154,7 +157,7 @@ function validateDawsonConfig (dawson, rootDir) {
 
   const assetsDir = typeof dawson.assetsDir === 'undefined' ? 'assets' : dawson.assetsDir;
   if (assetsDir) {
-    const resolvedAssetsPath = `${rootDir}/${assetsDir}`;
+    const resolvedAssetsPath = path.join(rootDir, assetsDir);
     if (!existsSync(resolvedAssetsPath)) {
       return [
         `Path specified by 'assetsDir' does not exist.`,
@@ -184,12 +187,15 @@ function execIfExists (...args) {
 }
 
 function validateSystem () {
-  const zipResult = execIfExists('zip', ['--help']);
-  if (zipResult.status !== 0) {
-    return [
-      `zip is a required dependency but the zip binary was not found: ${zipResult.error.message}`,
-      `install the 'zip' command using operating system's package manager`
-    ];
+  if (os.platform() !== 'win32') {
+    const zipResult = execIfExists('zip', ['--help']);
+    if (zipResult.status !== 0) {
+      return [
+        `zip is a required dependency but the zip binary was not found: ${zipResult.error.message}`,
+        `install the 'zip' command using operating system's package manager`
+      ];
+    }
+    return true;
   }
   return true;
 }
@@ -225,7 +231,7 @@ function validateBabelRc (rootDir) {
       Fore more info see https://babeljs.io/docs/usage/babelrc/#use-via-package-json
     `
   ];
-  if (existsSync(rootDir + '/.babelrc')) {
+  if (existsSync(path.join(rootDir, '.babelrc'))) {
     return error;
   }
   return true;
@@ -305,7 +311,7 @@ export function initConfig (argv) {
 
 function describeApi (rootDir) {
   try {
-    if (existsSync(`${rootDir}/api.js`)) {
+    if (existsSync(path.join(rootDir, 'api.js'))) {
       debug('Detected language:', LANGUAGE_JS_LATEST);
       return {
         language: LANGUAGE_JS_LATEST,
@@ -317,7 +323,7 @@ function describeApi (rootDir) {
         reason: 'There is no api file in the current directory',
         detailedReason: stripIndent`
           One of this files should exist:
-          - ${rootDir}/api.js
+          - ${path.join(rootDir, 'api.js')}
           `,
         solution: stripIndent`
           * verify that you have an api.js in the current directory

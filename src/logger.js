@@ -4,7 +4,7 @@ require('console.table');
 
 import { inspect } from 'util';
 
-let DEBUG_LEVEL = false;
+export let DEBUG_LEVEL = false;
 
 function stringify (obj) {
   if (typeof obj === 'string') {

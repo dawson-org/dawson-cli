@@ -4,10 +4,14 @@ import execa from 'execa';
 import fs from 'fs';
 import Listr from 'listr';
 import promisify from 'es6-promisify';
-import temp from 'temp';
+import { oneLine } from 'common-tags';
+
+import path from 'path';
+import os from 'os';
+const IS_WINDOWS = os.platform() === 'win32';
 
 import loadConfig from '../config';
-import { debug } from '../logger';
+import { debug, DEBUG_LEVEL } from '../logger';
 
 import jsCompile from './language-javascript-latest/compile';
 import jsInstallDeps from './language-javascript-latest/installDeps';
@@ -24,24 +28,8 @@ export const LANGUAGE_JS_LATEST = 'javascript-latest';
 const SUPPORTED_LANGUAGES = [LANGUAGE_JS_LATEST];
 const LANGUAGE_INVALID_ERR = new Error(`dawson internal error, unknown language in taskCreateBundle.`);
 
-// --- handles temporary files and deletes them on exit ---
-const TEMP_FILES = [];
-const tempPath = prefix => {
-  const path = temp.path(prefix);
-  TEMP_FILES.push(path);
-  return path;
-};
-const cleanupTemp = () => TEMP_FILES.forEach(path => {
-  try {
-    fs.unlinkSync(path);
-  } catch (e) {
-  }
-});
-process.on('exit', cleanupTemp);
-// --- / ---
-
 async function createTempFiles () {
-  const tempZipFile = tempPath('dawson-zip');
+  const tempZipFile = path.join(process.cwd(), '.dawson-dist.zip');
   await del('.dawson-dist');
   return { tempZipFile };
 }
@@ -59,10 +47,30 @@ function writeIndex ({ indexFileContents, indexFileExtension }) {
 async function zipRoot ({ tempZipFile, excludeList, rootDir }) {
   const excludeArg = '--exclude ' +
     [...excludeList, '.git', '.AppleDouble'].map(i => `\\*${i}\\*`).join(' ');
-  await execa.shell(
-    `cd .dawson-dist && zip -8 -r ${tempZipFile} . ${excludeArg}`,
-    { cwd: rootDir, maxBuffer: EXEC_MAX_OUTERR_BUFFER_SIZE }
-  );
+  const spawnOpts = {
+    cwd: rootDir,
+    maxBuffer: EXEC_MAX_OUTERR_BUFFER_SIZE
+  };
+  if (IS_WINDOWS) {
+    const rootDirWindows = rootDir.replace(/\\/g, '/');
+    const zipCmd = `bash -c "cd .dawson-dist && zip -8 -r ../.dawson-dist.zip . ${excludeArg}"`;
+    const zipDockerCmd = oneLine`
+      docker run
+        -v "${rootDirWindows}":/dawson-dist
+        -w /dawson-dist
+      dawsonorg/create-bundle:latest
+      ${zipCmd}
+    `;
+    debug('[windows-compat] zipping using docker:', zipDockerCmd);
+    if (DEBUG_LEVEL) {
+      spawnOpts.stdio = 'inherit';
+    }
+    await execa.shell(zipDockerCmd, spawnOpts);
+  } else {
+    debug('zipping using system\'s built-in command');
+    const zipCmd = `cd .dawson-dist && zip -8 -r ${tempZipFile} . ${excludeArg}`;
+    await execa.shell(zipCmd, spawnOpts);
+  }
   const { size } = await stat(tempZipFile);
   const sizeMB = `${Math.floor(size / 1000000.0)}MB`;
   return { tempZipFileSize: sizeMB };
@@ -165,10 +173,11 @@ export default function taskCreateBundle (args, result) {
       title: 'installing dependencies',
       skip: ctx => ctx.onlyCompile,
       task: ctx => {
-        const { language } = ctx;
+        const { language, skipChmod, rootDir } = ctx;
+        // keep after "compiling" step
         switch (language) {
           case LANGUAGE_JS_LATEST:
-            return jsInstallDeps({ skipChmod: ctx.skipChmod });
+            return jsInstallDeps({ skipChmod, rootDir });
           default:
             throw LANGUAGE_INVALID_ERR;
         }

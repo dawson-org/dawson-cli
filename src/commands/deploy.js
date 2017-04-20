@@ -222,7 +222,7 @@ export async function deploy (args) {
         const assetsBucket = resources.find(o => o.LogicalResourceId === 'BucketAssets').PhysicalResourceId;
         const destinationSuffix = ctx.root === 'api' ? '/assets/' : '';
         await s3Uploader({
-          source: path.resolve(`${ctx.rootDir}/${ctx.assetsDir}`),
+          source: path.resolve(ctx.rootDir, ctx.assetsDir),
           destination: `${assetsBucket}${destinationSuffix}`
         });
       }
