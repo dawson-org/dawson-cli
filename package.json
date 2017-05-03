@@ -63,7 +63,7 @@
   },
   "bin": "dist/index.js",
   "devDependencies": {
-    "ava": "github:avajs/ava#make-snapshot-work",
+    "ava": "^0.19.1",
     "commitizen": "^2.9.6",
     "coveralls": "^2.12.0",
     "cz-conventional-changelog": "^2.0.0",
