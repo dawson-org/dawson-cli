@@ -461,7 +461,8 @@ test('templateLambda with dev instruments', t => {
             DAWSON_myBar: 'baz',
             NODE_ENV: 'development',
             DAWSON_STAGE: 'devel',
-            DAWSONInstrument_Queue_MyFunction: { Ref: 'IQueueMyFunction' }
+            DAWSONInstrument_Queue_MyFunction: { Ref: 'IQueueRequestMyFunction' },
+            DAWSONInstrument_Queue_Response_MyFunction: { Ref: 'IQueueResponseMyFunction' }
           }
         }
       }
@@ -477,16 +478,20 @@ test('templateLambda with dev instruments', t => {
       },
       Type: 'AWS::Lambda::Permission'
     },
-    IQueueMyFunction: {
+    IQueueRequestMyFunction: {
       Type: 'AWS::SQS::Queue',
       Properties: {}
     },
-    IQueueMyFunctionPolicy: {
+    IQueueResponseMyFunction: {
+      Type: 'AWS::SQS::Queue',
+      Properties: {}
+    },
+    IQueueRequestMyFunctionPolicy: {
       Type: 'AWS::SQS::QueuePolicy',
       Properties: {
         Queues: [
           {
-            Ref: 'IQueueMyFunction'
+            Ref: 'IQueueRequestMyFunction'
           }
         ],
         PolicyDocument: {
@@ -497,7 +502,30 @@ test('templateLambda with dev instruments', t => {
               Principal: '*',
               Action: ['SQS:SendMessage'],
               Resource: {
-                'Fn::GetAtt': ['IQueueMyFunction', 'Arn']
+                'Fn::GetAtt': ['IQueueRequestMyFunction', 'Arn']
+              }
+            }
+          ]
+        }
+      }
+    },
+    IQueueResponseMyFunctionPolicy: {
+      Type: 'AWS::SQS::QueuePolicy',
+      Properties: {
+        Queues: [
+          {
+            Ref: 'IQueueResponseMyFunction'
+          }
+        ],
+        PolicyDocument: {
+          Version: '2012-10-17',
+          Statement: [
+            {
+              Effect: 'Allow',
+              Principal: '*',
+              Action: ['SQS:ReceiveMessage', 'SQS:DeleteMessage'],
+              Resource: {
+                'Fn::GetAtt': ['IQueueResponseMyFunction', 'Arn']
               }
             }
           ]

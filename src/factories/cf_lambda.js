@@ -123,21 +123,24 @@ function getDevInstrumentProperties ({ lambdaName, devInstrument }) {
   const lambdaLogicalName = `${lambdaName[0].toUpperCase()}${lambdaName.slice(
     1
   )}`;
-  const queueLogicalName = `IQueue${lambdaLogicalName}`;
+  const requestQueueLogicalName = `IQueueRequest${lambdaLogicalName}`;
+  const responseQueueLogicalName = `IQueueResponse${lambdaLogicalName}`;
   return {
     Resources: {
-      [queueLogicalName]: {
+      [requestQueueLogicalName]: {
         Type: 'AWS::SQS::Queue',
         Properties: {}
       },
-      [`${queueLogicalName}Policy`]: {
+      [responseQueueLogicalName]: {
+        Type: 'AWS::SQS::Queue',
+        Properties: {}
+      },
+      [`${requestQueueLogicalName}Policy`]: {
         Type: 'AWS::SQS::QueuePolicy',
         Properties: {
-          Queues: [
-            {
-              Ref: queueLogicalName
-            }
-          ],
+          Queues: [{
+            Ref: requestQueueLogicalName
+          }],
           PolicyDocument: {
             Version: '2012-10-17',
             Statement: [
@@ -146,7 +149,28 @@ function getDevInstrumentProperties ({ lambdaName, devInstrument }) {
                 Principal: '*', // should be, but doesn't work: { AWS: { Ref: 'AWS::AccountId' } },
                 Action: ['SQS:SendMessage'],
                 Resource: {
-                  'Fn::GetAtt': [queueLogicalName, 'Arn']
+                  'Fn::GetAtt': [requestQueueLogicalName, 'Arn']
+                }
+              }
+            ]
+          }
+        }
+      },
+      [`${responseQueueLogicalName}Policy`]: {
+        Type: 'AWS::SQS::QueuePolicy',
+        Properties: {
+          Queues: [{
+            Ref: responseQueueLogicalName
+          }],
+          PolicyDocument: {
+            Version: '2012-10-17',
+            Statement: [
+              {
+                Effect: 'Allow',
+                Principal: '*', // should be, but doesn't work: { AWS: { Ref: 'AWS::AccountId' } },
+                Action: ['SQS:ReceiveMessage', 'SQS:DeleteMessage'],
+                Resource: {
+                  'Fn::GetAtt': [responseQueueLogicalName, 'Arn']
                 }
               }
             ]
@@ -156,7 +180,10 @@ function getDevInstrumentProperties ({ lambdaName, devInstrument }) {
     },
     Environment: {
       [`DAWSONInstrument_Queue_${lambdaName}`]: {
-        Ref: queueLogicalName
+        Ref: requestQueueLogicalName
+      },
+      [`DAWSONInstrument_Queue_Response_${lambdaName}`]: {
+        Ref: responseQueueLogicalName
       }
     }
   };

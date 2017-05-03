@@ -69,9 +69,6 @@ const FUNCTION_CONFIGURATION_SCHEMA = {
         return;
       }
       if (typeof val === 'boolean') {
-        if (val === true && props.path !== false) {
-          return new Error(`the 'devInstrument' property can only be set on functions having path === false.`);
-        }
         return;
       }
       throw new Error(`value of property 'devInstrument' must be a boolean, not '${typeof val}'.`);

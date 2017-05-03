@@ -292,18 +292,21 @@ function findRoleName (stackResources, runner) {
   return found;
 }
 
-function findQueueURL (stackResources, runner) {
+function findQueueURL (stackResources, runner, which) {
+  if (which !== 'Request' && which !== 'Response') {
+    throw new Error('Internal error, `which` parameter to findQueueURL must be either Response or Request, got:', which);
+  }
   const functionName = runner.name;
   const lambdaName = functionName[0].toUpperCase() + functionName.substring(1);
-  const cfLogicalRoleName = `IQueue${lambdaName}`;
+  const cfLogicalQueueName = `IQueue${which}${lambdaName}`;
   let found = null;
   stackResources.forEach(resource => {
-    if (resource.LogicalResourceId === cfLogicalRoleName) {
+    if (resource.LogicalResourceId === cfLogicalQueueName) {
       found = resource.PhysicalResourceId;
     }
   });
   if (!found) {
-    throw new Error(`Cannot find a Queue Role for '${cfLogicalRoleName}'`);
+    throw new Error(`Cannot find a Queue named '${cfLogicalQueueName}'`);
   }
   return found;
 }
@@ -468,7 +471,7 @@ function createBundle ({ stage, stackName, onlyCompile = false, skipChmod }) {
 }
 
 function handleIncomingSQSMessage (
-  { stage, queueUrl, runner, outputs, resources, PROJECT_ROOT, message }
+  { stage, queueRequestUrl, queueResponseUrl, runner, outputs, resources, PROJECT_ROOT, message }
 ) {
   const body = message.Body;
   const receiptHandle = message.ReceiptHandle;
@@ -479,9 +482,24 @@ function handleIncomingSQSMessage (
     result
   ) => {
     log(`* Event handling by dev server is completed`.dim);
+    log(`devInstrument: publishing response to the response Queue`.dim);
+    const resultJSON = JSON.stringify(result);
+    sqs
+      .sendMessage({
+        QueueUrl: queueResponseUrl,
+        MessageBody: resultJSON
+      })
+      .promise()
+      .then(data => {
+        log('devInstrument: message publish OK', data.MessageId);
+      })
+      .catch(e => {
+        log('devInstrument: error publishing to Queue', queueResponseUrl, resultJSON);
+      });
+    log(`devInstrument: response has been published to the response Queue`.dim);
     sqs
       .deleteMessage({
-        QueueUrl: queueUrl,
+        QueueUrl: queueRequestUrl,
         ReceiptHandle: receiptHandle
       })
       .promise()
@@ -495,15 +513,16 @@ function handleIncomingSQSMessage (
           e
         );
       });
+    log(`devInstrument: request message deleted from the request Queue`.dim);
   });
 }
 
 function handleIncomingSQSMessages (
-  { stage, queueUrl, runner, outputs, resources, PROJECT_ROOT }
+  { stage, queueRequestUrl, queueResponseUrl, runner, outputs, resources, PROJECT_ROOT }
 ) {
   sqs
     .receiveMessage({
-      QueueUrl: queueUrl,
+      QueueUrl: queueRequestUrl,
       WaitTimeSeconds: 20,
       VisibilityTimeout: 30
     })
@@ -512,7 +531,8 @@ function handleIncomingSQSMessages (
       if (data.Messages && data.Messages.length > 0) {
         data.Messages.forEach(message => handleIncomingSQSMessage({
           stage,
-          queueUrl,
+          queueRequestUrl,
+          queueResponseUrl,
           runner,
           outputs,
           resources,
@@ -533,15 +553,24 @@ function startQueuePolling ({ stage, outputs, resources, PROJECT_ROOT }) {
     if (runner.api.devInstrument !== true) {
       return true;
     }
-    const queueUrl = findQueueURL(resources, runner);
-    handleIncomingSQSMessages({
-      stage,
-      queueUrl,
-      runner,
-      outputs,
-      resources,
-      PROJECT_ROOT
-    });
+    const queueRequestUrl = findQueueURL(resources, runner, 'Request');
+    const queueResponseUrl = findQueueURL(resources, runner, 'Response');
+    sqs
+    .purgeQueue({
+      QueueUrl: queueResponseUrl
+    })
+    .promise()
+    .then(() =>
+      handleIncomingSQSMessages({
+        stage,
+        queueRequestUrl,
+        queueResponseUrl,
+        runner,
+        outputs,
+        resources,
+        PROJECT_ROOT
+      })
+    );
   });
 }
 
@@ -763,12 +792,14 @@ export function run (argv) {
                   return true;
                 }
                 try {
-                  const queueUrl = findQueueURL(resources, runner);
+                  const queueRequestUrl = findQueueURL(resources, runner, 'Request');
+                  const queueResponseUrl = findQueueURL(resources, runner, 'Response');
                   debug(
-                    `Function '${runner.name}' will execute polling messages from '${queueUrl}'`
+                    `Function '${runner.name}' will execute polling messages from '${queueRequestUrl}' and push its responses to '${queueResponseUrl}'`
                   );
                   return true;
                 } catch (e) {
+                  debug('Swallowing error', e);
                   throw createError({
                     kind: 'Missing resources',
                     reason: `Function '${runner.name}' has not yet been fully deployed.`,

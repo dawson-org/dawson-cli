@@ -14,23 +14,74 @@ function getRunnerCode (name, apiConfig) {
   const logicalLambdaName = `${name[0].toUpperCase()}${name.slice(1)}`;
   return stripIndent`
     return new Promise((resolve, reject) => {
-      console.log('devInstrument: will handle this event');
       const AWS = require('aws-sdk');
       const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
-      const queueUrl = process.env.DAWSONInstrument_Queue_${logicalLambdaName};
+      const queueRequestUrl = process.env.DAWSONInstrument_Queue_${logicalLambdaName};
+      const queueResponseUrl = process.env.DAWSONInstrument_Queue_Response_${logicalLambdaName};
+      console.log('devInstrument: will handle this event', {
+        queueRequestUrl,
+        queueResponseUrl,
+        event: JSON.stringify(event, null, 2)
+      });
       const message = JSON.stringify(event);
       sqs.sendMessage({
-        QueueUrl: queueUrl,
+        QueueUrl: queueRequestUrl,
         MessageBody: message
       })
       .promise()
       .then(data => {
         console.log('devInstrument: message publish OK', data.MessageId);
-        return callback(null);
-      })
-      .catch(e => {
-        console.log('devInstrument: error publishing to Queue', queueUrl, message);
-        return callback(e);
+        // NOTICE:
+        // max queue polling time will be limited to 30s due to API Gateway
+        // timeout value. WaitTimeSeconds is 20s due to an SQS Limit;
+        // the latter actually limit max processing time to 20s since we call
+        // receiveMessage
+        return sqs
+          .receiveMessage({
+            QueueUrl: queueResponseUrl,
+            WaitTimeSeconds: 20,
+            VisibilityTimeout: 30
+          })
+          .promise()
+          .then(data => {
+            console.log('devInstrument: response queue has received a message', JSON.stringify(data));
+            if (!data.Messages || data.Messages.length === 0) {
+              return reject(new Error(JSON.stringify({
+                unhandled: false,
+                message: 'Did not receive a response from the development server within 20 seconds.',
+                httpStatus: 504
+              })));
+            }
+            console.log('devInstrument: continuing with first message in queue...');
+            const responseMessage = data.Messages[0];
+            const responseBody = JSON.parse(responseMessage.Body);
+            const responseReceiptHandle = responseMessage.ReceiptHandle;
+            let realResponse;
+            if (event.meta && event.meta.expectedResponseContentType.indexOf('application/json') !== -1) {
+              // unwrap "response" added by docker-lambda runner and parse
+              // json encoded by the docker-lambda runner
+              realResponse = JSON.parse(responseBody.response);
+            } else {
+              // unwrap "response" added by the docker-lambda runner
+              realResponse = responseBody.response;
+            }
+            console.log('devInstrument: got response', JSON.stringify(realResponse));
+            resolve(realResponse);
+            console.log('devInstrument: deleting response message');
+            return sqs
+              .deleteMessage({
+                QueueUrl: queueResponseUrl,
+                ReceiptHandle: responseReceiptHandle
+              })
+              .promise()
+              .then(() => {
+                console.log('devInstrument: all done');
+              })
+          })
+          .catch(e => {
+            console.log('devInstrument: error', e.message);
+            return callback(e);
+          });
       });
     });
   `;
