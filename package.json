@@ -70,7 +70,7 @@
     "deep-sort-object": "^1.0.1",
     "eslint": "~3.19.0",
     "eslint-config-semistandard": "^8.0.0",
-    "eslint-config-standard": "^8.0.0-beta.2",
+    "eslint-config-standard": "^10.1.0",
     "eslint-plugin-import": "^2.2.0",
     "eslint-plugin-node": "^4.2.1",
     "eslint-plugin-promise": "^3.4.0",
