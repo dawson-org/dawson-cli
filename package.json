@@ -40,7 +40,7 @@
     "del": "^2.2.2",
     "docker-lambda": "^0.12.2",
     "es6-promisify": "^5.0.0",
-    "execa": "^0.6.3",
+    "execa": "^0.7.0",
     "hard-rejection": "^1.0.0",
     "http-proxy": "^1.14.0",
     "indent-string": "^3.0.0",
