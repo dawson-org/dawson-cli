@@ -13,7 +13,9 @@
     "lint-link": "npm run lint && npm link",
     "lint:watch": "nodemon -w src -x npm -- run lint",
     "prepublish": "npm run clean && npm run compile",
-    "pre-commit": "npm run lint",
+    "precommit": "npm run lint",
+    "prepush": "npm run test",
+    "commitmsg": "validate-commit-msg",
     "coverage-coveralls": "nyc report --reporter=text-lcov | coveralls",
     "coverage-codecov": "nyc report --reporter=text-lcov > coverage.lcov && codecov",
     "coverage": "npm run coverage-coveralls && npm run coverage-codecov",
@@ -75,11 +77,12 @@
     "eslint-plugin-node": "^5.0.0",
     "eslint-plugin-promise": "^3.5.0",
     "eslint-plugin-standard": "^3.0.1",
+    "husky": "^0.14.0",
     "jest-snapshot": "^20.0.3",
     "nyc": "^11.0.2",
-    "pre-commit": "^1.2.2",
     "prettier-eslint-cli": "^4.1.1",
-    "snazzy": "^7.0.0"
+    "snazzy": "^7.0.0",
+    "validate-commit-msg": "^2.12.2"
   },
   "ava": {
     "require": [
