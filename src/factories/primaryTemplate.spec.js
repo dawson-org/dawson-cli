@@ -39,30 +39,27 @@ test('primary template builder', t => {
   t.snapshot(actual);
 });
 
-test(
-  'primary template builder throws if a function is missing the .api property',
-  t => {
-    const actual = () =>
-      generateTemplate({
-        acmCertificateArn: 'arn:bar',
-        API_DEFINITIONS: {
-          fooAPI: fixtures.fooAPI,
-          invalidAPI: fixtures.invalidAPI
-        },
-        appStage: 'devel',
-        root: 'assets',
-        cloudfrontSettings: 'mydomain.com',
-        hostedZoneId: { devel: 'ASDBAR123' },
-        skipAcmCertificate: false,
-        stackName: '',
-        stageName: 'prod',
-        supportBucketName: 'support-bucket-test',
-        zipS3Location: { S3Bucket: 'b', S3Key: 'k', S3VersionId: 'abc' },
-        deploymentUid: 'AVA'
-      });
-    t.throws(actual);
-  }
-);
+test('primary template builder throws if a function is missing the .api property', t => {
+  const actual = () =>
+    generateTemplate({
+      acmCertificateArn: 'arn:bar',
+      API_DEFINITIONS: {
+        fooAPI: fixtures.fooAPI,
+        invalidAPI: fixtures.invalidAPI
+      },
+      appStage: 'devel',
+      root: 'assets',
+      cloudfrontSettings: 'mydomain.com',
+      hostedZoneId: { devel: 'ASDBAR123' },
+      skipAcmCertificate: false,
+      stackName: '',
+      stageName: 'prod',
+      supportBucketName: 'support-bucket-test',
+      zipS3Location: { S3Bucket: 'b', S3Key: 'k', S3VersionId: 'abc' },
+      deploymentUid: 'AVA'
+    });
+  t.throws(actual);
+});
 
 test('primary template builder with cloudfront disabled', t => {
   const actual = generateTemplate({

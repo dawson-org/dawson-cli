@@ -37,10 +37,14 @@ export function buildCreateStackParams (
   { stackName, cfTemplateJSON, templateURL, inline = false }
 ) {
   if (inline === false && !templateURL) {
-    throw new Error(`Internal error: templateUrl is required when calling buildCreateStackParams with inline === false`);
+    throw new Error(
+      `Internal error: templateUrl is required when calling buildCreateStackParams with inline === false`
+    );
   }
   if (inline === true && !cfTemplateJSON) {
-    throw new Error(`Internal error: cfTemplateJSON is required when calling buildCreateStackParams with inline === true`);
+    throw new Error(
+      `Internal error: cfTemplateJSON is required when calling buildCreateStackParams with inline === true`
+    );
   }
   const templateSource = inline
     ? { TemplateBody: cfTemplateJSON }

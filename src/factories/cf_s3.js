@@ -25,7 +25,11 @@ export function templateAssetsBucket () {
               Resource: {
                 'Fn::Join': [
                   '',
-                  ['arn:aws:s3:::', { Ref: `${templateAssetsBucketName()}` }, '/*']
+                  [
+                    'arn:aws:s3:::',
+                    { Ref: `${templateAssetsBucketName()}` },
+                    '/*'
+                  ]
                 ]
               },
               Principal: '*'

@@ -10,7 +10,7 @@ test('templateRoute53', t => {
       Type: 'AWS::Route53::RecordSet',
       Properties: {
         AliasTarget: {
-          DNSName: {'Fn::Sub': '${WWWDistribution.DomainName}'}, // eslint-disable-line
+          DNSName: { 'Fn::Sub': '${WWWDistribution.DomainName}' }, // eslint-disable-line
           HostedZoneId: 'Z2FDTNDATAQYW2'
         },
         Comment: 'Record managed by dawson.',
