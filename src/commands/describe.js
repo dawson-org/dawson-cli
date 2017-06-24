@@ -83,7 +83,7 @@ export function run (argv) {
         );
         title('Stack Outputs');
         log(
-          'Please do not copy-paste any OutputValue into your functions. These values are available from the params.stageVariables.<OutputKey> in every lambda function.'.yellow.dim
+          'Please do not copy-paste any OutputValue into your functions. These values are available from the process.env.DAWSON_<OutputKey> in every lambda function.'.yellow.dim
         );
         console.log(table.toString());
       }
