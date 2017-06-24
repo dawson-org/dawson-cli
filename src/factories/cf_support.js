@@ -10,13 +10,19 @@ export function templateSupportStack () {
         Properties: {
           LifecycleConfiguration: {
             Rules: [
-              { Id: 'CleanupAfter7Days', ExpirationInDays: 7, Status: 'Enabled' }
+              {
+                Id: 'CleanupAfter7Days',
+                ExpirationInDays: 7,
+                Status: 'Enabled'
+              }
             ]
           },
           VersioningConfiguration: { Status: 'Enabled' }
         }
       }
     },
-    Outputs: { SupportBucket: { Value: { Ref: `${templateSupportBucketName()}` } } }
+    Outputs: {
+      SupportBucket: { Value: { Ref: `${templateSupportBucketName()}` } }
+    }
   };
 }

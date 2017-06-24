@@ -13,8 +13,10 @@ export function run (argv) {
   const { APP_NAME } = loadConfig();
   const { stage, outputName, resourceId, shell = false } = argv;
   const stackName = templateStackName({ appName: APP_NAME, stage });
-  return Promise
-    .all([getStackOutputs({ stackName }), getStackResources({ stackName })])
+  return Promise.all([
+    getStackOutputs({ stackName }),
+    getStackResources({ stackName })
+  ])
     .then(([outputs, resources]) => {
       if (typeof outputName !== 'undefined') {
         const foundOutput = outputs.find(
@@ -52,10 +54,10 @@ export function run (argv) {
           head: ['LogicalResourceId', 'PhysicalResourceId']
         });
         table.push(
-          ...sortedResources.map(({ LogicalResourceId, PhysicalResourceId }) => [
+          ...sortedResources.map(({
             LogicalResourceId,
             PhysicalResourceId
-          ])
+          }) => [LogicalResourceId, PhysicalResourceId])
         );
         title('Stack Resources');
         console.log(table.toString());

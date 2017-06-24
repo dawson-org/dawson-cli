@@ -18,7 +18,11 @@ test('templateSupportStack', t => {
         Properties: {
           LifecycleConfiguration: {
             Rules: [
-              { Id: 'CleanupAfter7Days', ExpirationInDays: 7, Status: 'Enabled' }
+              {
+                Id: 'CleanupAfter7Days',
+                ExpirationInDays: 7,
+                Status: 'Enabled'
+              }
             ]
           },
           VersioningConfiguration: { Status: 'Enabled' }

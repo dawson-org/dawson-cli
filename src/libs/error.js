@@ -18,7 +18,8 @@ export default function createError (
     `
     );
 
-    const msg = '\n' + stripIndent`
+    const msg = '\n' +
+      stripIndent`
 
 ${errorTitle}
 ${chalk.red.bold(kind)}
@@ -30,7 +31,11 @@ ${detailedReason}
 
 ${solutionTitle}
 ${solution}
-    `.trim().replace(/\n\n\n/g, '\n') + '\n\n' + footer;
+    `
+        .trim()
+        .replace(/\n\n\n/g, '\n') +
+      '\n\n' +
+      footer;
     return indent(msg, 3);
   };
   return err;

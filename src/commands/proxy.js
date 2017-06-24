@@ -183,7 +183,10 @@ async function runDockerContainer (
         ])
         .concat(['--env', `AWS_SESSION_TOKEN=${credentials.SessionToken}`])
         .concat(flatten(envVariables.map(v => ['--env', v]))),
-      spawnOptions: { encoding: 'utf8', stdio: ['pipe', 'pipe', process.stdout] }
+      spawnOptions: {
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', process.stdout]
+      }
     });
     log(`End of docker run`.dim);
     callback(runner, null, invokeResult);
@@ -294,7 +297,10 @@ function findRoleName (stackResources, runner) {
 
 function findQueueURL (stackResources, runner, which) {
   if (which !== 'Request' && which !== 'Response') {
-    throw new Error('Internal error, `which` parameter to findQueueURL must be either Response or Request, got:', which);
+    throw new Error(
+      'Internal error, `which` parameter to findQueueURL must be either Response or Request, got:',
+      which
+    );
   }
   const functionName = runner.name;
   const lambdaName = functionName[0].toUpperCase() + functionName.substring(1);
@@ -366,8 +372,8 @@ function runAuthorizer (
     {
       succeed: ({ policyDocument, principalId, context }) => {
         if (
-          !Object.values(context)
-            .every(val => ['number', 'string', 'boolean'].includes(typeof val))
+          !Object.values(context).every(val =>
+            ['number', 'string', 'boolean'].includes(typeof val))
         ) {
           throw new Error(
             'Authorizer Error: augmented context values can only be of type number, string or boolean.'
@@ -471,54 +477,76 @@ function createBundle ({ stage, stackName, onlyCompile = false, skipChmod }) {
 }
 
 function handleIncomingSQSMessage (
-  { stage, queueRequestUrl, queueResponseUrl, runner, outputs, resources, PROJECT_ROOT, message }
+  {
+    stage,
+    queueRequestUrl,
+    queueResponseUrl,
+    runner,
+    outputs,
+    resources,
+    PROJECT_ROOT,
+    message
+  }
 ) {
   const body = message.Body;
   const receiptHandle = message.ReceiptHandle;
   const event = JSON.parse(body);
-  runDockerContainer({ stage, runner, event, outputs, resources, PROJECT_ROOT }, (
-    _runner,
-    _error,
-    result
-  ) => {
-    log(`* Event handling by dev server is completed`.dim);
-    log(`devInstrument: publishing response to the response Queue`.dim);
-    const resultJSON = JSON.stringify(result);
-    sqs
-      .sendMessage({
-        QueueUrl: queueResponseUrl,
-        MessageBody: resultJSON
-      })
-      .promise()
-      .then(data => {
-        log('devInstrument: message publish OK', data.MessageId);
-      })
-      .catch(e => {
-        log('devInstrument: error publishing to Queue', queueResponseUrl, resultJSON);
-      });
-    log(`devInstrument: response has been published to the response Queue`.dim);
-    sqs
-      .deleteMessage({
-        QueueUrl: queueRequestUrl,
-        ReceiptHandle: receiptHandle
-      })
-      .promise()
-      .then(() => {
-        log(`* Message deleted from the Queue`.dim);
-        log(`======= Log Fragment End =======\n`.dim);
-      })
-      .catch(e => {
-        log(
-          `* Cleanup failed, message could not have been removed from the Queue`,
-          e
-        );
-      });
-    log(`devInstrument: request message deleted from the request Queue`.dim);
-  });
+  runDockerContainer(
+    { stage, runner, event, outputs, resources, PROJECT_ROOT },
+    (_runner, _error, result) => {
+      log(`* Event handling by dev server is completed`.dim);
+      log(`devInstrument: publishing response to the response Queue`.dim);
+      const resultJSON = JSON.stringify(result);
+      sqs
+        .sendMessage({
+          QueueUrl: queueResponseUrl,
+          MessageBody: resultJSON
+        })
+        .promise()
+        .then(data => {
+          log('devInstrument: message publish OK', data.MessageId);
+        })
+        .catch(e => {
+          log(
+            'devInstrument: error publishing to Queue',
+            queueResponseUrl,
+            resultJSON
+          );
+        });
+      log(
+        `devInstrument: response has been published to the response Queue`.dim
+      );
+      sqs
+        .deleteMessage({
+          QueueUrl: queueRequestUrl,
+          ReceiptHandle: receiptHandle
+        })
+        .promise()
+        .then(() => {
+          log(`* Message deleted from the Queue`.dim);
+          log(`======= Log Fragment End =======\n`.dim);
+        })
+        .catch(e => {
+          log(
+            `* Cleanup failed, message could not have been removed from the Queue`,
+            e
+          );
+        });
+      log(`devInstrument: request message deleted from the request Queue`.dim);
+    }
+  );
 }
 
 function handleIncomingSQSMessages (
-  { stage, queueRequestUrl, queueResponseUrl, runner, outputs, resources, PROJECT_ROOT }
+  {
+    stage,
+    queueRequestUrl,
+    queueResponseUrl,
+    runner,
+    outputs,
+    resources,
+    PROJECT_ROOT
+  }
 ) {
   sqs
     .receiveMessage({
@@ -529,16 +557,17 @@ function handleIncomingSQSMessages (
     .promise()
     .then(data => {
       if (data.Messages && data.Messages.length > 0) {
-        data.Messages.forEach(message => handleIncomingSQSMessage({
-          stage,
-          queueRequestUrl,
-          queueResponseUrl,
-          runner,
-          outputs,
-          resources,
-          PROJECT_ROOT,
-          message
-        }));
+        data.Messages.forEach(message =>
+          handleIncomingSQSMessage({
+            stage,
+            queueRequestUrl,
+            queueResponseUrl,
+            runner,
+            outputs,
+            resources,
+            PROJECT_ROOT,
+            message
+          }));
       }
       return handleIncomingSQSMessages(...arguments);
     });
@@ -556,21 +585,20 @@ function startQueuePolling ({ stage, outputs, resources, PROJECT_ROOT }) {
     const queueRequestUrl = findQueueURL(resources, runner, 'Request');
     const queueResponseUrl = findQueueURL(resources, runner, 'Response');
     sqs
-    .purgeQueue({
-      QueueUrl: queueResponseUrl
-    })
-    .promise()
-    .then(() =>
-      handleIncomingSQSMessages({
-        stage,
-        queueRequestUrl,
-        queueResponseUrl,
-        runner,
-        outputs,
-        resources,
-        PROJECT_ROOT
+      .purgeQueue({
+        QueueUrl: queueResponseUrl
       })
-    );
+      .promise()
+      .then(() =>
+        handleIncomingSQSMessages({
+          stage,
+          queueRequestUrl,
+          queueResponseUrl,
+          runner,
+          outputs,
+          resources,
+          PROJECT_ROOT
+        }));
   });
 }
 
@@ -680,12 +708,9 @@ export function run (argv) {
           cacheControl: false,
           root: pathModule.join(PROJECT_ROOT, assetsPath)
         })
-          .on('error', (sendError) => {
+          .on('error', sendError => {
             res.writeHead(sendError.status || 500);
-            const message = `Resource not found (root: ${pathModule.join(
-              PROJECT_ROOT,
-              assetsPath
-            )}) at path '${path}'`;
+            const message = `Resource not found (root: ${pathModule.join(PROJECT_ROOT, assetsPath)}) at path '${path}'`;
             warning(message);
             res.write(message);
             res.end();
@@ -721,100 +746,109 @@ export function run (argv) {
       },
       {
         title: 'validating AWS resources',
-        task: () => new Listr([
-          {
-            title: 'getting stack details from CloudFormation',
-            task: () => {
-              return getOutputsAndResources({ stackName })
-                .catch(e => {
-                  throw createError({
-                    kind: 'Failed to describe CloudFormation Stack',
-                    reason: `dawson could not find a CloudFormation stack for your app.`,
-                    detailedReason: stripIndent`
+        task: () =>
+          new Listr([
+            {
+              title: 'getting stack details from CloudFormation',
+              task: () => {
+                return getOutputsAndResources({ stackName })
+                  .catch(e => {
+                    throw createError({
+                      kind: 'Failed to describe CloudFormation Stack',
+                      reason: `dawson could not find a CloudFormation stack for your app.`,
+                      detailedReason: stripIndent`
                     The stack named '${stackName}' (stage: ${stage}, region: ${AWS_REGION})
                     cannot be described.
                     AWS Error: "${e.message}"
                     If this is the first time you are using this app,
                     you just need to run $ dawson deploy
                   `,
-                    solution: stripIndent`
+                      solution: stripIndent`
                     * deploy this app / stage (check AWS_STAGE or --stage)
                     * use the correct AWS Account (check AWS_PROFILE, AWS_ACCESS_KEY_ID)
                     * use the correct region (check AWS_REGION)
                     * check the 'name' property in your package.json
                   `
+                    });
+                  })
+                  .then(([_outputs, _resources]) => {
+                    [outputs, resources] = [_outputs, _resources];
                   });
-                })
-                .then(([_outputs, _resources]) => {
-                  [outputs, resources] = [_outputs, _resources];
-                });
-            }
-          },
-          {
-            title: 'checking IAM Roles',
-            task: () => {
-              Object.values(API_DEFINITIONS).every(runner => {
-                if (runner.name === 'customTemplateFragment') {
-                  return true;
-                }
-                if (runner.name === 'processCFTemplate') {
-                  return true;
-                }
-                try {
-                  const roleName = findRoleName(resources, runner);
-                  debug(
-                    `Function '${runner.name}' will execute with IAM Role '${roleName}'`
-                  );
-                  return true;
-                } catch (e) {
-                  throw createError({
-                    kind: 'Missing resources',
-                    reason: `Function '${runner.name}' has not yet been deployed.`,
-                    detailedReason: stripIndent`
+              }
+            },
+            {
+              title: 'checking IAM Roles',
+              task: () => {
+                Object.values(API_DEFINITIONS).every(runner => {
+                  if (runner.name === 'customTemplateFragment') {
+                    return true;
+                  }
+                  if (runner.name === 'processCFTemplate') {
+                    return true;
+                  }
+                  try {
+                    const roleName = findRoleName(resources, runner);
+                    debug(
+                      `Function '${runner.name}' will execute with IAM Role '${roleName}'`
+                    );
+                    return true;
+                  } catch (e) {
+                    throw createError({
+                      kind: 'Missing resources',
+                      reason: `Function '${runner.name}' has not yet been deployed.`,
+                      detailedReason: stripIndent`
                     dawson couldn't find any IAM Role to use when executing this function.
                     This happens when you're invoking a function that has never been deployed before.
                     Before a function can be executed, it must have been deployed at least once.
                   `,
-                    solution: 'execute $ dawson deploy, wait for the deploy to complete and then run this command again.'
-                  });
-                }
-              });
-            }
-          },
-          {
-            title: 'checking SQS Queues',
-            task: () => {
-              Object.values(API_DEFINITIONS).every(runner => {
-                if (!runner.api) {
-                  return true;
-                }
-                if (runner.api.devInstrument !== true) {
-                  return true;
-                }
-                try {
-                  const queueRequestUrl = findQueueURL(resources, runner, 'Request');
-                  const queueResponseUrl = findQueueURL(resources, runner, 'Response');
-                  debug(
-                    `Function '${runner.name}' will execute polling messages from '${queueRequestUrl}' and push its responses to '${queueResponseUrl}'`
-                  );
-                  return true;
-                } catch (e) {
-                  debug('Swallowing error', e);
-                  throw createError({
-                    kind: 'Missing resources',
-                    reason: `Function '${runner.name}' has not yet been fully deployed.`,
-                    detailedReason: stripIndent`
+                      solution: 'execute $ dawson deploy, wait for the deploy to complete and then run this command again.'
+                    });
+                  }
+                });
+              }
+            },
+            {
+              title: 'checking SQS Queues',
+              task: () => {
+                Object.values(API_DEFINITIONS).every(runner => {
+                  if (!runner.api) {
+                    return true;
+                  }
+                  if (runner.api.devInstrument !== true) {
+                    return true;
+                  }
+                  try {
+                    const queueRequestUrl = findQueueURL(
+                      resources,
+                      runner,
+                      'Request'
+                    );
+                    const queueResponseUrl = findQueueURL(
+                      resources,
+                      runner,
+                      'Response'
+                    );
+                    debug(
+                      `Function '${runner.name}' will execute polling messages from '${queueRequestUrl}' and push its responses to '${queueResponseUrl}'`
+                    );
+                    return true;
+                  } catch (e) {
+                    debug('Swallowing error', e);
+                    throw createError({
+                      kind: 'Missing resources',
+                      reason: `Function '${runner.name}' has not yet been fully deployed.`,
+                      detailedReason: stripIndent`
                     dawson couldn't find a Queue to poll for events to execute this function with.
                     This happens when you're invoking a function that has never been deployed before
                     or because you have changed the devInstrument api property without deploying.
                   `,
-                    solution: 'execute $ dawson deploy, wait for the deploy to complete and then run this command again.'
-                  });
-                }
-              });
+                      solution: 'execute $ dawson deploy, wait for the deploy to complete and then run this command again.'
+                    });
+                  }
+                });
+              }
             }
-          }
-        ])
+          ])
       }
     ],
     { concurrent: true, renderer: verbose ? verboseRenderer : undefined }
@@ -893,7 +927,9 @@ function setupWatcher ({ stage, stackName, ignore = [], PROJECT_ROOT }) {
       return;
     }
 
-    if (ignoreList.some(pattern => minimatch(fileName, pattern, { dot: true }))) {
+    if (
+      ignoreList.some(pattern => minimatch(fileName, pattern, { dot: true }))
+    ) {
       debug(`   Reload: [ignored] ${fileName}`.dim);
       return;
     }

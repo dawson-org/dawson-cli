@@ -99,7 +99,9 @@ export function templateResourceHelper ({ resourcePath }) {
     } else if (pathToken[0] === '{') {
       let pathWithoutBrackets = /\{(.*)\}/.exec(pathToken)[1];
       if (!pathWithoutBrackets.match(/^[a-z0-9]+$/i)) {
-        throw new Error(`Path part in '${resourcePath}' cannot contain non-alphanum characters inside brackets.`);
+        throw new Error(
+          `Path part in '${resourcePath}' cannot contain non-alphanum characters inside brackets.`
+        );
       }
       resourceName = pathWithoutBrackets[0].toUpperCase() +
         pathWithoutBrackets.substring(1);
@@ -110,19 +112,23 @@ export function templateResourceHelper ({ resourcePath }) {
         resolvedPathResources[cleanPath] = pathToken;
       }
       if (resolvedPathResources[cleanPath] !== pathToken) {
-        throw new Error(`Path part '${cleanPath}' in '${resourcePath}' conflicts with an existing path: '${resolvedPathResources[cleanPath]}', please rename.`);
+        throw new Error(
+          `Path part '${cleanPath}' in '${resourcePath}' conflicts with an existing path: '${resolvedPathResources[cleanPath]}', please rename.`
+        );
       }
     }
     assert(
       !pathToken || pathToken[0] !== '/',
       '`path` should not begin with a /'
     );
-    const templateResourcePartial = pathToken ? templateResource({
-      resourceName,
-          // @FIXME prepend to resourceName the parent resources names
-      resourcePath: pathToken,
-      parentResourceName: lastResourceName
-    }) : {};
+    const templateResourcePartial = pathToken
+      ? templateResource({
+        resourceName,
+        // @FIXME prepend to resourceName the parent resources names
+        resourcePath: pathToken,
+        parentResourceName: lastResourceName
+      })
+      : {};
     lastResourceName = resourceName;
     templateResourcePartials = {
       ...templateResourcePartials,
@@ -171,28 +177,22 @@ export function templateLambdaIntegration (
   { lambdaName, responseContentType, redirects }
 ) {
   let responseTemplate = {
-    [responseContentType]: (
-      stripIndent`
+    [responseContentType]: stripIndent`
       #set($inputRoot = $input.path('$'))
       $inputRoot.response
     `
-    )
   };
   let errorResponseTemplate = {
-    [responseContentType]: (
-      stripIndent`
+    [responseContentType]: stripIndent`
       #set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
       $errorMessageObj.response
     `
-    )
   };
   if (responseContentType.includes('application/json')) {
     errorResponseTemplate = {
-      'application/json': (
-        stripIndent`
+      'application/json': stripIndent`
         $input.path('$.errorMessage')
       `
-      )
     };
   }
   let apigResponseContentType = responseContentType;
@@ -206,19 +206,15 @@ export function templateLambdaIntegration (
     };
     apigResponseContentType = 'text/plain';
     responseTemplate = {
-      'text/plain': (
-        stripIndent`
+      'text/plain': stripIndent`
         #set($inputRoot = $input.path('$'))
         You are being redirected to $inputRoot.response.Location
       `
-      )
     };
     errorResponseTemplate = {
-      'text/plain': (
-        stripIndent`
+      'text/plain': stripIndent`
         Cannot redirect because of an error
       `
-      )
     };
   }
   return {
@@ -317,7 +313,9 @@ export function templateMethod (
     authorizerConfig = {
       ...authorizerConfig,
       AuthorizationType: 'CUSTOM',
-      AuthorizerId: { Ref: `${templateAuthorizerName({ authorizerFunctionName })}` }
+      AuthorizerId: {
+        Ref: `${templateAuthorizerName({ authorizerFunctionName })}`
+      }
     };
   }
   let authorizerPartial;
@@ -439,11 +437,7 @@ function templateAuthorizerName ({ authorizerFunctionName }) {
 }
 export function templateAuthorizer ({ authorizerFunctionName }) {
   const lambdaLogicalName = templateLambdaName({
-    lambdaName: (
-      `${authorizerFunctionName[0].toUpperCase()}${authorizerFunctionName.slice(
-        1
-      )}`
-    )
+    lambdaName: `${authorizerFunctionName[0].toUpperCase()}${authorizerFunctionName.slice(1)}`
   });
   const authorizerName = templateAuthorizerName({ authorizerFunctionName });
   return {
@@ -453,11 +447,9 @@ export function templateAuthorizer ({ authorizerFunctionName }) {
         AuthorizerResultTtlInSeconds: 0,
         // eslint-disable-line
         AuthorizerUri: {
-          'Fn::Sub': (
-            'arn:aws:apigateway:${AWS::Region}:lambda:path//2015-03-31/functions/${' +
-              lambdaLogicalName +
-              '.Arn}/invocations'
-          )
+          'Fn::Sub': 'arn:aws:apigateway:${AWS::Region}:lambda:path//2015-03-31/functions/${' +
+            lambdaLogicalName +
+            '.Arn}/invocations'
         },
         IdentitySource: 'method.request.header.token',
         Name: `${authorizerName}`,

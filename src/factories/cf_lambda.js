@@ -17,7 +17,7 @@ function extraTrustPrincipals () {
   // for testing with the development proxy
   // https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html#Principal
   return {
-    AWS: [{'Fn::Sub': 'arn:aws:iam::${AWS::AccountId}:root'}] // eslint-disable-line
+    AWS: [{ 'Fn::Sub': 'arn:aws:iam::${AWS::AccountId}:root' }] // eslint-disable-line
   };
 }
 
@@ -120,9 +120,7 @@ function getDevInstrumentProperties ({ lambdaName, devInstrument }) {
       Environment: {}
     };
   }
-  const lambdaLogicalName = `${lambdaName[0].toUpperCase()}${lambdaName.slice(
-    1
-  )}`;
+  const lambdaLogicalName = `${lambdaName[0].toUpperCase()}${lambdaName.slice(1)}`;
   const requestQueueLogicalName = `IQueueRequest${lambdaLogicalName}`;
   const responseQueueLogicalName = `IQueueResponse${lambdaLogicalName}`;
   return {
@@ -138,9 +136,11 @@ function getDevInstrumentProperties ({ lambdaName, devInstrument }) {
       [`${requestQueueLogicalName}Policy`]: {
         Type: 'AWS::SQS::QueuePolicy',
         Properties: {
-          Queues: [{
-            Ref: requestQueueLogicalName
-          }],
+          Queues: [
+            {
+              Ref: requestQueueLogicalName
+            }
+          ],
           PolicyDocument: {
             Version: '2012-10-17',
             Statement: [
@@ -159,9 +159,11 @@ function getDevInstrumentProperties ({ lambdaName, devInstrument }) {
       [`${responseQueueLogicalName}Policy`]: {
         Type: 'AWS::SQS::QueuePolicy',
         Properties: {
-          Queues: [{
-            Ref: responseQueueLogicalName
-          }],
+          Queues: [
+            {
+              Ref: responseQueueLogicalName
+            }
+          ],
           PolicyDocument: {
             Version: '2012-10-17',
             Statement: [

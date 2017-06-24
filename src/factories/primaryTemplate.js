@@ -1,4 +1,3 @@
-
 import merge from 'lodash/merge';
 
 import { RESERVED_FUCTION_NAMES } from '../config';
@@ -247,9 +246,12 @@ export default function generateTemplate (
 
   let customTemplateObjects = {};
   if (typeof API_DEFINITIONS.customTemplateFragment === 'function') {
-    customTemplateObjects = API_DEFINITIONS.customTemplateFragment({}, {
-      deploymentLogicalName: `${templateDeploymentName({ deploymentUid })}`
-    });
+    customTemplateObjects = API_DEFINITIONS.customTemplateFragment(
+      {},
+      {
+        deploymentLogicalName: `${templateDeploymentName({ deploymentUid })}`
+      }
+    );
   }
 
   const environment = {};
@@ -293,7 +295,9 @@ export default function generateTemplate (
     root
   });
 
-  const { route53Enabled, route53Partial } = taskCreateRoute53Template({ // eslint-disable-line no-unused-vars
+  const { route53Partial } = taskCreateRoute53Template({
+    /* route53Enabled, */
+    // eslint-disable-line no-unused-vars
     cloudfrontCustomDomain,
     hostedZoneId
   });

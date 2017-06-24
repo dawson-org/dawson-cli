@@ -10,7 +10,7 @@ import { promiseForUpdateCompleted } from '../libs/aws/cfn-update-observer';
 import { getStackOutputs } from '../libs/aws/cfn-get-stack-info-helpers';
 import createOrUpdateStack from '../libs/aws/cfn-create-or-update-stack';
 
-export default (async function taskUpdateSupportStack ({ appStage, appName }) {
+export default async function taskUpdateSupportStack ({ appStage, appName }) {
   const stackName = templateStackName({ appName: `${appName}Support` });
   const cfTemplate = templateSupportStack();
   const cfTemplateJSON = JSON.stringify(cfTemplate, null, 2);
@@ -35,4 +35,4 @@ export default (async function taskUpdateSupportStack ({ appStage, appName }) {
     o => o.OutputKey === 'SupportBucket'
   ).OutputValue;
   return { supportBucketName };
-});
+}
