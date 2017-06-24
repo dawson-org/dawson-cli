@@ -68,7 +68,7 @@
     "coveralls": "^2.12.0",
     "cz-conventional-changelog": "^2.0.0",
     "deep-sort-object": "^1.0.1",
-    "eslint": "~3.19.0",
+    "eslint": "~4.1.0",
     "eslint-config-semistandard": "^8.0.0",
     "eslint-config-standard": "^8.0.0-beta.2",
     "eslint-plugin-import": "^2.2.0",
