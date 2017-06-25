@@ -453,7 +453,9 @@ foo.api = {
     Resource: [{ 'Fn::Sub': 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${UsersTable}*' }]
   }],
   redirects: false,
+  devInstrument: false,
   responseContentType: 'text/html',
+  excludeEnv: []
 };
 ```
 
@@ -568,7 +570,7 @@ dawson pipes any [event supported by Lambda](https://docs.aws.amazon.com/lambda/
 This option can only be set when `path === false`, as it makes no sense to use this when an API Gateway Endpoint is present.
 
 ## `runtime`
-**Required**: no | **Type**: `string` | **Default**: conditional
+**Required**: no | **Type**: `string` | **Default**: conditional  
 **Use for**: overriding the runtime set by dawson
 
 **You should generally avoid using this option**  
@@ -580,6 +582,16 @@ Current valid values includes:
 * `nodejs6.10` (default)
 * `python2.7`
 
+## `excludeEnv`
+**Required**: no | **Type**: `list of strings` | **Default**: `[]`  
+**Use for**: specifying Outputs to not attach to a Lambda function
+
+This option is useful to avoid *circular dependency between resources*.  
+Dawson exports each `Output` from your template to every Lambda function (see [3.1.1 Accessing Template Outputs and Custom Resources](#311-accessing-template-outputs-and-custom-resources)). Sometimes this behavior causes a circular dependency between some resources.  
+
+In this property, you can specify a list of resources Logical IDs (as in `$ dawson describe`) that you want to exclude for this function. Any Output listed in `excludeEnv` won't be available as a `process.env.DAWSON_*` variable in the current function.
+
+> **Pro tip:** this is one of the cases when CloudFormation errors are less than useful, as it won't point out which resource actually causes this. Typically, this circular dependency happens between S3 Buckets and an associated Lambda Function. If you're coding an S3 Event Handler, you can get the bucket name from the S3 Event and there's no need to get it from the Env, so you can safely add the Bucket Logical Name to `excludeEnv`.
 
 ---
 
