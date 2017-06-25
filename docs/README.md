@@ -467,7 +467,7 @@ The HTTP path to this function, *without* leading and trailing slashes.
 The path must be unique in your whole app. You may use path parameters placeholder, as in API Gateway, by sorrounding the parameter name with `{}`).  
 If `false`, no API Gateway method will be deployed (see [Function Parameters](./Function-Parameters) for details).  
 
-Paths can be Greedy, which means that you can use a "+" at the end of a parth part name, to match the rest of the URL (as you would do in `express` with `*` for instance). See [Example #3](https://github.com/dawson-org/dawson-examples/tree/master/3-wildcard-path) for more info.
+Paths can be Greedy, which means that you can use a `+` at the end of a path part name, to match the rest of the URL (as you would do in `express` with `*` for instance). See [Example #3](https://github.com/dawson-org/dawson-examples/tree/master/3-wildcard-path) for more info.
 
 >  Due to an API Gateway limitation, `/hello/{name}.html` is [**invalid**](https://docs.aws.amazon.com/apigateway/latest/developerguide/getting-started-mappings.html). `/hello/{name}/profile.html` and `/{foo}/bar/{baz}` are valid (technically, "*each path part must not contain curly braces, or must both begin and end with a curly brace*").  
 
