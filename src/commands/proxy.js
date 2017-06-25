@@ -61,7 +61,8 @@ function findApi ({ method, pathname, API_DEFINITIONS }) {
       found.pathParams = {}; // [paramName]: paramValue };
       const [names, values] = result;
       names.forEach((paramName, paramIndex) => {
-        found.pathParams[paramName] = values[paramIndex];
+        const cleanParamName = paramName.replace('+', ''); // remove "greedy" flag
+        found.pathParams[cleanParamName] = values[paramIndex];
       });
     }
   });

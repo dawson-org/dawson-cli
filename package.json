@@ -28,7 +28,7 @@
   "author": "Simone Lusenti <lusenti.s@gmail.com>",
   "license": "GPL-3.0",
   "dependencies": {
-    "@dawson/pathmatch": "0.0.3",
+    "@dawson/pathmatch": "0.0.4",
     "aws-sdk": "^2.34.0",
     "babel-cli": "^6.14.0",
     "babel-polyfill": "^6.16.0",
