@@ -335,21 +335,40 @@ function describeApi (rootDir) {
 
 export default function loadConfig (rootDir = process.cwd()) {
   try {
+    // at this point, we must check that package.json exists,
+    // is readable, and it contains valid JSON
+    // (also, the package.json is required earlier by language-javascript-latest/_babelHelpers)
     requiredPkgJson = require(rootDir + '/package.json');
   } catch (e) {
-    console.error(createError({
-      kind: 'Cannot find package.json',
-      reason: 'There is no package.json file in the current directory',
-      detailedReason: stripIndent`
-          You are running this command from '${rootDir}' which does not
-          contain a package.json file as required by dawson.
-        `,
-      solution: stripIndent`
-        * check if the file exists by running 'stat ${rootDir}/package.json'
-        * run dawson from the correct folder
-        * check file permissions on package.json
-        `
-    }).toFormattedString());
+    if (e instanceof SyntaxError) {
+      console.error(createError({
+        kind: 'Syntax Error in package.json',
+        reason: 'package.json contains a syntax error',
+        detailedReason: stripIndent`
+            The file ${rootDir + '/package.json'} contains a Syntax Error and cannot be parsed.
+            You may want to check this file using a linter or https://jsonlint.com.
+          `,
+        solution: stripIndent`
+          * check if the file exists by running 'stat ${rootDir}/package.json'
+          * run dawson from the correct folder
+          * check file permissions on package.json
+          `
+      }).toFormattedString());
+    } else {
+      console.error(createError({
+        kind: 'Cannot find package.json',
+        reason: 'There is no package.json file in the current directory',
+        detailedReason: stripIndent`
+            You are running this command from '${rootDir}' which does not
+            contain a package.json file as required by dawson.
+          `,
+        solution: stripIndent`
+          * check if the file exists by running 'stat ${rootDir}/package.json'
+          * run dawson from the correct folder
+          * check file permissions on package.json
+          `
+      }).toFormattedString());
+    }
     process.exit(1);
   }
 

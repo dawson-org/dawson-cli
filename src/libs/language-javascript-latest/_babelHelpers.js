@@ -10,7 +10,17 @@ import { debug, warning } from '../../logger';
 
 // Support for `babel` property in project package.json to extend base babel config
 // to add plugins and more presets, etc. React, JSX Transform, Syntax support
-const babelRequiredPkgJson = require(path.join(process.cwd(), 'package.json'));
+let babelRequiredPkgJson;
+try {
+  babelRequiredPkgJson = require(path.join(process.cwd(), 'package.json'));
+} catch (e) {
+  debug(stripIndent`
+    _babelHelpers cannot load or parse package.json in '${process.cwd()}'.
+    This error is ignored and an empty object is returned.
+    config.js#loadConfig will probably throw now because of this.
+  `);
+  babelRequiredPkgJson = {};
+}
 
 // check if babel key is package.json
 const hasBabelConfigInPkgJson = ('babel' in babelRequiredPkgJson);
