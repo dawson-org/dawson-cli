@@ -18,7 +18,7 @@ import send from 'send';
 import util from 'util';
 import verboseRenderer from 'listr-verbose-renderer';
 import chokidar from 'chokidar';
-import { compare } from 'pathmatch';
+import { compare } from '@dawson/pathmatch';
 import { createProxyServer } from 'http-proxy';
 import { createServer } from 'http';
 import { oneLine, stripIndent } from 'common-tags';
