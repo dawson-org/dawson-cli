@@ -647,11 +647,16 @@ This option controls the [behaviour](https://docs.aws.amazon.com/AmazonCloudFron
 **Required**: no | **Type**: `string|boolean` | **Default**: `"assets"`  
 **Use for**: Specifying the path to the folder containing public assets (if any)
 
-Specify a path, relative to the package.json directory, in which public assets (css, img, js, etc.) are located. Dawson recursively uploads file and folders (except hidden files) to the `BucketAssets`.
-By default, if this property is not specified, dawson expects to find public assets in the `__dirname + /assets/` folder.  
-Another common value for this property might be something like `frontend/dist/` if you have a build process in place.  
-The folder must exist when dawson start.  
-Specify `false` to skip deploying assets.  
+Specify a path, relative to the package.json directory, in which public assets (css, img, js, etc.) are located. Dawson recursively uploads file and folders (except hidden files) to the `BucketAssets`.  
+
+The following behavior applies:
+
+- If this property is not specified, dawson expects to find public assets in the `process.cwd() + /assets/` folder; if such folder does not exist, dawson skips the assets upload step.
+- If you specify a value for this property, such folder must exist when dawson starts.
+- If you specify `false`, assets will not be uploaded.
+
+> Another common value for this property might be something like `frontend/dist/` if you have a build process in place.  
+> The AssetsBucket has a Bucket Policy which grants **public read permissions** on all objects.
 
 ## `route53`
 **Required**: no | **Type**: `Object<string:string|boolean>` | **Default**: `{}`  
