@@ -18,7 +18,7 @@ import send from 'send';
 import util from 'util';
 import verboseRenderer from 'listr-verbose-renderer';
 import chokidar from 'chokidar';
-import { compare } from 'pathmatch';
+import { compare } from '@dawson/pathmatch';
 import { createProxyServer } from 'http-proxy';
 import { createServer } from 'http';
 import { oneLine, stripIndent } from 'common-tags';
@@ -52,7 +52,7 @@ function findApi ({ method, pathname, API_DEFINITIONS }) {
     if (!def) return;
     if (def.path === false) return;
     if (typeof def.path === 'undefined') return;
-    if ((def.method || 'GET') !== method) return;
+    if (def.method !== 'ANY' && (def.method || 'GET') !== method) return;
     const defPath = `/${def.path}`;
     const result = compare(defPath, pathname);
     if (result !== false) {
@@ -61,7 +61,8 @@ function findApi ({ method, pathname, API_DEFINITIONS }) {
       found.pathParams = {}; // [paramName]: paramValue };
       const [names, values] = result;
       names.forEach((paramName, paramIndex) => {
-        found.pathParams[paramName] = values[paramIndex];
+        const cleanParamName = paramName.replace('+', ''); // remove "greedy" flag
+        found.pathParams[cleanParamName] = values[paramIndex];
       });
     }
   });
@@ -254,7 +255,10 @@ async function processAPIRequest (
       header: headers
     },
     body,
-    meta: { expectedResponseContentType }
+    meta: { expectedResponseContentType },
+    context: {
+      httpMethod: req.method
+    }
   };
   debug('Event parameter:'.gray.bold, JSON.stringify(event, null, 2).gray);
 

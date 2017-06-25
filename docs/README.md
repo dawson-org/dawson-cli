@@ -275,6 +275,10 @@ If `api.path !== false`, the Function expects to be called via an HTTP Request a
     //  for the API Gateway Method Response.
     "expectedResponseContentType": "the value from api.responseContentType property"
   },
+  "context": {
+    // context from API Gateway
+    "httpMethod": "GET" // actual HTTP method that this api is called with
+  },
   "stageVariables" : {
     // API Gateway's Stage Variables if you set any of them,
     // empty by default
@@ -461,11 +465,17 @@ The HTTP path to this function, *without* leading and trailing slashes.
 The path must be unique in your whole app. You may use path parameters placeholder, as in API Gateway, by sorrounding the parameter name with `{}`).  
 If `false`, no API Gateway method will be deployed (see [Function Parameters](./Function-Parameters) for details).  
 
+Paths can be Greedy, which means that you can use a "+" at the end of a parth part name, to match the rest of the URL (as you would do in `express` with `*` for instance). See [Example #3](https://github.com/dawson-org/dawson-examples/tree/master/3-wildcard-path) for more info.
+
 >  Due to an API Gateway limitation, `/hello/{name}.html` is [**invalid**](https://docs.aws.amazon.com/apigateway/latest/developerguide/getting-started-mappings.html). `/hello/{name}/profile.html` and `/{foo}/bar/{baz}` are valid (technically, "*each path part must not contain curly braces, or must both begin and end with a curly brace*").  
+
+>  Due to an API Gateway limitation, greedy modifiers can only appear in the last path part. For example `/page/{name+}/index.html` and `/page/{name+}.html` is [**invalid**](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-set-up-simple-proxy.html) while `/page/{name+}` and `/{foo}/bar/{baz+}` are OK. You can check out [PR #168](https://github.com/dawson-org/dawson-cli/pull/168) for implementation details.  
 
 ## `method`
 **Required**: no | **Type**: `string` | **Default**: `"GET"`  
 **Use for**: Specifying an HTTP Method
+
+The HTTP Method which this function responds to. Additionally to all supported HTTP methods, you may specify `ANY`. Setting this to `ANY` will cause this method to be called for any HTTP request that match the `path`. You cannot define any other method for this resource if you specify `ANY`.
 
 ## `responseContentType`
 **Required**: no | **Type**: `string` | **Default**: `"text/html"`  

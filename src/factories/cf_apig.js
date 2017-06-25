@@ -97,8 +97,8 @@ export function templateResourceHelper ({ resourcePath }) {
     if (!pathToken) {
       resourceName = null;
     } else if (pathToken[0] === '{') {
-      let pathWithoutBrackets = /\{(.*)\}/.exec(pathToken)[1];
-      if (!pathWithoutBrackets.match(/^[a-z0-9]+$/i)) {
+      let pathWithoutBrackets = /\{(.*)\}/.exec(pathToken)[1].replace(/\+/, 'Greedy');
+      if (!pathWithoutBrackets.match(/^[a-z0-9+]+$/i)) {
         throw new Error(
           `Path part in '${resourcePath}' cannot contain non-alphanum characters inside brackets.`
         );
