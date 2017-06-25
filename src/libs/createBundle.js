@@ -22,7 +22,9 @@ const S3_ZIP_PREFIX = 'lambda-sources';
 
 export const LANGUAGE_JS_LATEST = 'javascript-latest';
 const SUPPORTED_LANGUAGES = [LANGUAGE_JS_LATEST];
-const LANGUAGE_INVALID_ERR = new Error(`dawson internal error, unknown language in taskCreateBundle.`);
+const LANGUAGE_INVALID_ERR = new Error(
+  `dawson internal error, unknown language in taskCreateBundle.`
+);
 
 // --- handles temporary files and deletes them on exit ---
 const TEMP_FILES = [];
@@ -31,12 +33,12 @@ const tempPath = prefix => {
   TEMP_FILES.push(path);
   return path;
 };
-const cleanupTemp = () => TEMP_FILES.forEach(path => {
-  try {
-    fs.unlinkSync(path);
-  } catch (e) {
-  }
-});
+const cleanupTemp = () =>
+  TEMP_FILES.forEach(path => {
+    try {
+      fs.unlinkSync(path);
+    } catch (e) {}
+  });
 process.on('exit', cleanupTemp);
 // --- / ---
 
@@ -49,11 +51,9 @@ async function createTempFiles () {
 function writeIndex ({ indexFileContents, indexFileExtension }) {
   const indexFileName = `/.dawson-dist/dawsonindex.${indexFileExtension}`;
   debug('writing Lambda index to', indexFileName);
-  return writeFile(
-    process.cwd() + indexFileName,
-    indexFileContents,
-    { encoding: 'utf8' }
-  );
+  return writeFile(process.cwd() + indexFileName, indexFileContents, {
+    encoding: 'utf8'
+  });
 }
 
 async function zipRoot ({ tempZipFile, excludeList, rootDir }) {
@@ -150,7 +150,8 @@ export default function taskCreateBundle (args, result) {
         Object.assign(ctx, { tempZipFile });
       }
     },
-    { title: 'compiling',
+    {
+      title: 'compiling',
       task: ctx => {
         const { language } = ctx;
         switch (language) {

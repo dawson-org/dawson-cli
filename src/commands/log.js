@@ -22,8 +22,7 @@ export function filterAndPrint (
   let lastTimestamp = startTime;
   const { requestId, limit } = params;
 
-  return Promise
-    .resolve()
+  return Promise.resolve()
     .then(() => {
       const filter = requestId ? { filterPattern: `"${requestId}"` } : {};
       const cwlogs = new AWS.CloudWatchLogs({});
@@ -73,10 +72,7 @@ export function filterAndPrint (
           } catch (jsonParseError) {
             restMessageColorized = restMessage;
           }
-          msgToPrint = `\n    ${messageRequestId.bold.cyan}\n${indentString(
-            restMessageColorized,
-            4
-          )}`;
+          msgToPrint = `\n    ${messageRequestId.bold.cyan}\n${indentString(restMessageColorized, 4)}`;
         } else {
           msgToPrint = message;
         }
@@ -103,14 +99,13 @@ export function run (argv) {
   const camelFunctionName = functionName[0].toUpperCase() +
     functionName.substring(1);
   const cfLambdaName = templateLambdaName({ lambdaName: camelFunctionName });
-  return Promise
-    .resolve()
+  return Promise.resolve()
     .then(() => getStackResources({ stackName }))
     .then(resources => {
       const awsLambdaResource = resources.find(
         o =>
           o.ResourceType === 'AWS::Lambda::Function' &&
-            o.LogicalResourceId === cfLambdaName
+          o.LogicalResourceId === cfLambdaName
       );
       if (!awsLambdaResource) {
         const errMsg = 'Lambda function with this name does not exist or it has not been deployed yet';

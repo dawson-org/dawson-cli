@@ -14,7 +14,7 @@ test('templateLambdaExecutionRole', t => {
               Effect: 'Allow',
               Principal: {
                 Service: ['lambda.amazonaws.com'],
-                AWS: [{'Fn::Sub': 'arn:aws:iam::${AWS::AccountId}:root'}] // eslint-disable-line
+                AWS: [{ 'Fn::Sub': 'arn:aws:iam::${AWS::AccountId}:root' }] // eslint-disable-line
               },
               Action: ['sts:AssumeRole']
             }
@@ -149,7 +149,13 @@ test('templateLambda', t => {
         Runtime: 'foobar',
         MemorySize: 1024,
         Timeout: 30,
-        Environment: { Variables: { DAWSON_myBar: 'baz', NODE_ENV: 'development', DAWSON_STAGE: 'devel' } }
+        Environment: {
+          Variables: {
+            DAWSON_myBar: 'baz',
+            NODE_ENV: 'development',
+            DAWSON_STAGE: 'devel'
+          }
+        }
       }
     },
     PermissionForLambdaMyFunction: {
@@ -251,7 +257,13 @@ test('templateLambda in production', t => {
         Runtime: 'foobar',
         MemorySize: 1024,
         Timeout: 30,
-        Environment: { Variables: { DAWSON_myBar: 'baz', NODE_ENV: 'production', DAWSON_STAGE: 'devel' } }
+        Environment: {
+          Variables: {
+            DAWSON_myBar: 'baz',
+            NODE_ENV: 'production',
+            DAWSON_STAGE: 'devel'
+          }
+        }
       }
     },
     PermissionForLambdaMyFunction: {
@@ -356,7 +368,9 @@ test('templateLambda with inline codes', t => {
         Runtime: 'nodejs6.10',
         MemorySize: 1024,
         Timeout: 30,
-        Environment: { Variables: { NODE_ENV: 'development', DAWSON_STAGE: 'devel' } }
+        Environment: {
+          Variables: { NODE_ENV: 'development', DAWSON_STAGE: 'devel' }
+        }
       }
     },
     PermissionForLambdaMyFunction: {
@@ -375,9 +389,7 @@ test('templateLambda with inline codes', t => {
     appStage: 'devel',
     lambdaName: 'MyFunction',
     handlerFunctionName: 'myFunction',
-    inlineCode: (
-      `module.exports.handler = (event, context, callback) => { callback(null, 'Hooray'); }`
-    )
+    inlineCode: `module.exports.handler = (event, context, callback) => { callback(null, 'Hooray'); }`
   });
   t.deepEqual(expected, actual, 'should return a lambda template');
 });
@@ -461,7 +473,12 @@ test('templateLambda with dev instruments', t => {
             DAWSON_myBar: 'baz',
             NODE_ENV: 'development',
             DAWSON_STAGE: 'devel',
-            DAWSONInstrument_Queue_MyFunction: { Ref: 'IQueueMyFunction' }
+            DAWSONInstrument_Queue_MyFunction: {
+              Ref: 'IQueueRequestMyFunction'
+            },
+            DAWSONInstrument_Queue_Response_MyFunction: {
+              Ref: 'IQueueResponseMyFunction'
+            }
           }
         }
       }
@@ -477,16 +494,20 @@ test('templateLambda with dev instruments', t => {
       },
       Type: 'AWS::Lambda::Permission'
     },
-    IQueueMyFunction: {
+    IQueueRequestMyFunction: {
       Type: 'AWS::SQS::Queue',
       Properties: {}
     },
-    IQueueMyFunctionPolicy: {
+    IQueueResponseMyFunction: {
+      Type: 'AWS::SQS::Queue',
+      Properties: {}
+    },
+    IQueueRequestMyFunctionPolicy: {
       Type: 'AWS::SQS::QueuePolicy',
       Properties: {
         Queues: [
           {
-            Ref: 'IQueueMyFunction'
+            Ref: 'IQueueRequestMyFunction'
           }
         ],
         PolicyDocument: {
@@ -497,7 +518,30 @@ test('templateLambda with dev instruments', t => {
               Principal: '*',
               Action: ['SQS:SendMessage'],
               Resource: {
-                'Fn::GetAtt': ['IQueueMyFunction', 'Arn']
+                'Fn::GetAtt': ['IQueueRequestMyFunction', 'Arn']
+              }
+            }
+          ]
+        }
+      }
+    },
+    IQueueResponseMyFunctionPolicy: {
+      Type: 'AWS::SQS::QueuePolicy',
+      Properties: {
+        Queues: [
+          {
+            Ref: 'IQueueResponseMyFunction'
+          }
+        ],
+        PolicyDocument: {
+          Version: '2012-10-17',
+          Statement: [
+            {
+              Effect: 'Allow',
+              Principal: '*',
+              Action: ['SQS:ReceiveMessage', 'SQS:DeleteMessage'],
+              Resource: {
+                'Fn::GetAtt': ['IQueueResponseMyFunction', 'Arn']
               }
             }
           ]

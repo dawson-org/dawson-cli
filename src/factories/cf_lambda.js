@@ -17,7 +17,7 @@ function extraTrustPrincipals () {
   // for testing with the development proxy
   // https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html#Principal
   return {
-    AWS: [{'Fn::Sub': 'arn:aws:iam::${AWS::AccountId}:root'}] // eslint-disable-line
+    AWS: [{ 'Fn::Sub': 'arn:aws:iam::${AWS::AccountId}:root' }] // eslint-disable-line
   };
 }
 
@@ -120,22 +120,25 @@ function getDevInstrumentProperties ({ lambdaName, devInstrument }) {
       Environment: {}
     };
   }
-  const lambdaLogicalName = `${lambdaName[0].toUpperCase()}${lambdaName.slice(
-    1
-  )}`;
-  const queueLogicalName = `IQueue${lambdaLogicalName}`;
+  const lambdaLogicalName = `${lambdaName[0].toUpperCase()}${lambdaName.slice(1)}`;
+  const requestQueueLogicalName = `IQueueRequest${lambdaLogicalName}`;
+  const responseQueueLogicalName = `IQueueResponse${lambdaLogicalName}`;
   return {
     Resources: {
-      [queueLogicalName]: {
+      [requestQueueLogicalName]: {
         Type: 'AWS::SQS::Queue',
         Properties: {}
       },
-      [`${queueLogicalName}Policy`]: {
+      [responseQueueLogicalName]: {
+        Type: 'AWS::SQS::Queue',
+        Properties: {}
+      },
+      [`${requestQueueLogicalName}Policy`]: {
         Type: 'AWS::SQS::QueuePolicy',
         Properties: {
           Queues: [
             {
-              Ref: queueLogicalName
+              Ref: requestQueueLogicalName
             }
           ],
           PolicyDocument: {
@@ -146,7 +149,30 @@ function getDevInstrumentProperties ({ lambdaName, devInstrument }) {
                 Principal: '*', // should be, but doesn't work: { AWS: { Ref: 'AWS::AccountId' } },
                 Action: ['SQS:SendMessage'],
                 Resource: {
-                  'Fn::GetAtt': [queueLogicalName, 'Arn']
+                  'Fn::GetAtt': [requestQueueLogicalName, 'Arn']
+                }
+              }
+            ]
+          }
+        }
+      },
+      [`${responseQueueLogicalName}Policy`]: {
+        Type: 'AWS::SQS::QueuePolicy',
+        Properties: {
+          Queues: [
+            {
+              Ref: responseQueueLogicalName
+            }
+          ],
+          PolicyDocument: {
+            Version: '2012-10-17',
+            Statement: [
+              {
+                Effect: 'Allow',
+                Principal: '*', // should be, but doesn't work: { AWS: { Ref: 'AWS::AccountId' } },
+                Action: ['SQS:ReceiveMessage', 'SQS:DeleteMessage'],
+                Resource: {
+                  'Fn::GetAtt': [responseQueueLogicalName, 'Arn']
                 }
               }
             ]
@@ -156,7 +182,10 @@ function getDevInstrumentProperties ({ lambdaName, devInstrument }) {
     },
     Environment: {
       [`DAWSONInstrument_Queue_${lambdaName}`]: {
-        Ref: queueLogicalName
+        Ref: requestQueueLogicalName
+      },
+      [`DAWSONInstrument_Queue_Response_${lambdaName}`]: {
+        Ref: responseQueueLogicalName
       }
     }
   };

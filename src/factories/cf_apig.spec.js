@@ -67,7 +67,10 @@ test('templateRest', t => {
   const expected = {
     API: {
       Type: 'AWS::ApiGateway::RestApi',
-      Properties: { Description: 'REST API for dawson app', Name: 'AppAPIStage' }
+      Properties: {
+        Description: 'REST API for dawson app',
+        Name: 'AppAPIStage'
+      }
     }
   };
   const actual = templateRest({ appStage: 'stage' });
@@ -249,7 +252,10 @@ test('templateModel', t => {
       }
     }
   };
-  const actual = templateModel({ modelName: 'CustomResponse', modelSchema: {} });
+  const actual = templateModel({
+    modelName: 'CustomResponse',
+    modelSchema: {}
+  });
   t.deepEqual(sortObject(expected), sortObject(actual), 'should return');
 });
 
@@ -260,20 +266,16 @@ test('templateLambdaIntegration with custom ContentType', t => {
       {
         ResponseParameters: {},
         ResponseTemplates: {
-          'text/x-beer': (
-            `#set($inputRoot = $input.path('$'))
+          'text/x-beer': `#set($inputRoot = $input.path('$'))
 $inputRoot.response`
-          )
         },
         StatusCode: 200
       },
       {
         ResponseParameters: {},
         ResponseTemplates: {
-          'text/x-beer': (
-            `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+          'text/x-beer': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
 $errorMessageObj.response`
-          )
         },
         SelectionPattern: '.*"httpStatus":500.*',
         StatusCode: 500
@@ -281,10 +283,8 @@ $errorMessageObj.response`
       {
         ResponseParameters: {},
         ResponseTemplates: {
-          'text/x-beer': (
-            `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+          'text/x-beer': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
 $errorMessageObj.response`
-          )
         },
         SelectionPattern: '.*"httpStatus":400.*',
         StatusCode: 400
@@ -292,10 +292,8 @@ $errorMessageObj.response`
       {
         ResponseParameters: {},
         ResponseTemplates: {
-          'text/x-beer': (
-            `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+          'text/x-beer': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
 $errorMessageObj.response`
-          )
         },
         SelectionPattern: '.*"httpStatus":403.*',
         StatusCode: 403
@@ -303,10 +301,8 @@ $errorMessageObj.response`
       {
         ResponseParameters: {},
         ResponseTemplates: {
-          'text/x-beer': (
-            `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+          'text/x-beer': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
 $errorMessageObj.response`
-          )
         },
         SelectionPattern: '.*"httpStatus":404.*',
         StatusCode: 404
@@ -346,10 +342,8 @@ test('templateLambdaIntegration with ContentType = application/json', t => {
       {
         ResponseParameters: {},
         ResponseTemplates: {
-          'application/json': (
-            `#set($inputRoot = $input.path('$'))
+          'application/json': `#set($inputRoot = $input.path('$'))
 $inputRoot.response`
-          )
         },
         StatusCode: 200
       },
@@ -424,10 +418,8 @@ test('templateLambdaIntegration with redirect = true', t => {
           'method.response.header.Location': 'integration.response.body.response.Location'
         },
         ResponseTemplates: {
-          'text/plain': (
-            `#set($inputRoot = $input.path('$'))
+          'text/plain': `#set($inputRoot = $input.path('$'))
 You are being redirected to $inputRoot.response.Location`
-          )
         },
         StatusCode: 307
       },
@@ -526,20 +518,16 @@ test('templateMethod with an authorizer', t => {
             {
               ResponseParameters: {},
               ResponseTemplates: {
-                'text/x-bar': (
-                  `#set($inputRoot = $input.path('$'))
+                'text/x-bar': `#set($inputRoot = $input.path('$'))
 $inputRoot.response`
-                )
               },
               StatusCode: 200
             },
             {
               ResponseParameters: {},
               ResponseTemplates: {
-                'text/x-bar': (
-                  `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+                'text/x-bar': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
 $errorMessageObj.response`
-                )
               },
               SelectionPattern: '.*"httpStatus":500.*',
               StatusCode: 500
@@ -547,10 +535,8 @@ $errorMessageObj.response`
             {
               ResponseParameters: {},
               ResponseTemplates: {
-                'text/x-bar': (
-                  `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+                'text/x-bar': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
 $errorMessageObj.response`
-                )
               },
               SelectionPattern: '.*"httpStatus":400.*',
               StatusCode: 400
@@ -558,10 +544,8 @@ $errorMessageObj.response`
             {
               ResponseParameters: {},
               ResponseTemplates: {
-                'text/x-bar': (
-                  `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+                'text/x-bar': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
 $errorMessageObj.response`
-                )
               },
               SelectionPattern: '.*"httpStatus":403.*',
               StatusCode: 403
@@ -569,10 +553,8 @@ $errorMessageObj.response`
             {
               ResponseParameters: {},
               ResponseTemplates: {
-                'text/x-bar': (
-                  `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
+                'text/x-bar': `#set ($errorMessageObj = $util.parseJson($input.path('$.errorMessage')))
 $errorMessageObj.response`
-                )
               },
               SelectionPattern: '.*"httpStatus":404.*',
               StatusCode: 404
@@ -662,10 +644,8 @@ test('templateMethod without an authorizer', t => {
             {
               ResponseParameters: {},
               ResponseTemplates: {
-                'application/json': (
-                  `#set($inputRoot = $input.path('$'))
+                'application/json': `#set($inputRoot = $input.path('$'))
 $inputRoot.response`
-                )
               },
               StatusCode: 200
             },
@@ -725,27 +705,39 @@ $inputRoot.response`
         },
         MethodResponses: [
           {
-            ResponseModels: { 'application/json': { Ref: 'ModelHelloWorldModel' } },
+            ResponseModels: {
+              'application/json': { Ref: 'ModelHelloWorldModel' }
+            },
             StatusCode: 200
           },
           {
-            ResponseModels: { 'application/json': { Ref: 'ModelHelloWorldModel' } },
+            ResponseModels: {
+              'application/json': { Ref: 'ModelHelloWorldModel' }
+            },
             StatusCode: 400
           },
           {
-            ResponseModels: { 'application/json': { Ref: 'ModelHelloWorldModel' } },
+            ResponseModels: {
+              'application/json': { Ref: 'ModelHelloWorldModel' }
+            },
             StatusCode: 403
           },
           {
-            ResponseModels: { 'application/json': { Ref: 'ModelHelloWorldModel' } },
+            ResponseModels: {
+              'application/json': { Ref: 'ModelHelloWorldModel' }
+            },
             StatusCode: 404
           },
           {
-            ResponseModels: { 'application/json': { Ref: 'ModelHelloWorldModel' } },
+            ResponseModels: {
+              'application/json': { Ref: 'ModelHelloWorldModel' }
+            },
             StatusCode: 500
           },
           {
-            ResponseModels: { 'application/json': { Ref: 'ModelHelloWorldModel' } },
+            ResponseModels: {
+              'application/json': { Ref: 'ModelHelloWorldModel' }
+            },
             ResponseParameters: { 'method.response.header.Location': false },
             StatusCode: 307
           }
