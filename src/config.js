@@ -153,12 +153,23 @@ function validateDawsonConfig (dawson, rootDir) {
   if (assetsDir) {
     const resolvedAssetsPath = `${rootDir}/${assetsDir}`;
     if (!existsSync(resolvedAssetsPath)) {
+      if (typeof dawson.assetsDir === 'undefined') {
+        // if assetsDir is not provided in package.json
+        // and assets/ folder does not exists, no error is thrown
+        // and assets uploading is skipped
+        debug(stripIndent`
+          Will not try to upload static assets:
+          no assetsDir was provided in package.json and no assets/ folder is present in CWD.
+        `);
+        dawson.assetsDir = false;
+        return true;
+      }
       return [
         `Path specified by 'assetsDir' does not exist.`,
         stripIndent`
         Directory does not exist: '${resolvedAssetsPath}',
         either create this directory, set the correct value for the 'assetsDir' property
-        in package.json, or set 'assetsDir' to false if you're not using static assets.`
+        in package.json, or set { "assetsDir": false } if you're not using static assets.`
       ];
     }
   }
