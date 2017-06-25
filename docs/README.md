@@ -65,6 +65,7 @@ Check out the [examples repository](https://github.com/dawson-org/dawson-example
   * [`redirects`](#redirects)
   * [`devInstrument`](#devinstrument)
   * [`runtime`](#runtime)
+  * [`excludeEnv`](#excludeenv)
 - [5. Application configuration](#5-application-configuration)
   * [`pre-deploy`](#pre-deploy)
   * [`post-deploy`](#post-deploy)
