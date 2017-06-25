@@ -25,7 +25,7 @@ greet.api = {
 ```bash
 $ # 🛑 we strongly recommend to read this guide 🛑
 $ # 🛑     before getting your hands dirty      🛑
-$ npm install -g dawson
+$ npm install -g @dawson/dawson-cli
 $ export AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... AWS_REGION=...
 $ dawson deploy
 ```
@@ -126,7 +126,7 @@ export AWS_REGION=...
 You write your app's code and then dawson takes care of building, packing, uploading the code to AWS and of creating the AWS infrastructure that your application needs to run.
 
 ## 1.1 installing
-you should install dawson using npm or yarn: `npm install -g dawson` or `yarn global add dawson`. You should then be able to run a `dawson --help` command.  
+you should install dawson using npm or yarn: `npm install -g @dawson/dawson-cli` or `yarn global add @dawson/dawson-cli`. You should then be able to run a `dawson --help` command.  
 You're kindly invited to keep dawson up-to-date, starting with `v1.0.0` we will never introduce backwards-incompatible changes between non-major versions, following strict [SemVer](http://semver.org).  
 
 There are some system prerequisites; the following binaries must be available:
