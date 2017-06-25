@@ -37,6 +37,10 @@
     ansi-styles "^2.2.1"
     esutils "^2.0.2"
 
+"@dawson/pathmatch@0.0.4":
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/@dawson/pathmatch/-/pathmatch-0.0.4.tgz#fd39a2e506254f7df3f7e6e0f10419a2bac6f6f1"
+
 abbrev@1:
   version "1.0.9"
   resolved "https://registry.yarnpkg.com/abbrev/-/abbrev-1.0.9.tgz#91b4792588a7738c25f35dd6f63752a2f8776135"
@@ -3860,10 +3864,6 @@ path-type@^2.0.0:
   resolved "https://registry.yarnpkg.com/path-type/-/path-type-2.0.0.tgz#f012ccb8415b7096fc2daa1054c3d72389594c73"
   dependencies:
     pify "^2.0.0"
-
-pathmatch@^0.0.2:
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/pathmatch/-/pathmatch-0.0.2.tgz#b88b77e2e1f5bfcb95ffd78b4622d026d678d99d"
 
 pify@^2.0.0:
   version "2.3.0"
