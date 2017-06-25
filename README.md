@@ -10,7 +10,7 @@
 dawson is a [serverless](https://auth0.com/blog/what-is-serverless/) web framework for Node.js on AWS ([CloudFormation](https://aws.amazon.com/cloudformation/), [CloudFront](https://aws.amazon.com/cloudfront/), [API Gateway](https://aws.amazon.com/apigateway/), [Lambda](https://aws.amazon.com/lambda/)).  
 You can use `dawson` to build and deploy backend code and infrastructure for single-page apps + API, pure APIs or server-rendered pages.
 
-[![npm package](https://nodei.co/npm/dawson.png?compact=true)](https://npm.im/dawson)
+[![npm package](https://nodei.co/npm/@dawson/dawson-cli.png?compact=true)](https://npm.im/@dawson/dawson-cli)
 
 ```js
 // api.js
@@ -28,7 +28,7 @@ greet.api = {
 }
 ```
 ```bash
-$ npm install -g dawson
+$ npm install -g @dawson/dawson-cli
 $ export AWS_REGION=... AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=...
 $ dawson deploy
 ```
@@ -106,7 +106,7 @@ Chris_Matheson chrismatheson https://twitter.com/chrismatheson doc
 Contributors END -->
 
 ## Support
-In case you have an issue, make sure you have updated to the latest version (e.g.: `npm i dawson@latest`), then:
+In case you have an issue, make sure you have updated to the latest version (e.g.: `npm i @dawson/dawson-cli@latest`), then:
 
 * search / post on StackOverflow using the *dawson* tag
 * search / open an issue in this repo
