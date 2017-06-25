@@ -140,10 +140,13 @@ function apiCallback (res, runner, responseError, responseData) {
   res.end();
 }
 
-function getEnvVariables (outputs) {
+function getEnvVariables (outputs, excludeEnv = []) {
   const envVariables = outputs.map(output => {
+    if (excludeEnv.includes(output.OutputKey)) {
+      return;
+    }
     return `DAWSON_${output.OutputKey}=${output.OutputValue}`;
-  });
+  }).filter(Boolean);
   return envVariables;
 }
 
@@ -165,7 +168,7 @@ async function runDockerContainer (
     log(`   [STS] using cached credentials for Lambda '${runner.name}'`);
   }
   const credentials = credentialsCache.get(runner);
-  const envVariables = getEnvVariables(outputs);
+  const envVariables = getEnvVariables(outputs, runner.api.excludeEnv);
   try {
     log(`\n======= Log Fragment Begin for «${runner.name.bold}» =======`.dim);
     const invokeResult = dockerLambda({
