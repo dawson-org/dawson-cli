@@ -52,7 +52,7 @@ function findApi ({ method, pathname, API_DEFINITIONS }) {
     if (!def) return;
     if (def.path === false) return;
     if (typeof def.path === 'undefined') return;
-    if ((def.method || 'GET') !== method) return;
+    if (def.method !== 'ANY' && (def.method || 'GET') !== method) return;
     const defPath = `/${def.path}`;
     const result = compare(defPath, pathname);
     if (result !== false) {
@@ -254,7 +254,10 @@ async function processAPIRequest (
       header: headers
     },
     body,
-    meta: { expectedResponseContentType }
+    meta: { expectedResponseContentType },
+    context: {
+      httpMethod: req.method
+    }
   };
   debug('Event parameter:'.gray.bold, JSON.stringify(event, null, 2).gray);
 
