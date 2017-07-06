@@ -63,7 +63,7 @@
     "yargs": "^8.0.2",
     "zen-observable": "^0.5.1"
   },
-  "bin": "dist/index.js",
+  "bin": { "dawson": "dist/index.js" },
   "devDependencies": {
     "ava": "^0.19.1",
     "commitizen": "^2.9.6",
