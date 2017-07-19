@@ -39,6 +39,9 @@ $ dawson deploy
 ## Examples
 [Examples & Reference Apps](https://github.com/dawson-org/dawson-examples)
 
+## Articles & Tutorials
+1. [dawson & React server-side rendering](https://medium.com/@hwclass/aws-rendered-react-chocolate-chips-with-dawson-part-1-a-simple-service-for-serving-components-2b47a87bebab) by [@hwclass](https://twitter.com/hwclass)
+
 ## About
 dawson lets you to deploy your serverless Node.js apps on [Amazon Web Services](https://aws.amazon.com). It requires **no boilerplate**, no `init` command and no configuration files. Just write your functions and deploy!
 
