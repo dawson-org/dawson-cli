@@ -65,7 +65,7 @@
   },
   "bin": { "dawson": "dist/index.js" },
   "devDependencies": {
-    "ava": "^0.19.1",
+    "ava": "^0.20.0",
     "commitizen": "^2.9.6",
     "coveralls": "^2.13.1",
     "cz-conventional-changelog": "^2.0.0",
