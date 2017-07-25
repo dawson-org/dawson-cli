@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "scripts": {
     "clean": "rm -rf dist/",
-    "compile": "babel -s true --source-maps inline -d dist/ src/ --ignore *.AppleDouble*",
+    "compile": "babel -s true --source-maps inline -d dist/ src/ --ignore *.AppleDouble* --copy-files",
     "link:watch": "nodemon -w src -x npm -- run lint-link",
     "format": "prettier-eslint --write src/**/*.js",
     "lint": "eslint src/**/*.js",
@@ -19,7 +19,8 @@
     "coverage-coveralls": "nyc report --reporter=text-lcov | coveralls",
     "coverage-codecov": "nyc report --reporter=text-lcov > coverage.lcov && codecov",
     "coverage": "npm run coverage-coveralls && npm run coverage-codecov",
-    "test": "npm run lint && nyc ava src/**/*.spec.js",
+    "test-python": "cd src/libs/language-python/api-parser && pip install -r requirements-dev.txt && bash runtests.sh",
+    "test": "npm run lint && nyc ava src/**/*.spec.js && npm run test-python",
     "commit": "git-cz"
   },
   "engines": {
@@ -95,7 +96,13 @@
       "src/libs/**/createIndex.js"
     ],
     "exclude": [
-      "**/*.spec.js"
+      "**/*.spec.js",
+      "src/logger.js",
+      "src/config.js",
+      "src/libs/createBundle.js",
+      "src/libs/**/compile.js",
+      "src/libs/**/describeApi.js",
+      "src/libs/**/installDeps.js"
     ],
     "require": [
       "babel-register"

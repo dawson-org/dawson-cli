@@ -2,21 +2,24 @@
 import AWS from 'aws-sdk';
 import execa from 'execa';
 import Type from 'prop-types';
+import path from 'path';
 import { existsSync } from 'fs';
 import { stripIndent } from 'common-tags';
 
 import createError from './libs/error';
-import { LANGUAGE_JS_LATEST } from './libs/createBundle';
+import { LANGUAGE_JS_LATEST, LANGUAGE_PYTHON } from './libs/createBundle';
 import { debug } from './logger';
 
 // Language-specific bindings
 import jsDescribeApi from './libs/language-javascript-latest/describeApi';
+import pyDescribeApi from './libs/language-python/describeApi';
 
 export const AWS_REGION = AWS.config.region;
 export const RESERVED_FUCTION_NAMES = ['customTemplateFragment', 'processCFTemplate'];
 
 const FUNCTION_CONFIGURATION_PROPERTIES = [
   'path',
+  'runtime',
   'devInstrument',
   'authorizer',
   'method',
@@ -62,6 +65,7 @@ const FUNCTION_CONFIGURATION_SCHEMA = {
         return new Error(`path part either must start and end with a curly brace or must not contain any curly brace, and it cannot contain two consecutive slashes`);
       }
     },
+    runtime: Type.oneOf(['nodejs4.3', 'python2.7']), // https://docs.aws.amazon.com/lambda/latest/dg/API_CreateFunction.html#SSS-CreateFunction-request-Runtime
     authorizer: Type.func,
     devInstrument: function (props, propName) {
       const val = props[propName];
@@ -318,6 +322,11 @@ function describeApi (rootDir) {
       return {
         language: LANGUAGE_JS_LATEST,
         requiredApi: jsDescribeApi({ rootDir })
+      };
+    } else if (existsSync(path.join(rootDir, 'api.py'))) {
+      return {
+        language: LANGUAGE_PYTHON,
+        requiredApi: pyDescribeApi({ rootDir })
       };
     } else {
       console.error(createError({
