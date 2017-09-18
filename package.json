@@ -60,7 +60,7 @@
     "source-map-support": "^0.4.14",
     "temp": "^0.8.3",
     "update-notifier": "^2.0.0",
-    "yargs": "^8.0.2",
+    "yargs": "^9.0.1",
     "zen-observable": "^0.5.1"
   },
   "bin": { "dawson": "dist/index.js" },
