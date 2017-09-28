@@ -67,7 +67,7 @@
   "devDependencies": {
     "ava": "^0.19.1",
     "commitizen": "^2.9.6",
-    "coveralls": "^2.13.1",
+    "coveralls": "^3.0.0",
     "cz-conventional-changelog": "^2.0.0",
     "deep-sort-object": "^1.0.2",
     "eslint": "^4.1.0",
