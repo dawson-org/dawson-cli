@@ -57,7 +57,7 @@
     "prop-types": "0.2.0",
     "s3-recursive-uploader": "^0.3.0",
     "send": "^0.15.0",
-    "source-map-support": "^0.4.14",
+    "source-map-support": "^0.5.0",
     "temp": "^0.8.3",
     "update-notifier": "^2.0.0",
     "yargs": "^8.0.2",
