@@ -71,7 +71,7 @@
     "cz-conventional-changelog": "^2.0.0",
     "deep-sort-object": "^1.0.2",
     "eslint": "^4.1.0",
-    "eslint-config-semistandard": "^11.0.0",
+    "eslint-config-semistandard": "^12.0.0",
     "eslint-config-standard": "^10.2.1",
     "eslint-plugin-import": "^2.6.0",
     "eslint-plugin-node": "^5.0.0",
