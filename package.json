@@ -78,7 +78,7 @@
     "eslint-plugin-promise": "^3.5.0",
     "eslint-plugin-standard": "^3.0.1",
     "husky": "^0.14.0",
-    "jest-snapshot": "^20.0.3",
+    "jest-snapshot": "^22.0.2",
     "nyc": "^11.0.2",
     "prettier-eslint-cli": "^4.1.1",
     "snazzy": "^7.0.0",
