@@ -35,7 +35,7 @@
     "babel-preset-dawson": "1.0.0",
     "babel-register": "^6.16.3",
     "chalk": "^1.1.3",
-    "chokidar": "^1.6.1",
+    "chokidar": "^2.0.0",
     "cli-table": "^0.3.1",
     "colors": "^1.1.2",
     "common-tags": "^1.3.1",
@@ -56,14 +56,16 @@
     "prettyjson": "^1.1.3",
     "prop-types": "0.2.0",
     "s3-recursive-uploader": "^0.3.0",
-    "send": "^0.15.0",
+    "send": "^0.16.0",
     "source-map-support": "^0.4.14",
     "temp": "^0.8.3",
     "update-notifier": "^2.0.0",
     "yargs": "^8.0.2",
     "zen-observable": "^0.5.1"
   },
-  "bin": { "dawson": "dist/index.js" },
+  "bin": {
+    "dawson": "dist/index.js"
+  },
   "devDependencies": {
     "ava": "^0.19.1",
     "commitizen": "^2.9.6",
