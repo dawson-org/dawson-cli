@@ -1,5 +1,14 @@
 ![dawson](https://raw.githubusercontent.com/dawson-org/dawson-cli/images/dawson-logo.png)
 
+
+# ----
+# Sorry, this project is not maintained anymore.
+# ----
+
+
+
+
+
 [![Build Status](https://travis-ci.org/dawson-org/dawson-cli.svg?branch=master)](https://travis-ci.org/dawson-org/dawson-cli)
 [![Dependency Status](https://gemnasium.com/badges/github.com/dawson-org/dawson-cli.svg)](https://gemnasium.com/github.com/dawson-org/dawson-cli) 
 [![Greenkeeper badge](https://badges.greenkeeper.io/dawson-org/dawson-cli.svg)](https://greenkeeper.io/) 
